@@ -141,7 +141,7 @@ thr = calibrate("fp32")
 res = {"threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames", "threshold": thr,
        "quant_ops": QOPS, "calib": score("calib", "fp32", thr), "test_fp32": score("test", "fp32", thr), "test_q8": score("test", "q8", thr),
        "test_industrial_fp32": score("test", "fp32", thr, True), "test_industrial_q8": score("test", "q8", thr, True),
-       "input_size": proc.size}
+       "input_size": dict(proc.size)}
 
 if TILES:
     tthr = calibrate("tiled_q8")
