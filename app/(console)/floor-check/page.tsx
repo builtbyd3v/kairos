@@ -1,78 +1,82 @@
-import { FloorCheck } from "@/components/floor-check";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WaterTry } from "@/components/water-try";
+import { Why } from "@/components/why";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WATER_CONFIDENCE } from "@/lib/water-confidence";
+import { WATER_MODEL_ID, WATER_REVISION } from "@/lib/water-model";
+import { cn } from "@/lib/utils";
 
-// Numbers from docs/model/RESULTS.md (held-out test set, never used for training or model selection).
-const METRICS = [
-  { model: "Always \"dry\"", acc: "56.9%", wet: "0%" },
-  { model: "CLIP zero-shot (baseline)", acc: "71.8%", wet: "72.2%" },
-  { model: "Our fine-tuned ConvNeXt-Tiny", acc: "99.6%", wet: "99.1%" },
+// Held-out test numbers from docs/model/water-v2/RESULTS.md (never trained on; threshold picked on a separate calibration split).
+const STATS = [
+  { value: "85%", label: "Wet photos caught", note: "461 of 543, from a source it never trained on", tone: "text-go" },
+  { value: "2.3", label: "False alarms per 100 Spot frames", note: "4 of 172 dry frames from a camera on a Spot robot", tone: "text-go" },
+  { value: "67 ms", label: "Per frame, in your browser", note: "WebGPU; no server, no upload", tone: "text-foreground" },
+  { value: "7%", label: "Tiny puddles found", note: "4 of 57 under 1% of the frame. The known gap; your operators' labels close it", tone: "text-hold" },
 ];
 
-export default function FloorCheckPage() {
+const SAMPLES = [0, 1, 3, 5].map((i) => ({ src: `/captures/demo-wet-${i}.jpg`, label: `Held-out puddle photo ${i + 1}` })).concat([{ src: "/captures/demo-dry-0.jpg", label: "Dry floor, Spot camera" }]);
+
+export default function WaterModelPage() {
   return (
     <main>
-      <PageHeader
-        title="Floor check"
-        subtitle="A forecast can't see the floor Spot walks on. Our fine-tuned open model flags standing water in a camera frame so the dispatcher can hold that waypoint. It runs in this browser with transformers.js."
-      />
-      <div className="grid grid-cols-12 gap-5 px-8 py-6">
-        <Card className="col-span-8 animate-rise">
+      <PageHeader title="Water model" subtitle="Finds puddles and spills in Spot's camera, right in the browser." />
+      <div className="mx-auto grid max-w-[1440px] items-start gap-5 px-8 py-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <Card className="animate-rise">
           <CardHeader>
             <CardTitle>Try it</CardTitle>
-            <CardDescription>Three held-out test images, three NextEra kit images, or your own</CardDescription>
           </CardHeader>
           <CardContent>
-            <FloorCheck />
+            <WaterTry samples={SAMPLES} />
           </CardContent>
         </Card>
-        <Card className="col-span-4 animate-rise [--rise-delay:60ms]">
-          <CardHeader>
-            <CardTitle>How good is it?</CardTitle>
-            <CardDescription>752 held-out images (324 wet), 95% CIs in the model card. The browser loads a 34 MB int8 version (99.5% accuracy).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <table className="w-full text-left">
-              <thead className="font-mono text-[11px] tracking-wider text-helper uppercase">
-                <tr>
-                  <th className="py-1 font-medium">Model</th>
-                  <th className="font-medium">Accuracy</th>
-                  <th className="font-medium">Wet recall</th>
-                </tr>
-              </thead>
-              <tbody className="font-mono tabular-nums">
-                {METRICS.map((m) => (
-                  <tr key={m.model} className="border-t border-border/70">
-                    <td className="py-2.5 font-sans">{m.model}</td>
-                    <td>{m.acc}</td>
-                    <td>{m.wet}</td>
-                  </tr>
+        <div className="space-y-5">
+          <Card className="animate-rise [--rise-delay:60ms]">
+            <CardHeader>
+              <CardTitle>How good is it</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3">
+              {STATS.map((s) => (
+                <div key={s.label} className="panel-inset px-4 py-3">
+                  <p className={cn("font-mono text-3xl font-medium tabular-nums", s.tone)}>{s.value}</p>
+                  <p className="mt-1 text-sm">{s.label}</p>
+                  <p className="mt-1 text-xs text-helper">{s.note}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card className="animate-rise [--rise-delay:120ms]">
+            <CardHeader>
+              <CardTitle>What the % means</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-4 gap-2">
+                {WATER_CONFIDENCE.map((b) => (
+                  <div key={b.min} className="panel-inset px-3 py-2.5 text-center">
+                    <p className="font-mono text-xl font-medium text-[#8ab8ff] tabular-nums">{b.pct}%</p>
+                    <p className="text-[11px] text-helper">
+                      score {b.min}-{b.max}
+                    </p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-            <p>
-              <span className="font-medium">Honest number: 90.2% wet recall (37 of 41)</span> for the int8 model that runs in this browser, on images from a
-              single source (2 scenes). Full precision gets 92.7% (38 of 41). The full score is partly inflated because dry and wet images mostly come from
-              different datasets.
-            </p>
-            <p className="text-muted-foreground">
-              Off-domain: in our Python evaluation it flagged 2 of 6 dry NextEra kit images as wet (gauge p=0.51, thermal p=0.63). In the browser the gauge
-              lands just under 0.5 because image resizing differs slightly; the thermal image is still a false alarm. Trained on public street scenes, not plant
-              floors. Next step: fine-tune on real Spot frames.
-            </p>
-            <p className="text-xs text-helper">
-              Model:{" "}
-              <a className="text-link underline-offset-4 hover:underline" href="https://huggingface.co/builtbyd3v/spot-wetfloor-convnext-tiny">
-                builtbyd3v/spot-wetfloor-convnext-tiny
-              </a>
-              . Data:{" "}
-              <a className="text-link underline-offset-4 hover:underline" href="https://doi.org/10.17632/y6zyrnxbfm.4">
-                Bhutad and Patil, Mendeley Data V4
-              </a>{" "}
-              water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Base model facebook/convnext-tiny-224 (Apache-2.0).
-            </p>
-          </CardContent>
-        </Card>
+              </div>
+              <p className="text-sm text-muted-foreground">Of the boxes the model drew at each score, this share was real water.</p>
+              <Why>
+                <p>Measured on a calibration split (315 boxes), checked on the held-out test split (680 boxes): docs/model/water-v2/CONFIDENCE.md.</p>
+                <p>
+                  Model:{" "}
+                  <a className="text-link underline-offset-4 hover:underline" href={`https://huggingface.co/${WATER_MODEL_ID}/tree/${WATER_REVISION}`}>
+                    {WATER_MODEL_ID}
+                  </a>{" "}
+                  @ {WATER_REVISION.slice(0, 7)}, fine-tuned from PekingU/rtdetr_v2_r18vd (Apache-2.0).
+                </p>
+                <p>
+                  Data: Bhutad and Patil, Mendeley Data V4 (CC BY 4.0); Kaggle Dist-YOLO public spaces (CC0); Roboflow puddle and spill sets (CC BY 4.0); UT Austin SCAND Spot
+                  footage (CC0). No NextEra frames: every number here is on public photos.
+                </p>
+              </Why>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </main>
   );
