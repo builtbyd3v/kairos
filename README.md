@@ -15,6 +15,7 @@ Live: https://spot-ops-pi.vercel.app
 |---|---|
 | Dispatch board | Next round verdict with reasons and sources, confirm or override. True mission status vs reported. Attention queue ranked by severity and asset criticality. Two-floor facility map. Battery and inspection-type insights. Weather backtest. Decision log. |
 | Mission page | What happened in plain words, the route on the map, every action with its reading and anomaly. |
+| Floor check | Our fine-tuned open model ([builtbyd3v/spot-wetfloor-convnext-tiny](https://huggingface.co/builtbyd3v/spot-wetfloor-convnext-tiny)) flags standing water in a camera frame, in the browser with transformers.js. A wet frame holds that waypoint. |
 | Storm replay | A real storm afternoon at NextEra's St. Lucie plant, replayed minute by minute with no hindsight. The verdict flips live, and a recall shows how long Spot needs to reach the dock. |
 
 ## Rules
@@ -38,7 +39,10 @@ Every rule is in `lib/verdict.ts` and cited in the UI.
 - Orbit calls are simulated, using real Orbit API endpoint names.
 
 ## Stack
-Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind v4 · shadcn/ui · Neon Postgres (`@neondatabase/serverless`) · Vercel.
+Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind v4 · shadcn/ui · Neon Postgres (`@neondatabase/serverless`) · Hugging Face transformers.js + a fine-tuned ConvNeXt-Tiny · Vercel.
+
+## Model
+Fine-tuned `facebook/convnext-tiny-224` on Mendeley water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Held-out test (752 images): 99.6% accuracy vs 71.8% for zero-shot CLIP. **Honest number:** 92.7% wet recall on single-source images, because the full score is partly inflated by dataset source. It flagged 2 of 6 dry NextEra kit images as wet. Details: `docs/model/RESULTS.md`.
 
 ## Run it
 ```bash

@@ -24,3 +24,9 @@ Each entry: what we chose, what we rejected, and why.
 12. **Rules are pure functions with tests** (`lib/verdict.ts`, `npm test`). The live board, the replay and the backtest all run the same code.
 13. **Server Components by default.** The only client component is the replay player, which needs a clock and a slider.
 14. **Design: IBM Carbon dark tokens plus Orbit's navy bar.** It reads as an enterprise tool that sits next to Orbit, and its contrast is verified (WCAG AA). Status is always color, icon and word. Motion only on the verdict flip and new log rows.
+
+## Model
+16. **Fine-tune a small open vision model for wet floors.** ConvNeXt-Tiny (Apache-2.0) is small enough for the browser, and as a CNN it can be explained with heatmaps. Rejected: zero-shot CLIP only (71.8% accuracy), and a paid hosted endpoint.
+17. **Lead with the honest number.** Dry and wet images mostly came from different datasets, so we report the single-source wet recall (92.7%) next to the headline 99.6%, plus the off-domain false alarms on NextEra's images.
+18. **Run it in the browser.** transformers.js with an ONNX export: no server GPU, and no image leaves the operator's machine. Trade-off: a one-time model download.
+19. **Advisory only.** A wet frame holds the waypoint for an operator. "No water detected" never means safe.

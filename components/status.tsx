@@ -65,10 +65,11 @@ export const TRUTH_UI: Record<string, { text: string; label: string }> = {
   FAILED: { text: "text-recall", label: "Failed" },
 };
 
-export function AppHeader({ active }: { active: "board" | "replay" | "missions" }) {
+export function AppHeader({ active }: { active: "board" | "replay" | "missions" | "floor" }) {
   const tabs = [
     { id: "board", href: "/", label: "Dispatch board" },
     { id: "replay", href: "/replay", label: "Storm replay" },
+    { id: "floor", href: "/floor-check", label: "Floor check" },
   ] as const;
   return (
     <header className="border-b border-sidebar-border bg-navy">
