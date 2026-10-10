@@ -1,0 +1,92 @@
+/* Kairos intro (app/intro). One rule keeps reduced motion simple: an element's own style is its final pose and each
+   keyframe animates FROM the start pose with a backwards fill. With animation off, every beat is a clean static frame.
+   Delay and duration come in as CSS variables (Tailwind arbitrary properties: [--d:2.6s] [--t:2s]). */
+
+@keyframes k-fade { from { opacity: 0; } }
+@keyframes k-rise { from { opacity: 0; transform: translateY(28px); } }
+@keyframes k-pop { from { opacity: 0; transform: scale(0.4); } 70% { opacity: 1; transform: scale(1.05); } }
+@keyframes k-draw { from { stroke-dashoffset: 1; } }
+@keyframes k-flow { to { stroke-dashoffset: -28; } }
+@keyframes k-drift { from { opacity: 0; transform: translateX(900px); } }
+@keyframes k-rain { from { transform: translate(30px, -220px); } to { transform: translate(-30px, 220px); } }
+@keyframes k-splash { from { opacity: 1; transform: scale(0.2); } to { opacity: 0; transform: scale(1.6); } }
+@keyframes k-pulse { from { opacity: 0.9; transform: scale(0.6); } to { opacity: 0; transform: scale(2.6); } }
+@keyframes k-spin { to { transform: rotate(360deg); } }
+@keyframes k-shimmer { from { opacity: 0.3; } to { opacity: 0.85; } }
+@keyframes k-flash { 0%, 100% { opacity: 0; } 8% { opacity: 0.45; } 16% { opacity: 0.08; } 24% { opacity: 0.3; } }
+@keyframes k-cursor { from { opacity: 0; transform: translate(260px, 160px); } }
+@keyframes k-press { 50% { transform: scale(0.9); } }
+@keyframes k-ping { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.4); } }
+@keyframes k-hop {
+  0% { opacity: 0; transform: translateX(-100px) scale(0.6); }
+  18% { opacity: 1; transform: translateX(-70px) scale(1); }
+  78% { opacity: 1; transform: translateX(70px) scale(1); }
+  100% { opacity: 0; transform: translateX(120px) scale(0.3); }
+}
+@keyframes k-hop-down {
+  0% { opacity: 0; transform: translateY(-60px) scale(0.6); }
+  18% { opacity: 1; transform: translateY(-40px) scale(1); }
+  78% { opacity: 1; transform: translateY(40px) scale(1); }
+  100% { opacity: 0; transform: translateY(80px) scale(0.3); }
+}
+@keyframes k-walkin { from { transform: translateX(-1000px); } }
+
+.k-fade { animation: k-fade var(--t, 600ms) var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-rise { animation: k-rise var(--t, 700ms) var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-pop { transform-box: fill-box; transform-origin: center; animation: k-pop 560ms var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-draw { stroke-dasharray: 1; animation: k-draw 800ms var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-flow { stroke-dasharray: 2 12; animation: k-flow 900ms linear infinite; }
+.k-drift { animation: k-drift var(--t, 2.6s) var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-rain > * { animation: k-rain 650ms linear infinite; }
+.k-rain > :nth-child(3n + 1) { animation-delay: -220ms; }
+.k-rain > :nth-child(3n + 2) { animation-delay: -430ms; }
+.k-rain > :nth-child(5n) { animation-duration: 760ms; }
+.k-splash > * { transform-box: fill-box; transform-origin: center; animation: k-splash 700ms ease-out infinite; }
+.k-splash > :nth-child(2n) { animation-delay: -300ms; }
+.k-splash > :nth-child(3n) { animation-delay: -520ms; }
+.k-pulse { transform-box: fill-box; transform-origin: center; animation: k-pulse 1.6s ease-out var(--d, 0s) infinite backwards; }
+.k-spin { transform-box: view-box; transform-origin: center; animation: k-spin 3s linear infinite; }
+.k-shimmer { animation: k-shimmer 700ms ease-in-out infinite alternate; }
+.k-flash { opacity: 0; animation: k-flash 900ms linear var(--d, 0s) both; }
+.k-cursor { animation: k-cursor 800ms var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-press { animation: k-press 220ms ease-out var(--d, 0s); }
+.k-ping { opacity: 0; transform-origin: center; animation: k-ping 700ms ease-out var(--d, 0s) backwards; }
+.k-hop { opacity: 0; animation: k-hop 1s cubic-bezier(0.45, 0, 0.3, 1) var(--d, 0s) backwards; }
+.k-hop-down { opacity: 0; animation: k-hop-down 1s cubic-bezier(0.45, 0, 0.3, 1) var(--d, 0s) backwards; }
+.k-walkin { animation: k-walkin 1.8s cubic-bezier(0.3, 0, 0.3, 1) var(--d, 0s) backwards; }
+
+/* The robot dog. Legs swing from the hip; eyes blink. */
+@keyframes k-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+@keyframes k-breathe { 50% { transform: translateY(-0.3px); } }
+@keyframes k-step { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+@keyframes k-trot { to { transform: translateY(-0.5px); } }
+.dog-eyes { transform-box: fill-box; transform-origin: center; animation: k-blink 3.4s infinite; }
+.dog-leg { transform-box: fill-box; transform-origin: 50% 0; }
+.gait-idle .dog-body { animation: k-breathe 2.4s ease-in-out infinite; }
+.gait-walk .leg-a { animation: k-step 320ms ease-in-out infinite alternate; }
+.gait-walk .leg-b { animation: k-step 320ms ease-in-out infinite alternate-reverse; }
+.gait-walk .dog-body { animation: k-trot 160ms ease-in-out infinite alternate; }
+/* Beat 2: walk out for 2.4 s, stop for the recall, turn, walk home from 3.2 s. */
+.gait-b2 .leg-a { animation: k-step 300ms ease-in-out 8 alternate, k-step 300ms ease-in-out 3.2s 8 alternate; }
+.gait-b2 .leg-b { animation: k-step 300ms ease-in-out 8 alternate-reverse, k-step 300ms ease-in-out 3.2s 8 alternate-reverse; }
+/* Outro: walk in, stop. */
+.gait-in .leg-a { animation: k-step 300ms ease-in-out 6 alternate; }
+.gait-in .leg-b { animation: k-step 300ms ease-in-out 6 alternate-reverse; }
+
+@keyframes b2-track { 0% { transform: translateX(0); } 44% { transform: translateX(560px); } 58% { transform: translateX(560px); } 100% { transform: translateX(-130px); } }
+@keyframes b2-face { 0%, 52% { transform: scaleX(1); } 57%, 100% { transform: scaleX(-1); } }
+@keyframes b2-storm { from { transform: translate(-150px, 24px); } }
+.b2-track { animation: b2-track 5.6s linear both; }
+.b2-face { transform-box: fill-box; transform-origin: center; animation: b2-face 5.6s linear both; }
+.b2-storm { animation: b2-storm 2.6s cubic-bezier(0.4, 0, 0.6, 1) backwards; }
+
+@keyframes b3-dolly { from { transform: scale(1); } }
+@keyframes b3-bob { to { transform: translateY(6px) rotate(0.3deg); } }
+@keyframes b3-scan { from { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } to { opacity: 0; transform: translateY(1000px); } }
+.b3-dolly { transform-box: view-box; transform-origin: 960px 520px; transform: scale(1.12); animation: b3-dolly 2.4s cubic-bezier(0.3, 0, 0.4, 1) backwards; }
+.b3-bob { animation: b3-bob 360ms ease-in-out 6 alternate; }
+.b3-scan { opacity: 0; animation: b3-scan 1.6s ease-in-out var(--d, 0s) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-stage, .intro-stage * { animation: none !important; }
+}
