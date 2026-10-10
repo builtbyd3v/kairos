@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { checkFloor, FLOOR_MODEL, floorModel, type FloorResult } from "@/lib/floor-model";
 import { ORBIT_CALL, PATH, inPath, visionReason, type Vision } from "@/lib/verdict";
+import { labelDetection, recordDetection } from "@/lib/evidence";
 import { endOf, kitClock, kitDate, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
@@ -58,6 +59,37 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
 };
 // note: the kit has no camera frames, so the floor check runs on held-out sample images.
 const FRAMES = { dry: "/samples/test-dry-public-space.jpg", wet: "/samples/test-wet-public-space.jpg" };
+const FRAME_LICENSE = "CC0 (Kaggle public spaces)";
+// note: v1 model revision on the Hub; the v2 detector brings its own.
+const FLOOR_REVISION = "942bd9c786bcb4b0e3b1521c6763a88a66134e6e";
+
+/** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
+async function saveEvidence(frame: string, v: Vision, label: "confirm" | "reject") {
+  const bytes = await (await fetch(frame)).arrayBuffer();
+  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { score, ...box } = v.boxes[0];
+  const { id } = await recordDetection({
+    box,
+    score,
+    areaFrac: box.w * box.h,
+    frameUri: frame,
+    frameSha256: hash,
+    source: "live",
+    license: FRAME_LICENSE,
+    waypoint: v.waypoint,
+    modelId: v.model,
+    modelRevision: FLOOR_REVISION,
+    weather: null,
+    rulesVersion: "verdict.ts vision v1",
+    verdict: "HOLD",
+  });
+  const form = new FormData();
+  form.set("detectionId", String(id));
+  form.set("label", label);
+  form.set("operator", "live round");
+  await labelDetection(form);
+  return id;
+}
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
 export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor }: Props) {
@@ -77,7 +109,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [progress, setProgress] = useState(0);
   const [floor, setFloor] = useState<{ key: string; result?: FloorResult; failed?: boolean } | null>(null);
   // Operator's answer to a floor HOLD, keyed to the waypoint + frame it answers.
-  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override" } | null>(null);
+  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; saved?: number | "failed" } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
   const events = useMemo(() => stream.filter((e) => e.missionId === missionId), [stream, missionId]);
@@ -129,6 +161,15 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     const id = setInterval(() => setT((prev) => Math.min(end, prev + speed * TICK_MS)), TICK_MS);
     return () => clearInterval(id);
   }, [running, speed, end]);
+  const answerFloor = (label: "confirm" | "reject" | "override") => {
+    const key = floorKey!;
+    setAnswer({ key, label });
+    if (label === "override" || !vision?.boxes.length) return;
+    saveEvidence(frame, vision, label).then(
+      (saved) => setAnswer((a) => (a?.key === key ? { ...a, saved } : a)),
+      () => setAnswer((a) => (a?.key === key ? { ...a, saved: "failed" } : a)),
+    );
+  };
   const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
   // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
   const warm = () => void floorModel(setProgress).catch(() => {});
@@ -372,15 +413,15 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                           <p className="font-medium">Operator: is there water in Spot&apos;s path?</p>
                           <div className="flex flex-wrap gap-2">
                             {check.failed ? (
-                              <Button size="sm" variant="outline" onClick={() => setAnswer({ key: floorKey!, label: "override" })}>
+                              <Button size="sm" variant="outline" onClick={() => answerFloor("override")}>
                                 Continue without floor check
                               </Button>
                             ) : (
                               <>
-                                <Button size="sm" onClick={() => setAnswer({ key: floorKey!, label: "confirm" })}>
+                                <Button size="sm" onClick={() => answerFloor("confirm")}>
                                   Confirm water: mark hazard, continue
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => setAnswer({ key: floorKey!, label: "reject" })}>
+                                <Button size="sm" variant="outline" onClick={() => answerFloor("reject")}>
                                   Reject: floor is dry
                                 </Button>
                               </>
@@ -396,6 +437,13 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                       )}
                       {answered && (
                         <p className="text-muted-foreground">
+                          {answered.saved === "failed" ? (
+                            <span className="text-hold">Could not save to the evidence log. </span>
+                          ) : answered.saved ? (
+                            <Link href="/evidence" className="text-link hover:underline">
+                              Saved to Neon as evidence #{answered.saved}.{" "}
+                            </Link>
+                          ) : null}
                           Operator {answered.label === "confirm" ? "confirmed water; Kairos marks it as a hazard for Spot to avoid (simulated) and the round continues" : answered.label === "reject" ? "rejected the detection; Spot continues" : "overrode the missing floor check"}.
                         </p>
                       )}
