@@ -1,9 +1,9 @@
-// Run: npm test. Checks the dock-door fused rule: camera + observed + forecast rain into GO / HOLD.
+// Run: npm test. Checks the dock-door fused rule: wet ground in the door frame + rain now + rain next hour into GO / HOLD.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { doorVerdict, DOOR_RAIN_THRESHOLD, type DoorInput } from "./door-rain.ts";
+import { doorVerdict, type DoorInput } from "./door-rain.ts";
 
-const dry: DoorInput = { camera: { pRain: 0.01, status: "ok" }, weather: { observedRain: false, forecastRain: false } };
+const dry: DoorInput = { camera: { wetGround: false, status: "ok" }, weather: { observedRain: false, forecastRain: false } };
 const v = (camera: Partial<DoorInput["camera"]>, weather: Partial<DoorInput["weather"]> = {}) =>
   doorVerdict({ camera: { ...dry.camera, ...camera }, weather: { ...dry.weather, ...weather } });
 
@@ -13,16 +13,13 @@ test("all sources known and dry is GO", () => {
   assert.equal(r.reasons.length, 3);
 });
 
-test("camera p(rain) at or above the threshold holds; just below does not", () => {
-  assert.equal(v({ pRain: DOOR_RAIN_THRESHOLD }).verdict, "HOLD");
-  assert.equal(v({ pRain: 0.99 }).verdict, "HOLD");
-  assert.equal(v({ pRain: DOOR_RAIN_THRESHOLD - 0.001 }).verdict, "GO");
+test("wet ground at the door holds", () => {
+  assert.equal(v({ wetGround: true }).verdict, "HOLD");
 });
 
-test("fp32 fallback scores hold exactly at the fp32 threshold", async () => {
+test("advisory rain classifier: fp32 scores map onto the q8 scale at the threshold", async () => {
   const { fp32ToQ8Scale, DOOR_RAIN_THRESHOLDS: t } = await import("./door-rain.ts");
-  assert.equal(v({ pRain: fp32ToQ8Scale(t.fp32) }).verdict, "HOLD");
-  assert.equal(v({ pRain: fp32ToQ8Scale(t.fp32 - 0.001) }).verdict, "GO");
+  assert.equal(fp32ToQ8Scale(t.fp32), t.q8);
   assert.equal(fp32ToQ8Scale(0), 0);
   assert.equal(fp32ToQ8Scale(1), 1);
 });
@@ -33,23 +30,22 @@ test("observed rain or forecast rain holds on its own", () => {
 });
 
 test("any unknown evidence holds", () => {
-  assert.equal(v({ pRain: null }).verdict, "HOLD");
+  assert.equal(v({ wetGround: null }).verdict, "HOLD");
   assert.equal(v({ status: "stale" }).verdict, "HOLD");
   assert.equal(v({ status: "error" }).verdict, "HOLD");
-  assert.equal(v({ pRain: Number.NaN }).verdict, "HOLD");
   assert.equal(v({}, { observedRain: null }).verdict, "HOLD");
   assert.equal(v({}, { forecastRain: null }).verdict, "HOLD");
 });
 
-test("a confident dry camera never turns a weather HOLD into GO", () => {
-  const r = v({ pRain: 0 }, { forecastRain: true });
+test("dry ground never turns a weather HOLD into GO", () => {
+  const r = v({ wetGround: false }, { forecastRain: true });
   assert.equal(r.verdict, "HOLD");
   assert.deepEqual(r.reasons, ["Rain forecast for the round"]);
-  assert.equal(v({ pRain: 0 }, { observedRain: true, forecastRain: null }).verdict, "HOLD");
+  assert.equal(v({ wetGround: false }, { observedRain: true, forecastRain: null }).verdict, "HOLD");
 });
 
 test("every HOLD cause is listed", () => {
-  const r = v({ pRain: 0.9 }, { observedRain: true, forecastRain: null });
+  const r = v({ wetGround: true }, { observedRain: true, forecastRain: null });
   assert.equal(r.reasons.length, 3);
 });
 

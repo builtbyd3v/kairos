@@ -15,20 +15,20 @@ export function fp32ToQ8Scale(p: number): number {
 }
 
 export type DoorInput = {
-  camera: { pRain: number | null; status: "ok" | "stale" | "error" };
+  // Wet ground in the door camera frame, from the water detector (lib/water-model.ts). The rain classifier is advisory only.
+  camera: { wetGround: boolean | null; status: "ok" | "stale" | "error" };
   weather: { observedRain: boolean | null; forecastRain: boolean | null };
 };
 export type DoorVerdict = { verdict: "GO" | "HOLD"; reasons: string[] };
 
-/** GO only when every source is known and dry. Any rain or any unknown holds, so the camera can only add caution. */
+/** GO only when every source is known and dry. Rain now, rain in the next hour, wet ground at the door, or any unknown holds. */
 export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   const hold: string[] = [];
   const ok: string[] = [];
-  const { pRain, status } = camera;
 
-  if (status !== "ok" || pRain === null || !(pRain >= 0 && pRain <= 1)) hold.push(`Door camera unknown (${status}), so rain at the door is unknown`);
-  else if (pRain >= DOOR_RAIN_THRESHOLD) hold.push(`Door camera sees rain (p=${pRain.toFixed(2)})`);
-  else ok.push(`Door camera sees no rain (p=${pRain.toFixed(2)})`);
+  if (camera.status !== "ok" || camera.wetGround === null) hold.push("Ground at the door unknown (camera not checked)");
+  else if (camera.wetGround) hold.push("Wet ground at the door (water model)");
+  else ok.push("Ground at the door looks dry");
 
   if (weather.observedRain === null) hold.push("Rain now unknown (no 15-minute nowcast)");
   else if (weather.observedRain) hold.push("Rain now at the site (15-minute nowcast)");

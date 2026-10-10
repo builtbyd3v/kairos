@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Camera, CloudRain, DoorClosed, DoorOpen, Timer } from "lucide-react";
 import { classifyDoor, DOOR_RAIN_MODEL_ID, DOOR_RAIN_THRESHOLD, doorVerdict, type DoorInput } from "@/lib/door-rain";
+import { detectWater, WATER_MODEL_ID, type WaterDetection } from "@/lib/water-model";
 import { VerdictBlock } from "@/components/status";
 import { Why } from "@/components/why";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,11 @@ import { cn } from "@/lib/utils";
 
 // note: no camera at a NextEra dock door in the kit, so the frames are public example photos (CC0).
 const FRAMES = {
-  dry: { src: "/door/door-dry.jpg", credit: "Weather-Time road photo (Kaggle, CC0), a source the model never trained on" },
-  rain: { src: "/door/door-rain.jpg", credit: "Weather Image Recognition rain photo (Kaggle, CC0), calibration split, not trained on" },
+  dry: { src: "/door/door-dry.jpg", w: 640, h: 359, credit: "Weather-Time road photo (Kaggle, CC0)" },
+  rain: { src: "/door/door-rain.jpg", w: 552, h: 640, credit: "Weather Image Recognition rain photo (Kaggle, CC0)" },
 };
-type Camera = { key: keyof typeof FRAMES; pRain?: number; ms?: number; failed?: boolean };
+// Water boxes gate the door; the rain classifier's score is shown as advice only.
+type Camera = { key: keyof typeof FRAMES; boxes?: WaterDetection[]; pRain?: number; ms?: number; failed?: boolean };
 
 /** One status tile: icon, label, and a word that is green when dry and amber otherwise. */
 function Tile({ Icon, label, value, ok }: { Icon: typeof Camera; label: string; value: string; ok: boolean }) {
@@ -36,16 +38,19 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
   const [busy, setBusy] = useState(false);
 
   const shown = camera?.key === frame ? camera : null;
-  const status: DoorInput["camera"]["status"] = shown?.failed ? "error" : shown?.pRain !== undefined ? "ok" : "stale";
-  const result = doorVerdict({ camera: { pRain: shown?.pRain ?? null, status }, weather });
-  const camRain = status === "ok" && shown!.pRain! >= DOOR_RAIN_THRESHOLD;
+  const status: DoorInput["camera"]["status"] = shown?.failed ? "error" : shown?.boxes ? "ok" : "stale";
+  const wet = shown?.boxes ? shown.boxes.length > 0 : null;
+  const result = doorVerdict({ camera: { wetGround: wet, status }, weather });
+  const f = FRAMES[frame];
 
   const check = (key: keyof typeof FRAMES) => {
     setFrame(key);
     setBusy(true);
-    classifyDoor(FRAMES[key].src)
+    const started = performance.now();
+    // The rain classifier is advisory, so its failure must not block the water check.
+    Promise.all([detectWater(FRAMES[key].src), classifyDoor(FRAMES[key].src).catch(() => null)])
       .then(
-        (r) => setCamera({ key, ...r }),
+        ([boxes, rain]) => setCamera({ key, boxes, pRain: rain?.pRain, ms: Math.round(performance.now() - started) }),
         () => setCamera({ key, failed: true }),
       )
       .finally(() => setBusy(false));
@@ -63,16 +68,26 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
         <div className="flex flex-col gap-2">
           <div className="relative min-h-56 flex-1 overflow-hidden rounded-lg ring-1 ring-border">
             {/* eslint-disable-next-line @next/next/no-img-element -- local example frame */}
-            <img src={FRAMES[frame].src} alt={frame === "rain" ? "Door camera: rainy street" : "Door camera: dry road"} className="absolute inset-0 size-full object-cover" />
+            <img src={f.src} alt={frame === "rain" ? "Door camera: rainy street" : "Door camera: dry road"} className="absolute inset-0 size-full object-cover" />
+            {/* slice = the same crop as object-cover, so boxes land where the image shows them */}
+            <svg viewBox={`0 0 ${f.w} ${f.h}`} preserveAspectRatio="xMidYMid slice" aria-hidden className="absolute inset-0 size-full">
+              {shown?.boxes?.map((d, i) => (
+                <g key={i}>
+                  <rect x={d.box.x * f.w} y={d.box.y * f.h} width={d.box.w * f.w} height={d.box.h * f.h} rx="8" fill="#6ea8fe" fillOpacity="0.08" stroke="#6ea8fe" strokeOpacity="0.25" strokeWidth="14" />
+                  <rect x={d.box.x * f.w} y={d.box.y * f.h} width={d.box.w * f.w} height={d.box.h * f.h} rx="8" fill="none" stroke="#8ab8ff" strokeWidth="4" />
+                  <rect x={d.box.x * f.w} y={Math.max(0, d.box.y * f.h - 30)} width="128" height="28" rx="7" fill="#6ea8fe" />
+                  <text x={d.box.x * f.w + 9} y={Math.max(0, d.box.y * f.h - 30) + 20} fontSize="19" fontWeight="700" fill="#0b0d10" className="font-mono">
+                    water {d.score.toFixed(2)}
+                  </text>
+                </g>
+              ))}
+            </svg>
             <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide">DOOR CAM</span>
-            {shown?.pRain !== undefined && (
-              <div className="absolute inset-x-2 bottom-2 rounded bg-background/85 px-2 py-1.5">
-                <div className="flex justify-between font-mono text-[11px] tabular-nums">
-                  <span>rain {shown.pRain.toFixed(2)}</span>
-                  <span className="text-helper">{shown.ms} ms</span>
-                </div>
-                <meter min={0} max={1} low={DOOR_RAIN_THRESHOLD} high={DOOR_RAIN_THRESHOLD} optimum={0} value={shown.pRain} className="mt-1 block h-1.5 w-full" aria-label="Door camera rain score" />
-              </div>
+            {shown?.boxes && (
+              <span className="absolute right-2 bottom-2 rounded bg-background/85 px-2 py-1 font-mono text-[11px] tabular-nums">
+                {shown.boxes.length ? `${shown.boxes.length} wet area${shown.boxes.length > 1 ? "s" : ""}` : "no water"} · {shown.ms} ms
+                {shown.pRain !== undefined && <span className="text-helper"> · rain look {shown.pRain.toFixed(2)}</span>}
+              </span>
             )}
           </div>
           <div className="flex gap-2">
@@ -94,25 +109,29 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
                   ? "Raining at the plant now"
                   : weather.forecastRain
                     ? "Rain in the next hour"
-                    : camRain
-                      ? "Door camera sees rain"
-                      : "Not sure it is dry: check the door"
+                    : wet
+                      ? "Wet ground at the door"
+                      : "Check the door camera"
             }
           />
           <div className="grid grid-cols-3 gap-2">
-            <Tile Icon={Camera} label="Camera" value={status === "ok" ? (camRain ? "Rain" : "Dry") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !camRain} />
+            <Tile Icon={Camera} label="Ground" value={status === "ok" ? (wet ? "Wet" : "Dry") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
             <Tile Icon={CloudRain} label="Rain now" value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
             <Tile Icon={Timer} label="Next hour" value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />
           </div>
           <Why>
-            <p>Rule: any rain or anything unknown holds Spot inside. The camera can add caution but never overrules the weather.</p>
+            <p>Rule: rain now, rain in the next hour, wet ground at the door, or anything unknown holds Spot inside.</p>
             <p>Weather: {source}.</p>
             <p>
-              Camera model:{" "}
+              Ground: water detector{" "}
+              <a className="text-link underline-offset-4 hover:underline" href={`https://huggingface.co/${WATER_MODEL_ID}`}>
+                {WATER_MODEL_ID}
+              </a>
+              . &ldquo;Rain look&rdquo; is advice from{" "}
               <a className="text-link underline-offset-4 hover:underline" href={`https://huggingface.co/${DOOR_RAIN_MODEL_ID}`}>
                 {DOOR_RAIN_MODEL_ID}
-              </a>
-              , holds at {DOOR_RAIN_THRESHOLD}. Close to a coin flip on cameras it never trained on; not yet tested on a Spot door view.
+              </a>{" "}
+              (holds at {DOOR_RAIN_THRESHOLD} if it gated): close to a coin flip on cameras it never trained on, so it never decides.
             </p>
             <p>Frame: {FRAMES[frame].credit}.</p>
           </Why>
