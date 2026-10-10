@@ -16,8 +16,8 @@ const MINUTE = 60000;
 const SPEEDS = [1, 5, 15]; // replay minutes per real second
 
 // Timeline colors always have a text legend next to them.
-const BAND_FILL: Record<string, string> = { GO: "fill-go", HOLD: "fill-hold", RECALL: "fill-recall", DOCKED: "fill-info", DONE: "fill-secondary" };
-const BAND_LABEL: Record<string, string> = { GO: "GO", HOLD: "HOLD", RECALL: "RECALL", DOCKED: "Spot docked", DONE: "Round finished" };
+const BAND_FILL: Record<string, string> = { GO: "fill-go", HOLD: "fill-hold", RECALL: "fill-recall", DONE: "fill-secondary" };
+const BAND_LABEL: Record<string, string> = { GO: "GO", HOLD: "HOLD", RECALL: "RECALL", DONE: "Round finished" };
 
 type Props = { fixture: StormFixture; round: Round; sites: MapSite[]; dock: string; outdoor: string[] };
 
@@ -149,12 +149,12 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                   waiting: s.verdict === "GO" ? "Round can launch on schedule" : "Do not launch",
                   out: s.verdict === "GO" ? "Spot is on its round" : "Finish the round, then hold the next one",
                   returning: "Spot is heading to the dock",
-                  docked: "Spot is safe on the dock",
+                  docked: s.verdict === "GO" ? "Spot is docked · next round may launch" : "Spot is docked · hold the next round",
                   done: "Round finished",
                 }[s.phase]
               }
             />
-            {s.verdict !== "GO" && s.phase !== "docked" && (
+            {s.verdict !== "GO" && (
               <form action={logDecision}>
                 <input type="hidden" name="verdict" value={s.verdict} />
                 <input type="hidden" name="source" value="replay" />
@@ -170,7 +170,8 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
             {s.recallAt && s.dockAt && t >= s.recallAt && (
               <div className="rounded bg-recall/10 p-3 ring-1 ring-recall/40">
                 <p className="text-sm font-medium">
-                  Recall at {clock(s.recallAt)} · Spot needs {Math.round((s.dockAt - s.recallAt) / MINUTE)} min to reach the dock · docks at {clock(s.dockAt)}
+                  Recall at {clock(s.recallAt)} from {sites.find((x) => x.id === s.recallFrom)?.name} · Spot needs about{" "}
+                  {Math.max(1, Math.round((s.dockAt - s.recallAt) / MINUTE))} min to reach the dock · docked by {clock(s.dockAt + MINUTE - 1)}
                 </p>
                 {s.phase === "docked" && worst && (
                   <p className="mt-1 text-sm text-muted-foreground">

@@ -28,6 +28,7 @@ export type ReplayState = {
   reasons: Reason[];
   spotAt: string | null; // waypoint id while Spot is out
   recallAt: number | null;
+  recallFrom: string | null; // waypoint Spot was at when recalled
   dockAt: number | null;
 };
 
@@ -65,32 +66,37 @@ export function stateAt(f: StormFixture, round: Round, t: number): ReplayState {
     const p = (at - round.launch) / (round.durationMin * 60000);
     return round.route[Math.min(round.route.length - 1, Math.max(0, Math.floor(p * round.route.length)))];
   };
-  const dockAt = recallAt === null ? null : recallAt + (round.returnMin[position(recallAt)] ?? 0) * 60000;
+  const recallFrom = recallAt === null ? null : position(recallAt);
+  const dockAt = recallAt === null || recallFrom === null ? null : recallAt + (round.returnMin[recallFrom] ?? 0) * 60000;
 
   if (t < round.launch) {
     const { verdict, reasons } = verdictAt(f, round, t, false);
-    return { t, phase: "waiting", verdict, reasons, spotAt: null, recallAt, dockAt };
+    return { t, phase: "waiting", verdict, reasons, spotAt: null, recallAt, recallFrom, dockAt };
   }
   if (recallAt !== null && t >= recallAt) {
+    if (dockAt !== null && t >= dockAt) {
+      // Back on the dock: the question becomes whether the next round may launch.
+      const { verdict, reasons } = verdictAt(f, round, t, false);
+      return { t, phase: "docked", verdict, reasons, spotAt: null, recallAt, recallFrom, dockAt };
+    }
     const { reasons } = verdictAt(f, round, recallAt, true);
-    const docked = dockAt !== null && t >= dockAt;
-    return { t, phase: docked ? "docked" : "returning", verdict: "RECALL", reasons, spotAt: docked ? null : position(recallAt), recallAt, dockAt };
+    return { t, phase: "returning", verdict: "RECALL", reasons, spotAt: recallFrom, recallAt, recallFrom, dockAt };
   }
   if (progress >= 1) {
-    return { t, phase: "done", verdict: "GO", reasons: [], spotAt: null, recallAt, dockAt };
+    return { t, phase: "done", verdict: "GO", reasons: [], spotAt: null, recallAt, recallFrom, dockAt };
   }
   const { verdict, reasons } = verdictAt(f, round, t, true);
-  return { t, phase: "out", verdict, reasons, spotAt: position(t), recallAt, dockAt };
+  return { t, phase: "out", verdict, reasons, spotAt: position(t), recallAt, recallFrom, dockAt };
 }
 
 /** Verdict bands across the whole window for the timeline, one sample per 5 minutes. */
 export function bands(f: StormFixture, round: Round) {
-  const out: { from: number; to: number; label: Verdict | "DOCKED" | "DONE" }[] = [];
+  const out: { from: number; to: number; label: Verdict | "DONE" }[] = [];
   const start = Date.parse(f.window.start);
   const end = Date.parse(f.window.end);
   for (let t = start; t < end; t += 5 * 60000) {
     const s = stateAt(f, round, t);
-    const label = s.phase === "docked" ? "DOCKED" : s.phase === "done" ? "DONE" : s.verdict;
+    const label = s.phase === "done" ? "DONE" : s.verdict;
     const last = out.at(-1);
     if (last && last.label === label) last.to = t + 5 * 60000;
     else out.push({ from: t, to: t + 5 * 60000, label });

@@ -15,7 +15,7 @@ Each entry: what we chose, what we rejected, and why.
 
 ## Replay
 8. **No hindsight.** At time T the replay sees only alerts already issued and observations up to T. Rejected: feeding the real future into the rules, which would make the dispatcher look prescient.
-9. **Real storm, real plant.** The replay uses NWS alerts and the Fort Pierce ASOS station near NextEra's St. Lucie plant. Only warnings whose polygon contains the plant count, like `api.weather.gov/alerts/active?point=`.
+9. **Real storm, real plant.** The replay is the May 19, 2024 pop-up thunderstorm (no watch beforehand). It uses NWS alerts and the Fort Pierce ASOS station near NextEra's St. Lucie plant. Only warnings whose polygon contains the plant count, like `api.weather.gov/alerts/active?point=`.
 10. **Return time from geometry, not battery.** Straight-line distance from Spot's waypoint to the dock at 1 m/s, plus 1 min per floor. Rejected: guessing from battery.
 
 ## Tech

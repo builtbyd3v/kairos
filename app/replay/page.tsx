@@ -1,4 +1,4 @@
-import storm from "@/data/replay/storm-2025-05-05.json";
+import storm from "@/data/replay/storm-2024-05-19.json";
 import { analyze, loadKit } from "@/lib/kit";
 import { findRecall, stateAt, type Round, type StormFixture } from "@/lib/replay";
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, returnMinutes, routeOf } from "@/lib/route";
