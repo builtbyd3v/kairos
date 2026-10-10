@@ -3,7 +3,7 @@
 ## TL;DR
 - **Idea (locked):** Spot's dispatcher. Before every inspection round, it combines Spot's real health (from NextEra's mission data) with the weather and says GO, HOLD or RECALL, with a plain reason and the rule behind it.
 - **Gap we fill:** Orbit only checks rain before launch. Once Spot is out, nothing watches the sky, and nothing checks heat, lightning or wind. Mission status also hides failures: 46 failed inspections sit inside "COMPLETED" missions.
-- **Wow moment:** replay the real May 5, 2025 Juno Beach storm. The board goes GO → HOLD → RECALL with "Spot needs X min to dock, storm arrives in Y".
+- **Wow moment:** replay a real storm at NextEra's St. Lucie plant. The board goes GO → HOLD → RECALL with "Spot needs X min to dock, storm arrives in Y".
 - **Tracks:** NextEra (core), Neon (system of record, decision log, branch per replay), Hugging Face (fine-tuned wet-floor model), Figma Best Design. Auto-entered: Best Overall, Best AI.
 - **One number:** 46 failed inspections hidden inside COMPLETED missions, surfaced at zero clicks. Model number: baseline vs fine-tuned accuracy on a held-out set.
 
@@ -32,17 +32,18 @@
 |---|---|---|
 | NWS warning (severe thunderstorm, tornado, flash flood, extreme heat, tropical) | HOLD before launch, RECALL in mission | NWS alerts |
 | NWS watch or advisory | HOLD | NWS alerts |
-| Rain above 2.5 mm/h in the mission window | HOLD / RECALL | Spot guide p.22, p.61 (light rain only, IP54) |
+| Rain above 2.5 mm/h in the mission window | HOLD / RECALL | Spot guide p.22, p.61 (light rain only, IP54); Orbit's launch gate allows 5 mm |
+| Route has no outdoor leg | Weather does not gate it | Route map |
 | Light rain | GO with a wet-floor caution | Spot guide p.21-22 |
 | Thunder chance ≥ 30% | HOLD / RECALL | Assumption (guide is silent) |
 | Gusts ≥ 50 km/h | HOLD / RECALL | Assumption (guide is silent) |
 | Air temperature within 5 C of -20 / 45 C | HOLD / RECALL | Spot guide p.22 |
-| Battery under 40% at launch | HOLD | Spot guide p.57; kit: 27% action success under 20% |
+| Projected battery at the dock under 20% | HOLD | Kit drain rates (V1 1.9%/min, V2 1.3%/min); kit: 27% action success under 20% |
 | Weather missing or older than 30 min | HOLD | Missing data never looks green |
 | Waypoint on route under 75% success | Advisory | Kit data |
 
 ## Assumptions (shown on screen)
-- The site is Juno Beach, FL (NextEra HQ). The kit facility is fictional.
+- The site is NextEra's St. Lucie Plant, FL. The kit facility is fictional.
 - Each round has an outdoor leg at the WP01 entrance. The kit is indoor-only, but NextEra's real Orbit captures show outdoor decks.
 - Battery at launch equals the last mission's start battery. The kit has no live telemetry.
 - Orbit calls are simulated. They use real endpoint names: schedule toggle for HOLD, send-robot-to-dock for RECALL.
