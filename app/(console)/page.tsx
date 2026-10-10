@@ -10,6 +10,7 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
 import { DockDoor } from "@/components/dock-door";
+import { RainRadar } from "@/components/rain-radar";
 import { doorWeather } from "@/lib/door-rain";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +72,8 @@ async function Dashboard() {
                   <CardTitle>St. Lucie weather, next 12 hours</CardTitle>
                   <CardDescription>Live NWS forecast grid and Open-Meteo rain. Kairos checks this until Spot docks, not only at launch.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
                   <WeatherStrip weather={plan.weather} />
                 </CardContent>
               </Card>

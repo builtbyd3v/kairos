@@ -4,6 +4,7 @@ import { CloudLightning, CloudSun, TriangleAlert } from "lucide-react";
 import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
 import { WeatherStrip } from "@/components/next-round";
+import { RainRadar } from "@/components/rain-radar";
 import { VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,10 @@ async function Watch() {
         </p>
         <span className="text-xs text-helper">Real weather now; the round below replays NextEra&apos;s kit data.</span>
       </div>
-      <WeatherStrip weather={weather} />
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
+        <WeatherStrip weather={weather} />
+      </div>
     </section>
   );
 }
