@@ -1,0 +1,107 @@
+{
+ "note": "Held-out test split of the water model (never trained on). Road-shoulder puddles, smallest first. Boxes are ground truth [x,y,w,h], normalized.",
+ "frames": [
+  {
+   "src": "/captures/demo-wet-0.jpg",
+   "truth": [
+    [
+     0.32401,
+     0.4852,
+     0.28125,
+     0.15132
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1915-_jpg.rf.b65501a2ac3ab6a7844cffdaf0919807.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-wet-1.jpg",
+   "truth": [
+    [
+     0.20395,
+     0.20724,
+     0.47204,
+     0.12993
+    ],
+    [
+     0.0,
+     0.38651,
+     0.71217,
+     0.21382
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1902-_jpg.rf.87283a35c28588fa7fc66757da76b2cb.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-wet-2.jpg",
+   "truth": [
+    [
+     0.18914,
+     0.46217,
+     0.39967,
+     0.19901
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1916-_jpg.rf.78197b56dc4160b42d8f50de8794bf91.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-wet-3.jpg",
+   "truth": [
+    [
+     0.24836,
+     0.20559,
+     0.36349,
+     0.3125
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1895-_jpg.rf.e0ed8b443708fa075f5d530faec78b7b.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-wet-4.jpg",
+   "truth": [
+    [
+     0.29441,
+     0.25,
+     0.38487,
+     0.40132
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1906-_jpg.rf.22c0f3bb98cc16338c4e58c72659a09d.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-wet-5.jpg",
+   "truth": [
+    [
+     0.09539,
+     0.27303,
+     0.74836,
+     0.42928
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-1905-_jpg.rf.d7233b23a7e41ad4bab36c7183be511f.jpg",
+   "split": "test"
+  }
+ ]
+}
