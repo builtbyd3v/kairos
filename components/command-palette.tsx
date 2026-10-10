@@ -42,10 +42,10 @@ export function CommandPalette({ items }: { items: PaletteItem[] }) {
     <>
       <button
         onClick={() => dialog.current?.showModal()}
-        className="mb-5 flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+        className="flex w-full items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >
         <Search aria-hidden className="size-4" />
-        Search
+        Search…
         <kbd className="ml-auto rounded border border-border px-1.5 font-mono text-[11px]">⌘K</kbd>
       </button>
       <dialog

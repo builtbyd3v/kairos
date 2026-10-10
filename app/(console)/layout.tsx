@@ -7,23 +7,23 @@ import { currentReviews } from "@/lib/reviews";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { CommandPalette, type PaletteItem } from "@/components/command-palette";
+import { TopBar } from "@/components/top-bar";
 import { SITE } from "@/lib/weather";
 
 // Console shell: sidebar navigation plus the page. Every operator page lives under app/(console).
 export default function ConsoleLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-screen print:bg-white">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-4 lg:flex print:hidden">
+    <div className="flex min-h-screen bg-background print:bg-white">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col px-3 py-5 lg:flex print:hidden">
         <Link href="/" className="mb-6 flex items-center gap-2.5 px-3 focus-visible:outline-2 focus-visible:outline-ring">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
             <Dog aria-hidden className="size-4.5" />
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-semibold">SPOT Dispatch</span>
+            <span className="block text-sm font-semibold">Dogwatch</span>
             <span className="block text-xs text-muted-foreground">{SITE.name.split(" (")[0]}</span>
           </span>
         </Link>
-        <Palette />
         <Suspense fallback={<SidebarNav />}>
           <NavWithBadges />
         </Suspense>
@@ -32,10 +32,23 @@ export default function ConsoleLayout({ children }: LayoutProps<"/">) {
           <p>Mission data: NextEra synthetic SPOT kit. Orbit link simulated.</p>
         </div>
       </aside>
-      <div className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</div>
+      {/* The app panel floats on the page, like a framed window. */}
+      <div className="min-w-0 flex-1 pb-20 lg:my-2 lg:mr-2 lg:rounded-2xl lg:border lg:border-white/[0.06] lg:bg-[#0e0f11] lg:pb-0 print:m-0 print:border-0 print:bg-white">
+        <Suspense fallback={<TopBar search={<Palette />} openAnomalies={0} site={SITE.name.split(",")[0]} />}>
+          <Top />
+        </Suspense>
+        {children}
+      </div>
       <MobileNav />
     </div>
   );
+}
+
+async function Top() {
+  await connection();
+  const [kit, reviews] = await Promise.all([loadKit(), currentReviews()]);
+  const open = kit.anomalies.filter((a) => a.reviewRequired && !reviews[a.id]).length;
+  return <TopBar search={<Palette />} openAnomalies={open} site={SITE.name.split(",")[0]} />;
 }
 
 async function NavWithBadges() {

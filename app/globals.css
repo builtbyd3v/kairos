@@ -55,7 +55,7 @@
 }
 
 :root {
-    /* SPOT Dispatch, dark by default. Palette from samehere.dev (accent #4f9fe8), all text pairs WCAG AA. See DESIGN.md. */
+    /* Dogwatch, dark by default. Palette from samehere.dev (accent #4f9fe8), all text pairs WCAG AA. See DESIGN.md. */
     --background: #0a0a0a;
     --foreground: #f4f4f5;
     --card: #161616;

@@ -1,4 +1,4 @@
-# SPOT Dispatch design
+# Dogwatch design
 
 ## TL;DR
 - Dark by default. Accent is samehere.dev blue `#4f9fe8`. Neutrals are near-black.

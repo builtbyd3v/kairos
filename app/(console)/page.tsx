@@ -12,6 +12,8 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
 import { ShiftBrief } from "@/components/shift-brief";
+import { SparkBars } from "@/components/spark-bars";
+import { RoundsChart } from "@/components/rounds-chart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -68,10 +70,12 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       <main className="mx-auto max-w-[1440px] space-y-6 px-8 py-6">
         <Card className="grid grid-cols-5 divide-x divide-border py-0">
           <Kpi label="Missions reported COMPLETED" value={`${a.totals.reportedCompleted}/${a.totals.missions}`} note={`${a.totals.clean} actually clean`} tone="text-hold" />
-          <Kpi label="Failed inspections hidden in COMPLETED" value={String(a.totals.hiddenFailures)} note="Invisible in mission status" tone="text-recall" />
+          <Kpi label="Failed inspections hidden in COMPLETED" value={String(a.totals.hiddenFailures)} note="Invisible in mission status" tone="text-recall"
+            spark={<SparkBars values={a.missionRows.map((m) => m.failed)} highlight={(v) => v >= 3} label="Failed inspections per mission, oldest to newest" />}
+          />
           <Kpi label="Needs you" value={String(counts.open)} note={`${counts.critical} critical`} tone={counts.critical ? "text-recall" : "text-muted-foreground"} />
           <Kpi label="Triaged today" value={String(triagedToday)} note={`${counts.ack + counts.closed} triaged in total`} tone="text-muted-foreground" />
-          <Kpi label="Fleet action success" value={`${v1}% → ${v2}%`} note={`V1 to V2, ${v2 - v1 >= 0 ? "+" : ""}${v2 - v1} pts`} tone={v2 >= v1 ? "text-go" : "text-recall"} />
+          <Kpi label="Action success, V2" value={`${v2}%`} note={`V1 was ${v1}%, ${v2 - v1 >= 0 ? "+" : ""}${v2 - v1} pts`} tone={v2 >= v1 ? "text-go" : "text-recall"} />
         </Card>
 
         <div className="grid grid-cols-[minmax(0,1fr)_24rem] items-start gap-6">
@@ -81,6 +85,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
           </div>
           <aside aria-label="Next round and activity" className="space-y-6">
             <NextRound plan={plan} />
+            <RoundsChart rows={a.missionRows} />
             <ShiftBrief kit={kit} reviews={reviews} plan={plan} />
             <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
               <ActivityFeed now={now} />
@@ -92,12 +97,15 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
   );
 }
 
-function Kpi({ label, value, note, tone }: { label: string; value: string; note: string; tone: string }) {
+function Kpi({ label, value, note, tone, spark }: { label: string; value: string; note: string; tone: string; spark?: React.ReactNode }) {
   return (
     <div className="px-5 py-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-mono text-2xl font-medium tabular-nums">{value}</p>
-      <p className={cn("mt-0.5 text-xs", tone)}>{note}</p>
+      <p className="text-[11px] font-medium tracking-wider text-helper uppercase">{label}</p>
+      <div className="mt-1.5 flex items-end justify-between gap-2">
+        <p className="font-mono text-[28px] leading-none font-medium tabular-nums">{value}</p>
+        {spark}
+      </div>
+      <p className={cn("mt-1.5 text-xs", tone)}>{note}</p>
     </div>
   );
 }
