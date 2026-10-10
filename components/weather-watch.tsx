@@ -5,7 +5,7 @@ import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { SITE } from "@/lib/weather";
 import { weatherNow } from "@/lib/scenario";
 import { RainRadar } from "@/components/rain-radar";
-import { VerdictChip } from "@/components/status";
+import { VerdictBlock, VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
 import { loadKit } from "@/lib/kit";
 import { forecast } from "@/lib/forecast";
@@ -95,5 +95,43 @@ async function Watch({ mode }: { mode: "now" | "next" }) {
         </Why>
       </div>
     </section>
+  );
+}
+
+/** Dashboard hero: the weather call for a Spot on route right now, with the radar that explains it. */
+export function RouteWeatherCard() {
+  return (
+    <Suspense fallback={<Card className="min-h-96 animate-pulse" />}>
+      <RouteWeather />
+    </Suspense>
+  );
+}
+
+async function RouteWeather() {
+  await connection();
+  const { weather, now, scenario } = await weatherNow();
+  const health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
+  const { verdict, reasons } = decide(weather, health, { now, start: now, end: new Date(now.getTime() + ROUND_MIN * 60000) }, true);
+  const top = reasons.find((r) => r.verdict === verdict) ?? reasons[0];
+  return (
+    <Card className="animate-rise">
+      <CardHeader>
+        <CardTitle>Weather on the route</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <VerdictBlock verdict={verdict} caption={verdict === "RECALL" ? "Bring Spot back to the dock" : verdict === "HOLD" ? "Hold Spot where it is" : "Spot keeps going"} />
+        <p className="text-sm">{top?.text.split(";")[0] ?? "Nothing before Spot can dock"}</p>
+        <RainRadar stamp={Math.floor(now.getTime() / 300000)} recorded={scenario === "recorded"} label="Rain radar around the St. Lucie plant" />
+        <Why label="Details">
+          <p>Checked as if Spot were out now, until it can dock ({ROUND_MIN} min), every time the weather updates. Orbit gates the launch; this keeps watching during the round.</p>
+          {verdict === "RECALL" && <p className="font-mono">Orbit call: {ORBIT_CALL.RECALL}</p>}
+          {reasons.map((r) => (
+            <p key={r.text}>
+              {r.text}: {r.source}
+            </p>
+          ))}
+        </Why>
+      </CardContent>
+    </Card>
   );
 }

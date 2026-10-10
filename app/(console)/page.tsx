@@ -6,13 +6,10 @@ import { weatherNow } from "@/lib/scenario";
 import { PageHeader } from "@/components/page-header";
 import { VerdictChip } from "@/components/status";
 import { et, NextRound, planNextRound } from "@/components/next-round";
-import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
-import { LiveRadar, WeatherWatch } from "@/components/weather-watch";
+import { RouteWeatherCard } from "@/components/weather-watch";
 import { RouteWater } from "@/components/route-water";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   return (
@@ -42,30 +39,29 @@ async function Board() {
     <>
       <PageHeader
         title="Dashboard"
-        subtitle={
-          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            Next round {et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET{" "}
-            <VerdictChip verdict={plan.verdict} className={cn(plan.verdict === "RECALL" && "animate-pulse-soft")} />
-            {plan.verdict !== "GO" && nextGo && <> · next safe launch {et(nextGo, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</>}
-          </span>
-        }
+        subtitle="Kairos watches two things on every Spot round: the weather and water on the route."
       />
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
-        {/* In-route weather first: what happens to a Spot that is out right now. */}
-        <WeatherWatch at="now" />
-        <div className="grid gap-5 xl:grid-cols-3 [&>*]:h-full">
-          <NextRound plan={plan} strip={false} nextGo={nextGo} />
-          <LiveRadar />
+        {/* Two things Kairos watches on every round: weather and water. */}
+        <div className="grid items-start gap-5 xl:grid-cols-2">
+          <RouteWeatherCard />
           <RouteWater />
         </div>
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
-          <ReadinessForecast />
-          <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
-            <ActivityFeed now={now} />
-          </Suspense>
-        </div>
+        <details className="group rounded-2xl bg-card ring-1 ring-white/[0.06]">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 px-5 py-4 text-sm">
+            <span className="font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">Next round</span>
+            <span>{et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</span>
+            <VerdictChip verdict={plan.verdict} />
+            {plan.verdict !== "GO" && nextGo && <span className="text-muted-foreground">· next safe launch {et(nextGo, { hour: "numeric", minute: "2-digit" })} ET</span>}
+            <span className="ml-auto text-xs text-helper group-open:hidden">Details</span>
+          </summary>
+          <div className="grid items-start gap-5 p-5 pt-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+            <NextRound plan={plan} strip={false} nextGo={nextGo} />
+            <ReadinessForecast />
+          </div>
+        </details>
       </main>
     </>
   );
