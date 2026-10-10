@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { connection } from "next/server";
-import { ArrowRight } from "lucide-react";
 import { loadKit } from "@/lib/kit";
 import { forecast } from "@/lib/forecast";
 import { weatherNow } from "@/lib/scenario";
@@ -14,8 +12,8 @@ import { ReadinessForecast } from "@/components/readiness-forecast";
 import { DockDoor } from "@/components/dock-door";
 import { LiveRadar } from "@/components/weather-watch";
 import { doorWeather } from "@/lib/door-rain";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StoryBar } from "@/components/story-bar";
 import { cn } from "@/lib/utils";
 
 export default function Launch() {
@@ -52,15 +50,8 @@ async function Dashboard() {
             {plan.verdict !== "GO" && nextGo && <> · next safe launch {et(nextGo, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</>}
           </span>
         }
-        actions={
-          <Button asChild size="lg">
-            <Link href="/live">
-              Watch the live round
-              <ArrowRight aria-hidden />
-            </Link>
-          </Button>
-        }
       />
+      <StoryBar step={1} />
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">

@@ -27,13 +27,14 @@ import approach from "@/public/captures/approach.json";
 import spotDry from "@/public/captures/spot-dry.json";
 import { ORBIT_CALL, inPath, visionReason, type Vision } from "@/lib/verdict";
 import { labelDetection, recordDetection } from "@/lib/evidence";
-import { endOf, kitClock, kitDate, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
+import { endOf, kitClock, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
 import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { StoryBar } from "@/components/story-bar";
 import { Why } from "@/components/why";
 
 type Mission = { id: string; name: string; config: string; plan: { id: string; locationId: string; type: string }[] };
@@ -174,7 +175,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     <>
       <PageHeader
         title="Live round"
-        subtitle={`${mission.id} ${mission.name} · config ${mission.config} · started ${kitDate(start)} kit time`}
+        subtitle={`${mission.name} · route ${mission.id}`}
         actions={
           <span
             className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary ring-1 ring-primary/40"
@@ -185,6 +186,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </span>
         }
       />
+      <StoryBar step={2} />
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
         {watch}
         <Card className="animate-rise">
@@ -235,8 +237,10 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 />
                 Puddle on route
               </label>
-              <span className="ml-auto font-mono text-2xl font-medium tabular-nums">{kitClock(t)}</span>
-              <span className="text-xs text-helper">kit time</span>
+              <span className="ml-auto font-mono text-2xl font-medium tabular-nums">
+                {String(Math.floor((t - start) / 60000)).padStart(2, "0")}:{String(Math.floor(((t - start) % 60000) / 1000)).padStart(2, "0")}
+              </span>
+              <span className="text-xs text-helper">into the round</span>
             </div>
             <div className="panel-inset p-3">
               <ol aria-label="Mission actions" className="flex gap-1">
@@ -387,6 +391,11 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
             </Card>
 
             {radar}
+            <details className="group rounded-2xl bg-card ring-1 ring-white/[0.06]">
+              <summary className="cursor-pointer list-none px-4 py-3 font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase hover:text-foreground">
+                Round details: status and event feed
+              </summary>
+              <div className="space-y-5 p-1">
             <Card className="animate-rise [--rise-delay:160ms]">
               <CardHeader>
                 <CardTitle>True status so far</CardTitle>
@@ -471,6 +480,8 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 </ol>
               </CardContent>
             </Card>
+              </div>
+            </details>
           </div>
         </div>
       </main>

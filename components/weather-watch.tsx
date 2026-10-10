@@ -7,6 +7,9 @@ import { weatherNow } from "@/lib/scenario";
 import { RainRadar } from "@/components/rain-radar";
 import { VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
+import { loadKit } from "@/lib/kit";
+import { forecast } from "@/lib/forecast";
+import { et } from "@/components/next-round";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Why } from "@/components/why";
 
@@ -47,10 +50,13 @@ export function WeatherWatch() {
 
 async function Watch() {
   await connection();
-  const { weather, now } = await weatherNow();
+  const [{ weather, now, scenario }, kit] = await Promise.all([weatherNow(), loadKit()]);
+  // Recorded story: this is the round at the next safe launch (the storm has passed). Live: as if Spot were out right now.
+  const at = scenario === "recorded" ? (forecast(weather, kit, now).nextGo ?? now) : now;
   // Weather only: full battery and no route risk, so the verdict here is the weather's alone.
   const health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
-  const { verdict, reasons } = decide(weather, health, { now, start: now, end: new Date(now.getTime() + ROUND_MIN * 60000) }, true);
+  const { verdict, reasons } = decide(weather, health, { now, start: at, end: new Date(at.getTime() + ROUND_MIN * 60000) }, true);
+  const when = et(at, { weekday: "short", hour: "numeric", minute: "2-digit" });
   const top = reasons.find((r) => r.verdict === verdict) ?? reasons[0];
   const Icon = verdict === "RECALL" ? TriangleAlert : verdict === "HOLD" ? CloudLightning : CloudSun;
   return (
@@ -66,7 +72,10 @@ async function Watch() {
         <VerdictChip verdict={verdict} />
         <p className="min-w-0 flex-1 text-base">
           <span className="font-semibold">{verdict === "RECALL" ? "Bring Spot home" : verdict === "HOLD" ? "Hold Spot" : "Weather is clear"}</span>
-          <span className="text-muted-foreground"> · {top?.text.split(";")[0] ?? "nothing before Spot can dock"}</span>
+          <span className="text-muted-foreground">
+            {" "}
+            · {scenario === "recorded" ? `${when} ET round, after the storm` : (top?.text.split(";")[0] ?? "nothing before Spot can dock")}
+          </span>
         </p>
         <Why label="Details">
           <p>Live weather at {SITE.name.split(" (")[0]}, checked as if Spot were out now ({ROUND_MIN} min to dock).</p>

@@ -4,6 +4,7 @@ import { findRecall, stateAt, type Round, type StormFixture } from "@/lib/replay
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, returnMinutes, routeOf } from "@/lib/route";
 import { ReplayPlayer } from "@/components/replay-player";
 import { DrillBranchStatus } from "@/components/drill-branch-status";
+import { StoryBar } from "@/components/story-bar";
 import { PageHeader } from "@/components/page-header";
 
 const fixture = storm as StormFixture;
@@ -42,6 +43,7 @@ export default async function ReplayPage() {
         title="Storm drill"
         subtitle={`${fixture.site.name}, ${fixture.date}. Real NWS alerts and weather station observations, replayed minute by minute with no hindsight. Spot's round uses kit route ${mission.id}.`}
       />
+      <StoryBar step={3} />
       <div className="space-y-4 px-8 py-6">
         <DrillBranchStatus />
         <ReplayPlayer fixture={fixture} round={{ ...base, launch }} sites={a.sites} dock={DOCK} outdoor={[...OUTDOOR_WAYPOINTS]} />
