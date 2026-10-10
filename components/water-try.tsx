@@ -87,7 +87,7 @@ export function WaterTry({ samples }: { samples: Sample[] }) {
         )}
       </label>
       {error && <p className="text-sm text-hold">{error}</p>}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="keep-grid grid grid-cols-5 gap-2">
         {samples.map((s) => (
           <button key={s.src} onClick={() => run(s.src)} className={cn("overflow-hidden rounded-lg ring-1 ring-border hover:ring-primary/60", shot?.src === s.src && "ring-2 ring-primary")} title={s.label}>
             {/* eslint-disable-next-line @next/next/no-img-element -- local sample thumbnail */}

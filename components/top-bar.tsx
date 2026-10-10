@@ -38,7 +38,7 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
 
   return (
     <div className="flex items-center gap-3 border-b border-white/[0.06] px-8 py-3 print:hidden">
-      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
+      <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1.5 text-sm sm:flex">
         <span className="text-muted-foreground">Kairos</span>
         {crumbs.map((c, i) => (
           <span key={c.href} className="flex items-center gap-1.5">
@@ -62,7 +62,14 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
             const on = (v === "recorded") === Boolean(recordedAt);
             return (
               <button key={v} name="scenario" value={v} aria-pressed={on} className={cn("rounded-md px-2 py-1 transition-colors", on ? (v === "live" ? "bg-go/20 text-go" : "bg-hold/20 text-hold") : "text-muted-foreground hover:text-foreground")}>
-                {v === "recorded" ? "RECORDED STORM" : "LIVE"}
+                {v === "recorded" ? (
+                  <>
+                    <span className="sm:hidden">STORM</span>
+                    <span className="hidden sm:inline">RECORDED STORM</span>
+                  </>
+                ) : (
+                  "LIVE"
+                )}
               </button>
             );
           })}

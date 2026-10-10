@@ -95,7 +95,7 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
             }
           />
           <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="keep-grid grid grid-cols-3 gap-2">
             <Tile Icon={Camera} label="Ground" value={status === "ok" ? (wet ? "Wet" : "Dry") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
             <Tile Icon={CloudRain} label="Rain now" value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
             <Tile Icon={Timer} label="Next hour" value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />

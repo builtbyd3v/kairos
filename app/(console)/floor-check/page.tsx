@@ -34,7 +34,7 @@ export default function WaterModelPage() {
             <CardHeader>
               <CardTitle>How good is it</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
+            <CardContent className="keep-grid grid grid-cols-2 gap-3">
               {STATS.map((s) => (
                 <div key={s.label} className="panel-inset px-4 py-3">
                   <p className={cn("font-mono text-3xl font-medium tabular-nums", s.tone)}>{s.value}</p>
@@ -49,7 +49,7 @@ export default function WaterModelPage() {
               <CardTitle>What the % means</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="keep-grid grid grid-cols-4 gap-2">
                 {WATER_CONFIDENCE.map((b) => (
                   <div key={b.min} className="panel-inset px-3 py-2.5 text-center">
                     <p className="font-mono text-xl font-medium text-[#8ab8ff] tabular-nums">{b.pct}%</p>
