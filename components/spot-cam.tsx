@@ -28,7 +28,10 @@ export function useSpotCam(frames: CamFrame[], { active, paused, waypoint }: { a
     const started = performance.now();
     detectWater(frame.src, setProgress).then(
       (boxes) => current && setResults((r) => ({ ...r, [frame.src]: { boxes, ms: Math.round(performance.now() - started) } })),
-      () => current && setResults((r) => ({ ...r, [frame.src]: "error" })),
+      (e) => {
+        console.error("Kairos water model failed", e); // the HUD shows MODEL OFFLINE; the console says why
+        if (current) setResults((r) => ({ ...r, [frame.src]: "error" }));
+      },
     );
     return () => {
       current = false;
@@ -199,7 +202,9 @@ const PX_M = 11; // radar pixels per meter
 function AroundSpot({ boxes }: { boxes: WaterDetection[] }) {
   const gid = useId();
   const C = 100;
-  const at = (deg: number, r: number) => ({ x: C + r * Math.sin((deg * Math.PI) / 180), y: C - r * Math.cos((deg * Math.PI) / 180) });
+  // Rounded so server and browser trig render identical markup (no hydration mismatch).
+  const round = (v: number) => Math.round(v * 100) / 100;
+  const at = (deg: number, r: number) => ({ x: round(C + r * Math.sin((deg * Math.PI) / 180)), y: round(C - r * Math.cos((deg * Math.PI) / 180)) });
   const R = RING_M.at(-1)! * PX_M;
   const a = at(-FOV / 2, R);
   const b = at(FOV / 2, R);

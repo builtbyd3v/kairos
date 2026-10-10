@@ -21,7 +21,7 @@ import {
   TriangleAlert,
   WifiOff,
 } from "lucide-react";
-import { waterModel } from "@/lib/water-model";
+import { waterModel, WATER_REVISION } from "@/lib/water-model";
 import { SpotCam, useSpotCam, type CamFrame } from "@/components/spot-cam";
 import approach from "@/public/captures/approach.json";
 import spotDry from "@/public/captures/spot-dry.json";
@@ -66,8 +66,6 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
 // note: the kit has no camera frames. Wet walk = held-out test photos approaching a puddle (never trained on);
 // dry walk = real frames from a camera on a Spot robot (UT Austin SCAND). Both labeled on screen.
 const WALKS: Record<"wet" | "dry", CamFrame[]> = { wet: approach.frames, dry: spotDry.frames };
-// note: Hub revision is "main" until the v2 card pins a commit; the evidence row also stores the frame hash.
-const WATER_REVISION = "main";
 
 /** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
 async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reject") {

@@ -3,6 +3,8 @@
 import type { RawImage, Tensor } from "@huggingface/transformers";
 
 export const WATER_MODEL_ID = "builtbyd3v/kairos-water-rtdetr";
+/** Hub commit with the float32 position-embedding fix that onnxruntime-web needs. Pinned so caches and evidence rows name one exact model. */
+export const WATER_REVISION = "54c3bb405fdce4fcc27294d10051e1ae87ac2942";
 /** Score cutoff picked on the calibration split (never the test split). See docs/model/water-v2/RESULTS.md. */
 export const WATER_THRESHOLD = 0.49;
 
@@ -23,12 +25,11 @@ async function load(onProgress: (pct: number) => void): Promise<Loaded> {
   const progress_callback = (p: { status: string; progress?: number }) => {
     if (p.status === "progress" && p.progress !== undefined) onProgress(Math.round(p.progress));
   };
-  const processor = await AutoProcessor.from_pretrained(WATER_MODEL_ID, { progress_callback });
-  // WebGPU when the browser has it, else the default backend (WASM in browsers, CPU in Node). int8 weights; the eval checks q8 against fp32.
-  const gpu = typeof navigator !== "undefined" && "gpu" in navigator;
-  const model = await (gpu ? AutoModel.from_pretrained(WATER_MODEL_ID, { dtype: "q8", device: "webgpu", progress_callback }) : Promise.reject()).catch(
-    () => AutoModel.from_pretrained(WATER_MODEL_ID, { dtype: "q8", progress_callback }),
-  );
+  const processor = await AutoProcessor.from_pretrained(WATER_MODEL_ID, { revision: WATER_REVISION, progress_callback });
+  // note: WASM in browsers, CPU in Node. The int8 model fails to create a WebGPU session (ORT Cast node), and trying WebGPU first
+  // leaves ORT unable to build the WASM session, so the browser goes straight to WASM (~100-300 ms per frame).
+  const browser = typeof window !== "undefined";
+  const model = await AutoModel.from_pretrained(WATER_MODEL_ID, { revision: WATER_REVISION, dtype: "q8", device: browser ? "wasm" : undefined, progress_callback });
   return {
     run: (pixel_values) => model({ pixel_values }) as Promise<{ logits: Tensor; pred_boxes: Tensor }>,
     prep: (image) => processor(image) as Promise<{ pixel_values: Tensor }>,
