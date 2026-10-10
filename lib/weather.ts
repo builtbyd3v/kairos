@@ -5,7 +5,7 @@ import type { Weather, WeatherStep } from "./verdict";
 export const SITE = { name: "St. Lucie Plant, FL (assumed site)", lat: 27.3486, lon: -80.2464, nwsGrid: "MLB/75,21" };
 
 const NWS_HEADERS = { "User-Agent": "spot-ops-hackathon (knight-hacks-ix demo)", Accept: "application/geo+json" };
-const HOURS_AHEAD = 12; // rounds run every 8 hours, so this always covers the next one
+const HOURS_AHEAD = 24; // covers the next three rounds for the 24-hour readiness forecast
 
 type NwsLayer = { values: { validTime: string; value: number | null }[] };
 

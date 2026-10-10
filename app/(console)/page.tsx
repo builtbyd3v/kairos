@@ -9,6 +9,9 @@ import { VerdictChip } from "@/components/status";
 import { et, NextRound, planNextRound } from "@/components/next-round";
 import { inboxCounts, pgDate, toTab, TriageInbox } from "@/components/triage-inbox";
 import { ActivityFeed } from "@/components/activity-feed";
+import { WeatherBanner } from "@/components/weather-banner";
+import { ReadinessForecast } from "@/components/readiness-forecast";
+import { ShiftBrief } from "@/components/shift-brief";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -60,6 +63,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
           </Button>
         }
       />
+      <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-6 px-8 py-6">
         <Card className="grid grid-cols-5 divide-x divide-border py-0">
@@ -71,9 +75,13 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
         </Card>
 
         <div className="grid grid-cols-[minmax(0,1fr)_24rem] items-start gap-6">
-          <TriageInbox kit={kit} reviews={reviews} tab={toTab(tab)} basePath="/" limit={6} />
+          <div className="min-w-0 space-y-6">
+            <ReadinessForecast />
+            <TriageInbox kit={kit} reviews={reviews} tab={toTab(tab)} basePath="/" limit={6} />
+          </div>
           <aside aria-label="Next round and activity" className="space-y-6">
             <NextRound plan={plan} />
+            <ShiftBrief kit={kit} reviews={reviews} plan={plan} />
             <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
               <ActivityFeed now={now} />
             </Suspense>

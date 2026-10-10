@@ -13,7 +13,7 @@ export const et = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleStrin
 // Rounds launch at 02:00, 10:00 and 18:00 plant time, as in the kit's mission schedule.
 function nextRoundStart(now: Date): Date {
   const wall = new Date(et(now, {}));
-  const offset = now.getTime() - wall.getTime();
+  const offset = Math.round((now.getTime() - wall.getTime()) / 60000) * 60000; // whole minutes: the formatted wall clock drops milliseconds
   for (let day = 0; day < 2; day++) {
     for (const hour of [2, 10, 18]) {
       const c = new Date(wall);

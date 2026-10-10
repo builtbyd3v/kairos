@@ -40,7 +40,7 @@ export const LIMITS = {
 } as const;
 
 export const RECALL_ALERTS = ["Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Heat Warning", "Hurricane Warning", "Tropical Storm Warning"];
-const HOLD_ALERTS = ["Tornado Watch", "Severe Thunderstorm Watch", "Flash Flood Watch", "Flood Warning", "Heat Advisory", "Hurricane Watch", "Tropical Storm Watch"];
+export const HOLD_ALERTS = ["Tornado Watch", "Severe Thunderstorm Watch", "Flash Flood Watch", "Flood Warning", "Heat Advisory", "Hurricane Watch", "Tropical Storm Watch"];
 
 const RANK: Record<Verdict, number> = { GO: 0, HOLD: 1, RECALL: 2 };
 

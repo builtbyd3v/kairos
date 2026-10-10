@@ -12,7 +12,7 @@ import { SITE } from "@/lib/weather";
 // Console shell: sidebar navigation plus the page. Every operator page lives under app/(console).
 export default function ConsoleLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen print:bg-white">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-4 lg:flex print:hidden">
         <Link href="/" className="mb-6 flex items-center gap-2.5 px-3 focus-visible:outline-2 focus-visible:outline-ring">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">

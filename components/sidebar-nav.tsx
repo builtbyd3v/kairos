@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ClipboardList, CloudLightning, Droplets, House, MapPin, Radio, ListChecks, Route } from "lucide-react";
+import { BarChart3, ClipboardList, CloudLightning, FileText, Droplets, House, MapPin, Radio, ListChecks, Route } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const GROUPS = [
@@ -17,7 +17,13 @@ const GROUPS = [
       { href: "/work-orders", label: "Work orders", Icon: ClipboardList },
     ],
   },
-  { label: "Analyze", items: [{ href: "/insights", label: "Insights", Icon: BarChart3 }] },
+  {
+    label: "Analyze",
+    items: [
+      { href: "/insights", label: "Insights", Icon: BarChart3 },
+      { href: "/brief", label: "Shift handoff", Icon: FileText },
+    ],
+  },
   {
     label: "Tools",
     items: [
