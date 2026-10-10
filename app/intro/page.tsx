@@ -4,7 +4,8 @@ import { Intro } from "@/components/intro/intro";
 
 export const metadata: Metadata = { title: "Kairos intro" };
 
-// Self-playing intro for the demo video. ?beat=1..5 shows one beat and holds it (for stills).
+// Self-playing intro for the demo video.
+// ?beat=1..5 plays one beat and holds it (stills). ?t=<seconds> freezes the whole timeline there (video render).
 export default function IntroPage({ searchParams }: PageProps<"/intro">) {
   return (
     <Suspense>
@@ -14,6 +15,13 @@ export default function IntroPage({ searchParams }: PageProps<"/intro">) {
 }
 
 async function Player({ searchParams }: Pick<PageProps<"/intro">, "searchParams">) {
-  const n = Number((await searchParams).beat);
-  return <Intro only={Number.isInteger(n) && n >= 1 && n <= 5 ? n - 1 : undefined} />;
+  const { beat, t } = await searchParams;
+  const n = Number(beat);
+  const sec = typeof t === "string" && t !== "" ? Number(t) : NaN;
+  return (
+    <Intro
+      only={Number.isInteger(n) && n >= 1 && n <= 5 ? n - 1 : undefined}
+      t={Number.isFinite(sec) && sec >= 0 ? sec : undefined}
+    />
+  );
 }

@@ -1,8 +1,10 @@
 /* Kairos intro (app/intro). One rule keeps reduced motion simple: an element's own style is its final pose and each
    keyframe animates FROM the start pose with a backwards fill. With animation off, every beat is a clean static frame.
-   Delay and duration come in as CSS variables (Tailwind arbitrary properties: [--d:2.6s] [--t:2s]). */
+   Delay and duration come in as CSS variables (Tailwind arbitrary properties: [--d:2.6s] [--t:2s]).
+   ?t=<seconds> freezes every animation through the Web Animations API (intro.tsx), so nothing here needs to know. */
 
 @keyframes k-fade { from { opacity: 0; } }
+@keyframes k-out { to { opacity: 0; } }
 @keyframes k-rise { from { opacity: 0; transform: translateY(28px); } }
 @keyframes k-pop { from { opacity: 0; transform: scale(0.4); } 70% { opacity: 1; transform: scale(1.05); } }
 @keyframes k-draw { from { stroke-dashoffset: 1; } }
@@ -14,8 +16,6 @@
 @keyframes k-spin { to { transform: rotate(360deg); } }
 @keyframes k-shimmer { from { opacity: 0.3; } to { opacity: 0.85; } }
 @keyframes k-flash { 0%, 100% { opacity: 0; } 8% { opacity: 0.45; } 16% { opacity: 0.08; } 24% { opacity: 0.3; } }
-@keyframes k-cursor { from { opacity: 0; transform: translate(260px, 160px); } }
-@keyframes k-press { 50% { transform: scale(0.9); } }
 @keyframes k-ping { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.4); } }
 @keyframes k-hop {
   0% { opacity: 0; transform: translateX(-100px) scale(0.6); }
@@ -29,9 +29,17 @@
   78% { opacity: 1; transform: translateY(40px) scale(1); }
   100% { opacity: 0; transform: translateY(80px) scale(0.3); }
 }
-@keyframes k-walkin { from { transform: translateX(-1000px); } }
+/* The detection flies from the puddle up into the Neon cloud. */
+@keyframes k-fly {
+  0% { opacity: 0; transform: translate(-30px, 650px) scale(0.5); }
+  12% { opacity: 1; transform: translate(-10px, 560px) scale(0.9); }
+  55% { transform: translate(70px, 260px) scale(1); }
+  85% { opacity: 1; transform: translate(10px, 30px) scale(0.9); }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+}
 
 .k-fade { animation: k-fade var(--t, 600ms) var(--ease-out-quint) var(--d, 0s) backwards; }
+.k-out { animation: k-out 500ms ease-in var(--d, 0s) forwards; }
 .k-rise { animation: k-rise var(--t, 700ms) var(--ease-out-quint) var(--d, 0s) backwards; }
 .k-pop { transform-box: fill-box; transform-origin: center; animation: k-pop 560ms var(--ease-out-quint) var(--d, 0s) backwards; }
 .k-draw { stroke-dasharray: 1; animation: k-draw 800ms var(--ease-out-quint) var(--d, 0s) backwards; }
@@ -45,47 +53,46 @@
 .k-splash > :nth-child(2n) { animation-delay: -300ms; }
 .k-splash > :nth-child(3n) { animation-delay: -520ms; }
 .k-pulse { transform-box: fill-box; transform-origin: center; animation: k-pulse 1.6s ease-out var(--d, 0s) infinite backwards; }
-.k-spin { transform-box: view-box; transform-origin: center; animation: k-spin 3s linear infinite; }
+.k-spin { transform-box: view-box; transform-origin: 960px 560px; animation: k-spin 4s linear infinite; }
 .k-shimmer { animation: k-shimmer 700ms ease-in-out infinite alternate; }
 .k-flash { opacity: 0; animation: k-flash 900ms linear var(--d, 0s) both; }
-.k-cursor { animation: k-cursor 800ms var(--ease-out-quint) var(--d, 0s) backwards; }
-.k-press { animation: k-press 220ms ease-out var(--d, 0s); }
-.k-ping { opacity: 0; transform-origin: center; animation: k-ping 700ms ease-out var(--d, 0s) backwards; }
+/* No backwards fill: the ring must stay hidden while it waits. */
+.k-ping { opacity: 0; transform-origin: center; animation: k-ping 700ms ease-out var(--d, 0s); }
 .k-hop { opacity: 0; animation: k-hop 1s cubic-bezier(0.45, 0, 0.3, 1) var(--d, 0s) backwards; }
 .k-hop-down { opacity: 0; animation: k-hop-down 1s cubic-bezier(0.45, 0, 0.3, 1) var(--d, 0s) backwards; }
-.k-walkin { animation: k-walkin 1.8s cubic-bezier(0.3, 0, 0.3, 1) var(--d, 0s) backwards; }
+.k-fly { opacity: 0; animation: k-fly 1.3s cubic-bezier(0.45, 0, 0.3, 1) var(--d, 0s) backwards; }
 
-/* The robot dog. Legs swing from the hip; eyes blink. */
-@keyframes k-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
-@keyframes k-breathe { 50% { transform: translateY(-0.3px); } }
-@keyframes k-step { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
-@keyframes k-trot { to { transform: translateY(-0.5px); } }
-.dog-eyes { transform-box: fill-box; transform-origin: center; animation: k-blink 3.4s infinite; }
-.dog-leg { transform-box: fill-box; transform-origin: 50% 0; }
-.gait-idle .dog-body { animation: k-breathe 2.4s ease-in-out infinite; }
-.gait-walk .leg-a { animation: k-step 320ms ease-in-out infinite alternate; }
-.gait-walk .leg-b { animation: k-step 320ms ease-in-out infinite alternate-reverse; }
-.gait-walk .dog-body { animation: k-trot 160ms ease-in-out infinite alternate; }
-/* Beat 2: walk out for 2.4 s, stop for the recall, turn, walk home from 3.2 s. */
-.gait-b2 .leg-a { animation: k-step 300ms ease-in-out 8 alternate, k-step 300ms ease-in-out 3.2s 8 alternate; }
-.gait-b2 .leg-b { animation: k-step 300ms ease-in-out 8 alternate-reverse, k-step 300ms ease-in-out 3.2s 8 alternate-reverse; }
-/* Outro: walk in, stop. */
-.gait-in .leg-a { animation: k-step 300ms ease-in-out 6 alternate; }
-.gait-in .leg-b { animation: k-step 300ms ease-in-out 6 alternate-reverse; }
+/* Spot-style robot dog. Each leg: thigh turns at the hip, shin at the knee (both groups have their pivot at 0,0).
+   Trot: diagonal pairs a (near front, far hind) and b (near hind, far front) half a cycle apart.
+   a: 0-50% stance (foot sweeps back), 50-100% swing (shin folds to lift the foot). b is the same, shifted.
+   Every walk ends where the thigh is upright and the shin straight (a at 25%, b at 75%), so stopping never snaps.
+   Speed: the stance sweep covers about 200 px/s, so tracks below move the body at 200 px/s. */
+@keyframes spot-thigh-a { 0%, 100% { transform: rotate(-13deg); } 50% { transform: rotate(13deg); } }
+@keyframes spot-shin-a { 0%, 50%, 100% { transform: rotate(0deg); } 75% { transform: rotate(-40deg); } }
+@keyframes spot-thigh-b { 0%, 100% { transform: rotate(13deg); } 50% { transform: rotate(-13deg); } }
+@keyframes spot-shin-b { 0%, 50%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-40deg); } }
 
-@keyframes b2-track { 0% { transform: translateX(0); } 44% { transform: translateX(560px); } 58% { transform: translateX(560px); } 100% { transform: translateX(-130px); } }
-@keyframes b2-face { 0%, 52% { transform: scaleX(1); } 57%, 100% { transform: scaleX(-1); } }
-@keyframes b2-storm { from { transform: translate(-150px, 24px); } }
-.b2-track { animation: b2-track 5.6s linear both; }
-.b2-face { transform-box: fill-box; transform-origin: center; animation: b2-face 5.6s linear both; }
-.b2-storm { animation: b2-storm 2.6s cubic-bezier(0.4, 0, 0.6, 1) backwards; }
+/* Route beat: walk 0 to 3.15 s, stand, walk home from 9.4 s. */
+.walk-route .leg-a .thigh { animation: spot-thigh-a 600ms linear 5.25, spot-thigh-a 600ms linear 9.4s 3.25; }
+.walk-route .leg-a .shin { animation: spot-shin-a 600ms linear 5.25, spot-shin-a 600ms linear 9.4s 3.25; }
+.walk-route .leg-b .thigh { animation: spot-thigh-b 600ms linear 5.75, spot-thigh-b 600ms linear 9.4s 3.75; }
+.walk-route .leg-b .shin { animation: spot-shin-b 600ms linear 5.75, spot-shin-b 600ms linear 9.4s 3.75; }
+@keyframes route-track { 0% { transform: translateX(0); } 27.4% { transform: translateX(630px); } 81.7% { transform: translateX(630px); } 98.7%, 100% { transform: translateX(240px); } }
+@keyframes route-face { 0%, 78.3% { transform: scaleX(1); } 80.9%, 100% { transform: scaleX(-1); } }
+.route-track { animation: route-track 11.5s linear both; }
+/* Flip about the middle of the body (local x 160), not the beam. */
+.route-face { transform-box: view-box; transform-origin: 160px 0; animation: route-face 11.5s linear both; }
 
-@keyframes b3-dolly { from { transform: scale(1); } }
-@keyframes b3-bob { to { transform: translateY(6px) rotate(0.3deg); } }
-@keyframes b3-scan { from { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } to { opacity: 0; transform: translateY(1000px); } }
-.b3-dolly { transform-box: view-box; transform-origin: 960px 520px; transform: scale(1.12); animation: b3-dolly 2.4s cubic-bezier(0.3, 0, 0.4, 1) backwards; }
-.b3-bob { animation: b3-bob 360ms ease-in-out 6 alternate; }
-.b3-scan { opacity: 0; animation: b3-scan 1.6s ease-in-out var(--d, 0s) backwards; }
+/* Dock beat: walk onto the dock pad in 1.95 s. */
+.walk-dock .leg-a .thigh { animation: spot-thigh-a 600ms linear 3.25; }
+.walk-dock .leg-a .shin { animation: spot-shin-a 600ms linear 3.25; }
+.walk-dock .leg-b .thigh { animation: spot-thigh-b 600ms linear 3.75; }
+.walk-dock .leg-b .shin { animation: spot-shin-b 600ms linear 3.75; }
+@keyframes dock-track { from { transform: translateX(-390px); } }
+.dock-track { animation: dock-track 1.95s linear backwards; }
+
+@keyframes radar-storm { from { transform: translate(-340px, 30px); } }
+.radar-storm { animation: radar-storm 3.8s cubic-bezier(0.3, 0, 0.6, 1) backwards; }
 
 @media (prefers-reduced-motion: reduce) {
   .intro-stage, .intro-stage * { animation: none !important; }
