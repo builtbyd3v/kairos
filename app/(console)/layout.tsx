@@ -76,6 +76,7 @@ async function Palette() {
       ["Storm drill", "/replay"],
       ["Floor check", "/floor-check"],
       ["Shift handoff", "/brief"],
+      ["Incident review", "/review"],
     ].map(([label, href]) => ({ label, hint: "", href, group: "Page" })),
     ...kit.missions.map((m) => ({ label: m.id, hint: `${m.start.replace("T", " ").slice(5, 16)} · ${m.config} · ${m.status}`, href: `/missions/${m.id}`, group: "Mission" })),
     ...kit.locations.map((l) => ({ label: `${l.id} ${l.name}`, hint: `${l.zone.toLowerCase()} · floor ${l.floor}`, href: `/waypoints/${l.id}`, group: "Waypoint" })),
