@@ -11,12 +11,22 @@ Live: https://spot-ops-pi.vercel.app
 - **Spot doesn't know the weather.** Spot is rated IP54 (splashes, light rain) for -20 to 45 °C. Orbit's schedule can block a *launch* on a rain forecast, but nothing recalls Spot once it is out, and nothing checks heat, lightning or wind.
 
 ## What it does
-| Screen | What the operator gets |
+An operator console that opens on "what needs me right now".
+
+| Page | What the operator gets |
 |---|---|
-| Dispatch board | Next round verdict with reasons and sources, confirm or override. True mission status vs reported. Attention queue ranked by severity and asset criticality. Two-floor facility map. Battery and inspection-type insights. Weather backtest. Decision log. |
-| Mission page | What happened in plain words, the route on the map, every action with its reading and anomaly. |
-| Floor check | Our fine-tuned open model ([builtbyd3v/spot-wetfloor-convnext-tiny](https://huggingface.co/builtbyd3v/spot-wetfloor-convnext-tiny)) flags standing water in a camera frame, in the browser with transformers.js. A wet frame holds that waypoint. |
-| Storm replay | A real storm afternoon at NextEra's St. Lucie plant, replayed minute by minute with no hindsight. The verdict flips live, and a recall shows how long Spot needs to reach the dock. |
+| Today | Shift greeting, KPI strip, 24-hour readiness forecast (GO/HOLD per hour and per scheduled round), weather alert banner, the "Needs you" triage inbox (create work order, acknowledge, dismiss, reopen; saved in Neon), next-round verdict with confirm/override, shift brief, activity feed. |
+| Live round | NextEra's replay stream played as a live mission: Spot on the map, event feed, "true status so far", and an automatic wet-floor check when Spot reaches the outdoor leg. |
+| Anomalies | Full triage inbox with evidence ("what Spot saw", context, why it needs you). |
+| Missions | Reported status next to what actually happened; per-mission action timeline with readings, anomalies, sample inspection images. |
+| Waypoints | Where failures concentrate: per-location success, failure types, V1 vs V2, asset mismatches in the kit. |
+| Work orders | Work orders created from triage, prioritized P1-P3 by severity and asset criticality. |
+| Insights | Battery vs success, inspection reliability, V1 vs V2 within the same battery band, weather backtest, decision log. |
+| Shift handoff | A printable plain-English handoff for the next operator. |
+| Storm drill | A real pop-up storm at St. Lucie (2024-05-19) replayed with no hindsight: mid-round recall before the NWS warning. |
+| Floor check | Our fine-tuned wet-floor model running in the browser. |
+
+⌘K jumps to any page, mission, waypoint or anomaly. On a phone, the sidebar becomes a bottom tab bar.
 
 ## Rules
 Every rule is in `lib/verdict.ts` and cited in the UI.
