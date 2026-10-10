@@ -41,7 +41,7 @@ export default async function ReplayPage() {
     <main>
       <PageHeader
         title="Storm drill"
-        subtitle={`${fixture.site.name}, ${fixture.date}. Real NWS alerts and weather station observations, replayed minute by minute with no hindsight. Spot's round uses kit route ${mission.id}.`}
+        subtitle={`What if a storm hits mid-round? A real storm at ${fixture.site.name.split(",")[0]}, ${fixture.date}, replayed minute by minute.`}
       />
       <StoryBar step={3} />
       <div className="space-y-4 px-8 py-6">
