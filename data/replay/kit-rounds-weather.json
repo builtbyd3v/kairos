@@ -1,0 +1,991 @@
+{
+  "site": {
+    "name": "Juno Beach, FL",
+    "lat": 26.8806,
+    "lon": -80.0575
+  },
+  "source": "Open-Meteo Historical Weather API (archive-api.open-meteo.com/v1/archive), models=best_match (ECMWF ERA5 / ERA5-Land reanalysis), nearest grid cell 26.889,-80.122; alerts: IEM VTEC watch/warning archive, Palm Beach County (FLC099)",
+  "rounds": [
+    {
+      "missionId": "M001",
+      "start": "2026-09-01T18:00:00-04:00",
+      "durationMin": 31,
+      "steps": [
+        {
+          "time": "2026-09-01T17:00:00-04:00",
+          "precipMmPerHour": 0.3,
+          "thunderPct": 0,
+          "gustKmh": 12.6,
+          "tempC": 29.3
+        },
+        {
+          "time": "2026-09-01T18:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 11.5,
+          "tempC": 29.1
+        },
+        {
+          "time": "2026-09-01T19:00:00-04:00",
+          "precipMmPerHour": 1.0,
+          "thunderPct": 0,
+          "gustKmh": 16.2,
+          "tempC": 27.3
+        },
+        {
+          "time": "2026-09-01T20:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 20.2,
+          "tempC": 26.5
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M002",
+      "start": "2026-09-02T02:00:00-04:00",
+      "durationMin": 31,
+      "steps": [
+        {
+          "time": "2026-09-02T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 8.6,
+          "tempC": 25.2
+        },
+        {
+          "time": "2026-09-02T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 5.4,
+          "tempC": 25.3
+        },
+        {
+          "time": "2026-09-02T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 3.2,
+          "tempC": 25.2
+        },
+        {
+          "time": "2026-09-02T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 6.1,
+          "tempC": 25.1
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M003",
+      "start": "2026-09-02T10:00:00-04:00",
+      "durationMin": 28,
+      "steps": [
+        {
+          "time": "2026-09-02T09:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 9.7,
+          "tempC": 27.4
+        },
+        {
+          "time": "2026-09-02T10:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 17.6,
+          "tempC": 28.4
+        },
+        {
+          "time": "2026-09-02T11:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 15.5,
+          "tempC": 29.3
+        },
+        {
+          "time": "2026-09-02T12:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 14.8,
+          "tempC": 29.8
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M004",
+      "start": "2026-09-02T18:00:00-04:00",
+      "durationMin": 30,
+      "steps": [
+        {
+          "time": "2026-09-02T17:00:00-04:00",
+          "precipMmPerHour": 0.7,
+          "thunderPct": 0,
+          "gustKmh": 19.8,
+          "tempC": 29.5
+        },
+        {
+          "time": "2026-09-02T18:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 19.8,
+          "tempC": 28.9
+        },
+        {
+          "time": "2026-09-02T19:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 10.8,
+          "tempC": 28.5
+        },
+        {
+          "time": "2026-09-02T20:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 6.1,
+          "tempC": 27.7
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M005",
+      "start": "2026-09-03T02:00:00-04:00",
+      "durationMin": 25,
+      "steps": [
+        {
+          "time": "2026-09-03T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 12.2,
+          "tempC": 25.5
+        },
+        {
+          "time": "2026-09-03T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 5.0,
+          "tempC": 25.6
+        },
+        {
+          "time": "2026-09-03T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 6.5,
+          "tempC": 25.8
+        },
+        {
+          "time": "2026-09-03T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 5.8,
+          "tempC": 25.7
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M006",
+      "start": "2026-09-03T10:00:00-04:00",
+      "durationMin": 31,
+      "steps": [
+        {
+          "time": "2026-09-03T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 18.7,
+          "tempC": 29.2
+        },
+        {
+          "time": "2026-09-03T10:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 23.0,
+          "tempC": 30.4
+        },
+        {
+          "time": "2026-09-03T11:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 25.6,
+          "tempC": 31.1
+        },
+        {
+          "time": "2026-09-03T12:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 26.3,
+          "tempC": 30.3
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M007",
+      "start": "2026-09-03T18:00:00-04:00",
+      "durationMin": 27,
+      "steps": [
+        {
+          "time": "2026-09-03T17:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 18.7,
+          "tempC": 30.5
+        },
+        {
+          "time": "2026-09-03T18:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 15.1,
+          "tempC": 30.2
+        },
+        {
+          "time": "2026-09-03T19:00:00-04:00",
+          "precipMmPerHour": 5.6,
+          "thunderPct": 0,
+          "gustKmh": 14.8,
+          "tempC": 26.3
+        },
+        {
+          "time": "2026-09-03T20:00:00-04:00",
+          "precipMmPerHour": 3.9,
+          "thunderPct": 0,
+          "gustKmh": 20.9,
+          "tempC": 28.5
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M008",
+      "start": "2026-09-04T02:00:00-04:00",
+      "durationMin": 26,
+      "steps": [
+        {
+          "time": "2026-09-04T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 22.7,
+          "tempC": 28.0
+        },
+        {
+          "time": "2026-09-04T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 20.2,
+          "tempC": 27.4
+        },
+        {
+          "time": "2026-09-04T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 16.2,
+          "tempC": 26.9
+        },
+        {
+          "time": "2026-09-04T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 11.9,
+          "tempC": 26.6
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M009",
+      "start": "2026-09-04T10:00:00-04:00",
+      "durationMin": 25,
+      "steps": [
+        {
+          "time": "2026-09-04T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 21.6,
+          "tempC": 29.5
+        },
+        {
+          "time": "2026-09-04T10:00:00-04:00",
+          "precipMmPerHour": 0.3,
+          "thunderPct": 0,
+          "gustKmh": 25.6,
+          "tempC": 30.0
+        },
+        {
+          "time": "2026-09-04T11:00:00-04:00",
+          "precipMmPerHour": 0.5,
+          "thunderPct": 0,
+          "gustKmh": 28.8,
+          "tempC": 30.1
+        },
+        {
+          "time": "2026-09-04T12:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 27.0,
+          "tempC": 31.0
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M010",
+      "start": "2026-09-04T18:00:00-04:00",
+      "durationMin": 33,
+      "steps": [
+        {
+          "time": "2026-09-04T17:00:00-04:00",
+          "precipMmPerHour": 0.3,
+          "thunderPct": 0,
+          "gustKmh": 20.9,
+          "tempC": 28.8
+        },
+        {
+          "time": "2026-09-04T18:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 15.5,
+          "tempC": 29.1
+        },
+        {
+          "time": "2026-09-04T19:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 13.0,
+          "tempC": 28.5
+        },
+        {
+          "time": "2026-09-04T20:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 10.8,
+          "tempC": 28.9
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M011",
+      "start": "2026-09-05T02:00:00-04:00",
+      "durationMin": 33,
+      "steps": [
+        {
+          "time": "2026-09-05T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 11.9,
+          "tempC": 26.6
+        },
+        {
+          "time": "2026-09-05T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 4.3,
+          "tempC": 25.9
+        },
+        {
+          "time": "2026-09-05T03:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 18.0,
+          "tempC": 25.7
+        },
+        {
+          "time": "2026-09-05T04:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 18.0,
+          "tempC": 25.6
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M012",
+      "start": "2026-09-05T10:00:00-04:00",
+      "durationMin": 27,
+      "steps": [
+        {
+          "time": "2026-09-05T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 14.4,
+          "tempC": 28.6
+        },
+        {
+          "time": "2026-09-05T10:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 18.0,
+          "tempC": 30.2
+        },
+        {
+          "time": "2026-09-05T11:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 22.3,
+          "tempC": 30.5
+        },
+        {
+          "time": "2026-09-05T12:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 22.3,
+          "tempC": 30.9
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M013",
+      "start": "2026-09-05T18:00:00-04:00",
+      "durationMin": 32,
+      "steps": [
+        {
+          "time": "2026-09-05T17:00:00-04:00",
+          "precipMmPerHour": 0.3,
+          "thunderPct": 0,
+          "gustKmh": 12.6,
+          "tempC": 29.4
+        },
+        {
+          "time": "2026-09-05T18:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 17.6,
+          "tempC": 29.1
+        },
+        {
+          "time": "2026-09-05T19:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 17.6,
+          "tempC": 28.6
+        },
+        {
+          "time": "2026-09-05T20:00:00-04:00",
+          "precipMmPerHour": 1.5,
+          "thunderPct": 0,
+          "gustKmh": 27.4,
+          "tempC": 25.8
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M014",
+      "start": "2026-09-06T02:00:00-04:00",
+      "durationMin": 26,
+      "steps": [
+        {
+          "time": "2026-09-06T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 13.3,
+          "tempC": 24.5
+        },
+        {
+          "time": "2026-09-06T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 10.4,
+          "tempC": 24.6
+        },
+        {
+          "time": "2026-09-06T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 10.4,
+          "tempC": 24.5
+        },
+        {
+          "time": "2026-09-06T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 14.0,
+          "tempC": 24.3
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M015",
+      "start": "2026-09-06T10:00:00-04:00",
+      "durationMin": 34,
+      "steps": [
+        {
+          "time": "2026-09-06T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 17.3,
+          "tempC": 27.3
+        },
+        {
+          "time": "2026-09-06T10:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 23.0,
+          "tempC": 29.3
+        },
+        {
+          "time": "2026-09-06T11:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 24.5,
+          "tempC": 30.6
+        },
+        {
+          "time": "2026-09-06T12:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 23.4,
+          "tempC": 31.7
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M016",
+      "start": "2026-09-06T18:00:00-04:00",
+      "durationMin": 26,
+      "steps": [
+        {
+          "time": "2026-09-06T17:00:00-04:00",
+          "precipMmPerHour": 0.4,
+          "thunderPct": 0,
+          "gustKmh": 23.8,
+          "tempC": 28.8
+        },
+        {
+          "time": "2026-09-06T18:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 21.6,
+          "tempC": 29.0
+        },
+        {
+          "time": "2026-09-06T19:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 16.2,
+          "tempC": 28.4
+        },
+        {
+          "time": "2026-09-06T20:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 16.2,
+          "tempC": 28.4
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M017",
+      "start": "2026-09-07T02:00:00-04:00",
+      "durationMin": 31,
+      "steps": [
+        {
+          "time": "2026-09-07T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 18.4,
+          "tempC": 25.7
+        },
+        {
+          "time": "2026-09-07T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 19.8,
+          "tempC": 26.5
+        },
+        {
+          "time": "2026-09-07T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 20.2,
+          "tempC": 26.5
+        },
+        {
+          "time": "2026-09-07T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 21.2,
+          "tempC": 26.1
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M018",
+      "start": "2026-09-07T10:00:00-04:00",
+      "durationMin": 33,
+      "steps": [
+        {
+          "time": "2026-09-07T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 13.0,
+          "tempC": 28.2
+        },
+        {
+          "time": "2026-09-07T10:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 15.5,
+          "tempC": 30.4
+        },
+        {
+          "time": "2026-09-07T11:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 16.6,
+          "tempC": 31.2
+        },
+        {
+          "time": "2026-09-07T12:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 17.6,
+          "tempC": 32.1
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M019",
+      "start": "2026-09-07T18:00:00-04:00",
+      "durationMin": 22,
+      "steps": [
+        {
+          "time": "2026-09-07T17:00:00-04:00",
+          "precipMmPerHour": 0.9,
+          "thunderPct": 0,
+          "gustKmh": 31.7,
+          "tempC": 26.4
+        },
+        {
+          "time": "2026-09-07T18:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 29.9,
+          "tempC": 26.4
+        },
+        {
+          "time": "2026-09-07T19:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 24.1,
+          "tempC": 25.9
+        },
+        {
+          "time": "2026-09-07T20:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 21.6,
+          "tempC": 25.1
+        }
+      ],
+      "alerts": [
+        "Flood Advisory"
+      ]
+    },
+    {
+      "missionId": "M020",
+      "start": "2026-09-08T02:00:00-04:00",
+      "durationMin": 20,
+      "steps": [
+        {
+          "time": "2026-09-08T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 13.0,
+          "tempC": 24.1
+        },
+        {
+          "time": "2026-09-08T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 11.5,
+          "tempC": 23.9
+        },
+        {
+          "time": "2026-09-08T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 9.7,
+          "tempC": 23.8
+        },
+        {
+          "time": "2026-09-08T04:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 11.5,
+          "tempC": 23.8
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M021",
+      "start": "2026-09-08T10:00:00-04:00",
+      "durationMin": 22,
+      "steps": [
+        {
+          "time": "2026-09-08T09:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 10.8,
+          "tempC": 27.0
+        },
+        {
+          "time": "2026-09-08T10:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 11.2,
+          "tempC": 29.2
+        },
+        {
+          "time": "2026-09-08T11:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 15.1,
+          "tempC": 30.2
+        },
+        {
+          "time": "2026-09-08T12:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 15.8,
+          "tempC": 30.9
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M022",
+      "start": "2026-09-08T18:00:00-04:00",
+      "durationMin": 24,
+      "steps": [
+        {
+          "time": "2026-09-08T17:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 15.5,
+          "tempC": 29.6
+        },
+        {
+          "time": "2026-09-08T18:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 12.6,
+          "tempC": 29.6
+        },
+        {
+          "time": "2026-09-08T19:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 8.6,
+          "tempC": 28.9
+        },
+        {
+          "time": "2026-09-08T20:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 4.7,
+          "tempC": 27.3
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M023",
+      "start": "2026-09-09T02:00:00-04:00",
+      "durationMin": 21,
+      "steps": [
+        {
+          "time": "2026-09-09T01:00:00-04:00",
+          "precipMmPerHour": 6.7,
+          "thunderPct": 0,
+          "gustKmh": 14.8,
+          "tempC": 24.4
+        },
+        {
+          "time": "2026-09-09T02:00:00-04:00",
+          "precipMmPerHour": 2.3,
+          "thunderPct": 0,
+          "gustKmh": 10.1,
+          "tempC": 24.8
+        },
+        {
+          "time": "2026-09-09T03:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 9.0,
+          "tempC": 25.3
+        },
+        {
+          "time": "2026-09-09T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 6.1,
+          "tempC": 25.4
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M024",
+      "start": "2026-09-09T10:00:00-04:00",
+      "durationMin": 19,
+      "steps": [
+        {
+          "time": "2026-09-09T09:00:00-04:00",
+          "precipMmPerHour": 0.9,
+          "thunderPct": 0,
+          "gustKmh": 10.4,
+          "tempC": 28.6
+        },
+        {
+          "time": "2026-09-09T10:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 26.6,
+          "tempC": 29.0
+        },
+        {
+          "time": "2026-09-09T11:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 31.0,
+          "tempC": 29.4
+        },
+        {
+          "time": "2026-09-09T12:00:00-04:00",
+          "precipMmPerHour": 0.2,
+          "thunderPct": 0,
+          "gustKmh": 32.8,
+          "tempC": 29.9
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M025",
+      "start": "2026-09-09T18:00:00-04:00",
+      "durationMin": 18,
+      "steps": [
+        {
+          "time": "2026-09-09T17:00:00-04:00",
+          "precipMmPerHour": 0.5,
+          "thunderPct": 0,
+          "gustKmh": 19.4,
+          "tempC": 28.3
+        },
+        {
+          "time": "2026-09-09T18:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 12.6,
+          "tempC": 28.3
+        },
+        {
+          "time": "2026-09-09T19:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 12.2,
+          "tempC": 27.9
+        },
+        {
+          "time": "2026-09-09T20:00:00-04:00",
+          "precipMmPerHour": 0.5,
+          "thunderPct": 0,
+          "gustKmh": 12.2,
+          "tempC": 27.6
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M026",
+      "start": "2026-09-10T02:00:00-04:00",
+      "durationMin": 23,
+      "steps": [
+        {
+          "time": "2026-09-10T01:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 16.9,
+          "tempC": 27.6
+        },
+        {
+          "time": "2026-09-10T02:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 20.2,
+          "tempC": 27.9
+        },
+        {
+          "time": "2026-09-10T03:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 21.6,
+          "tempC": 27.7
+        },
+        {
+          "time": "2026-09-10T04:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 15.5,
+          "tempC": 27.2
+        }
+      ],
+      "alerts": []
+    },
+    {
+      "missionId": "M027",
+      "start": "2026-09-10T10:00:00-04:00",
+      "durationMin": 25,
+      "steps": [
+        {
+          "time": "2026-09-10T09:00:00-04:00",
+          "precipMmPerHour": 1.7,
+          "thunderPct": 0,
+          "gustKmh": 21.2,
+          "tempC": 27.7
+        },
+        {
+          "time": "2026-09-10T10:00:00-04:00",
+          "precipMmPerHour": 0.6,
+          "thunderPct": 0,
+          "gustKmh": 34.9,
+          "tempC": 26.6
+        },
+        {
+          "time": "2026-09-10T11:00:00-04:00",
+          "precipMmPerHour": 0.1,
+          "thunderPct": 0,
+          "gustKmh": 28.8,
+          "tempC": 27.0
+        },
+        {
+          "time": "2026-09-10T12:00:00-04:00",
+          "precipMmPerHour": 0.0,
+          "thunderPct": 0,
+          "gustKmh": 22.3,
+          "tempC": 27.8
+        }
+      ],
+      "alerts": []
+    }
+  ],
+  "assumptions": [
+    "Mission start times come from data/kit/missions.csv and are read as America/New_York local time (EDT, -04:00).",
+    "Weather is the reanalysis grid cell at 26.889,-80.122, about 6.5 km west of Juno Beach, not an observation at the site.",
+    "precipMmPerHour is Open-Meteo hourly precipitation, the total for the hour ending at the step time. gustKmh is wind_gusts_10m. tempC is temperature_2m.",
+    "thunderPct is 100 if weather_code >= 95, else 0. ERA5-based weather_code does not produce thunderstorm codes (95-99), so 0 means 'not indicated by reanalysis', not 'no lightning'.",
+    "alerts lists NWS county-based products for Palm Beach County (UGC FLC099) whose issue <= mission start < expire, from the IEM VTEC archive."
+  ]
+}

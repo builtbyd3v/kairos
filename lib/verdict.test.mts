@@ -5,7 +5,7 @@ import { decide, type Weather } from "./verdict.ts";
 
 const now = new Date("2025-05-05T18:00:00Z");
 const end = new Date("2025-05-05T18:45:00Z");
-const healthy = { batteryPct: 90, routeRisk: [] };
+const healthy = { outdoor: true, batteryPct: 90, projectedEndPct: 60, routeRisk: [] };
 const calm: Weather = {
   fetchedAt: now.toISOString(),
   alerts: [],
@@ -42,6 +42,12 @@ test("weather after Spot is back on the dock does not count", () => {
   assert.equal(decide(later, healthy, { now, start: now, end }, false).verdict, "GO");
 });
 
-test("low battery holds even in good weather", () => {
-  assert.equal(decide(calm, { ...healthy, batteryPct: 30 }, { now, start: now, end }, false).verdict, "HOLD");
+test("a projected dock battery under 20% holds even in good weather", () => {
+  assert.equal(decide(calm, { ...healthy, projectedEndPct: 12 }, { now, start: now, end }, false).verdict, "HOLD");
+});
+
+test("an indoor route stays GO through a storm", () => {
+  const storm = { ...calm, alerts: ["Severe Thunderstorm Warning"] };
+  assert.equal(decide(storm, { ...healthy, outdoor: false }, { now, start: now, end }, true).verdict, "GO");
+  assert.equal(decide(null, { ...healthy, outdoor: false }, { now, start: now, end }, false).verdict, "GO");
 });

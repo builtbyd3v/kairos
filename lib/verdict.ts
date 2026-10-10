@@ -18,7 +18,9 @@ export type Weather = {
 };
 
 export type Health = {
+  outdoor: boolean; // does the route leave the building? Weather only gates outdoor routes.
   batteryPct: number;
+  projectedEndPct: number; // battery when Spot is back on the dock, from the kit's drain rate
   routeRisk: { locationId: string; name: string; successPct: number }[]; // weakest waypoints on the route
 };
 
@@ -32,7 +34,7 @@ export const LIMITS = {
   moderateRainMmPerHour: 2.5, // AMS "light rain" ends at 2.5 mm/h; Spot guide p.22 allows light rain only
   thunderPct: 30, // ASSUMPTION: guide is silent on lightning
   gustKmh: 50, // ASSUMPTION: guide is silent on wind
-  minBatteryPct: 40, // Spot guide p.57: swap if under 40% at startup
+  minDockBatteryPct: 20, // kit: actions below 20% battery succeed 27% of the time
   staleMinutes: 30, // ASSUMPTION: older weather counts as unknown
 } as const;
 
@@ -55,7 +57,9 @@ export function decide(
   const hazard = inProgress ? "RECALL" : "HOLD";
 
   const ageMin = weather ? (now.getTime() - new Date(weather.fetchedAt).getTime()) / 60000 : Infinity;
-  if (!weather || ageMin > LIMITS.staleMinutes) {
+  if (!health.outdoor) {
+    reasons.push({ verdict: "GO", text: "Route stays indoors, so weather does not gate it", source: "Route map" });
+  } else if (!weather || ageMin > LIMITS.staleMinutes) {
     // Missing data must never look green.
     reasons.push({ verdict: "HOLD", text: "Weather data is missing or stale, so conditions are unknown", source: "Dispatcher rule" });
   } else {
@@ -82,7 +86,7 @@ export function decide(
     const cold = window.map((s) => s.tempC).filter((v): v is number => v !== null).reduce((a, b) => Math.min(a, b), Infinity);
 
     if (rain !== null && rain > LIMITS.moderateRainMmPerHour)
-      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61" });
+      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61; Orbit's own launch gate allows up to 5 mm" });
     else if (rain !== null && rain > 0)
       reasons.push({ verdict: "GO", text: `Light rain (${rain.toFixed(1)} mm/h) is within Spot's rating, but expect wet, slippery floors after`, source: "Spot guide p.21-22" });
     if (thunder !== null && thunder >= LIMITS.thunderPct)
@@ -95,8 +99,12 @@ export function decide(
       reasons.push({ verdict: hazard, text: `Air temperature drops to ${Math.round(cold)} C; Spot's limit is ${LIMITS.minTempC} C`, source: "Spot guide p.22" });
   }
 
-  if (health.batteryPct < LIMITS.minBatteryPct)
-    reasons.push({ verdict: "HOLD", text: `Battery at ${health.batteryPct}%; swap before launch. In this data, actions below 20% battery succeed only 27% of the time`, source: "Spot guide p.57; NextEra kit" });
+  if (health.projectedEndPct < LIMITS.minDockBatteryPct)
+    reasons.push({
+      verdict: "HOLD",
+      text: `Spot would dock at about ${Math.round(health.projectedEndPct)}% battery (starts at ${health.batteryPct}%). Below 20%, inspections succeed only 27% of the time`,
+      source: "NextEra kit drain rates",
+    });
   for (const r of health.routeRisk.filter((r) => r.successPct < 75))
     reasons.push({ verdict: "GO", text: `${r.name} succeeds only ${r.successPct}% of the time; check results there first`, source: "NextEra kit" });
 

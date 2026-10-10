@@ -1,1 +1,119 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+    --font-mono: var(--font-mono);
+    --color-go: var(--go);
+    --color-hold: var(--hold);
+    --color-recall: var(--recall);
+    --color-info: var(--info);
+    --color-helper: var(--helper);
+    --color-link: var(--link);
+    --color-navy: var(--navy);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* SPOT Dispatch, dark only. IBM Carbon g100 tokens plus an Orbit-style navy bar. See DESIGN.md. */
+    --background: #161616;
+    --foreground: #f4f4f4;
+    --card: #262626;
+    --card-foreground: #f4f4f4;
+    --popover: #262626;
+    --popover-foreground: #f4f4f4;
+    --primary: #4589ff;
+    --primary-foreground: #161616;
+    --secondary: #393939;
+    --secondary-foreground: #f4f4f4;
+    --muted: #2e2e2e;
+    --muted-foreground: #c6c6c6;
+    --accent: #393939;
+    --accent-foreground: #f4f4f4;
+    --destructive: #fa4d56;
+    --border: #393939;
+    --input: #6f6f6f;
+    --ring: #78a9ff;
+    --chart-1: #4589ff;
+    --chart-2: #42be65;
+    --chart-3: #f1c21b;
+    --chart-4: #fa4d56;
+    --chart-5: #8d8d8d;
+    --radius: 0.25rem;
+    --sidebar: #0b1c33;
+    --sidebar-foreground: #f4f4f4;
+    --sidebar-primary: #4589ff;
+    --sidebar-primary-foreground: #161616;
+    --sidebar-accent: #12284a;
+    --sidebar-accent-foreground: #f4f4f4;
+    --sidebar-border: #1d3a66;
+    --sidebar-ring: #78a9ff;
+    /* Status: always paired with an icon and a word. */
+    --go: #42be65;
+    --hold: #f1c21b;
+    --recall: #fa4d56;
+    --info: #4589ff;
+    --helper: #8d8d8d;
+    --link: #78a9ff;
+    --navy: #0b1c33;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+/* Motion: only the verdict flip and new log rows move. Everything else is static (DESIGN.md). */
+@keyframes verdict-in { from { opacity: 0.4; } to { opacity: 1; } }
+@keyframes row-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@utility animate-verdict { animation: verdict-in 240ms cubic-bezier(0.23, 1, 0.32, 1); }
+@utility animate-row { animation: row-in 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .animate-row { animation: verdict-in 180ms linear; }
+}
