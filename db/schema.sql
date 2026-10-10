@@ -171,3 +171,18 @@ CREATE TABLE IF NOT EXISTS eval_runs (
   rejected int NOT NULL,
   precision real
 );
+
+-- Seeded demo decisions (scripts/snapshots.mts) are marked, so they never pass for real operator clicks.
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS seeded boolean NOT NULL DEFAULT false;
+
+-- Incident review moments. Each row names a Neon branch snap-<name>, a frozen copy of main at that moment. Written by scripts/snapshots.mts only.
+CREATE TABLE IF NOT EXISTS snapshots (
+  name text PRIMARY KEY CHECK (name ~ '^[a-z][a-z-]{1,40}$'),
+  label text NOT NULL,
+  at timestamptz NOT NULL,
+  verdict text CHECK (verdict IN ('GO', 'HOLD', 'RECALL')),
+  decided text NOT NULL,
+  why text NOT NULL,
+  weather jsonb NOT NULL,
+  branch_as_of timestamptz
+);

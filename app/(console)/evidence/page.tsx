@@ -7,7 +7,7 @@ import { et } from "@/components/next-round";
 import { EvidenceLabelButtons } from "@/components/evidence-label-buttons";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { StoryBar } from "@/components/story-bar";
+import { SandboxStatus } from "@/components/drill-branch-status";
 import { cn } from "@/lib/utils";
 
 const SUBTITLE = "Every water detection is a row in Neon. Confirm or reject it. Your labels score each model version on a frozen Neon branch.";
@@ -25,8 +25,8 @@ export default function EvidencePage() {
   return (
     <main>
       <PageHeader title="Water evidence" subtitle={SUBTITLE} />
-      <StoryBar step={4} />
       <div className="space-y-5 px-8 py-6">
+        <SandboxStatus />
         <Suspense fallback={<Card className="px-5 text-sm text-muted-foreground">Loading evidence from Neon…</Card>}>
           <Evidence />
         </Suspense>
