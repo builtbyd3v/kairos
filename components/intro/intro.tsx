@@ -167,7 +167,8 @@ export function Intro({ beat: startBeat, t }: IntroProps) {
     <main className={`relative h-dvh w-screen overflow-hidden bg-backdrop ${show ? "" : "cursor-none"}`}>
       <div
         ref={stage}
-        className={`intro-stage absolute top-1/2 left-1/2 h-[1080px] w-[1920px] -translate-x-1/2 -translate-y-1/2 overflow-hidden text-foreground ${bg}`}
+        // Render mode (?t=) pins the stage to the top-left corner, so a screenshot clip of it never picks up the letterbox.
+        className={`intro-stage absolute h-[1080px] w-[1920px] overflow-hidden text-foreground ${frozen ? "top-0 left-0 origin-top-left" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"} ${bg}`}
         // note: the fit factor is computed from the window; Tailwind cannot express it.
         style={{ scale: String(scale) }}
       >
