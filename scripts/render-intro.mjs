@@ -14,20 +14,20 @@ const FPS = 30;
 const CHUNK = 200; // frames per Aside REPL call; a call may run 120 s and a frame takes about 70 to 150 ms
 const DIR = "public/intro";
 // note: must equal TOTAL in components/intro/intro.tsx (beat lengths x 1.5). The video step checks it against the page.
-const TOTAL = 47.25;
+const TOTAL = 45.75;
 
 // Narration: one short line per moment, start times in clock seconds.
 const LINES = [
-  [0.4, "Spot's team asked for two things: catch puddles on the route, and keep Spot inside when it rains."],
-  [6.8, "Kairos flags even a small puddle, and saves the evidence to Neon."],
-  [11.2, "When a storm closes in, Orbit calls Spot back to the dock."],
-  [17.6, "Live radar around Saint Lucie tracks the storm, and every water find."],
-  [23.8, "At the dock door, rain means hold, and the door stays shut until the next safe launch."],
-  [33.5, "Spot's camera feeds a water model in the browser, Kairos adds the weather rules, and Orbit pauses or recalls the round."],
-  [42.4, "Kairos. Weather and water checks for Spot, inside Orbit."],
+  [0.4, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
+  [7.2, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
+  [13.0, "It also watches live radar around Saint Lucie while the round is running."],
+  [19.2, "When the weather turns mid-round, Kairos recalls Spot to the dock."],
+  [28.8, "Here is how it works."],
+  [31.9, "The water model runs in the browser, the Kairos dashboard plugs into Orbit, and every call is logged in Neon."],
+  [40.8, "Kairos. Weather and water checks for Spot, inside Orbit."],
 ];
-// Soft rain bed under the storm (route beat) and the dock beat, clock seconds.
-const RAIN = [[9.9, 17.25], [23.25, 33.0]];
+// Soft rain bed under the storm beat, clock seconds.
+const RAIN = [[21.0, 31.5]];
 
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 const seconds = (file) => Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]));
