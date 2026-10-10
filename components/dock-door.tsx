@@ -31,7 +31,7 @@ function Tile({ Icon, label, value, ok }: { Icon: typeof Camera; label: string; 
   );
 }
 
-const word = (v: boolean | null, yes: string) => (v === null ? "Unknown" : v ? yes : "Dry");
+const word = (v: boolean | null) => (v === null ? "Unknown" : v ? "Rain" : "No rain");
 
 /** The dock door check: Spot leaves only if the camera and the weather both say dry. Any rain or any unknown holds. */
 /** One moment to check the door at: now, or the next safe launch. */
@@ -49,6 +49,10 @@ export function DockDoor({ checks, source }: { checks: Check[]; source: string }
   const status: DoorInput["camera"]["status"] = shown?.failed ? "error" : shown?.boxes ? "ok" : "stale";
   const wet = shown?.boxes ? shown.boxes.length > 0 : null;
   const result = doorVerdict({ camera: { wetGround: wet, status }, weather });
+  // The operator's OK covers the frame it was given for; a new check asks again.
+  const [okFor, setOkFor] = useState<string | null>(null);
+  const approved = result.operatorCheck !== null && okFor === `${frame}|${status}`;
+  const out = result.verdict === "GO" && (!result.operatorCheck || approved);
   const f = FRAMES[frame];
 
   const check = (key: keyof typeof FRAMES) => {
@@ -89,7 +93,7 @@ export function DockDoor({ checks, source }: { checks: Check[]; source: string }
       <CardContent className="flex flex-1 flex-col gap-4">
         {/* Scene on top, full width; the call and its evidence underneath. */}
         <div className="relative aspect-[16/7] overflow-hidden rounded-lg bg-[#1f1f1f] ring-1 ring-border">
-          <DockScene go={result.verdict === "GO"} rainNow={weather.observedRain} rainSoon={weather.forecastRain} wetGround={wet} />
+          <DockScene go={out} rainNow={weather.observedRain} rainSoon={weather.forecastRain} wetGround={wet} />
           <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/70 p-0.5 backdrop-blur">
             <Button size="sm" variant={frame === "dry" ? "secondary" : "ghost"} disabled={busy} onClick={() => check("dry")}>
               Door cam: dry
@@ -103,21 +107,27 @@ export function DockDoor({ checks, source }: { checks: Check[]; source: string }
           <VerdictBlock
             verdict={result.verdict}
             caption={
-              result.verdict === "GO"
-                ? `Door clear and no rain: Spot can walk out ${when === "Now" ? "now" : `at ${when}`}`
-                : wet
-                  ? `Puddles at the door${weather.observedRain || weather.forecastRain ? ", and rain due" : ""}`
-                  : weather.observedRain || weather.forecastRain
-                    ? `${wet === false ? "Door is clear, but " : ""}rain ${weather.observedRain ? (when === "Now" ? "now" : `at ${when}`) : "in the hour after"} holds Spot`
-                    : "Check the door camera first"
+              result.verdict === "HOLD"
+                ? `${weather.observedRain ? `Rain ${when === "Now" ? "now" : `at ${when}`}` : weather.forecastRain ? "Rain in the hour after" : "Weather unknown"} holds Spot inside`
+                : out
+                  ? `Spot can walk out ${when === "Now" ? "now" : `at ${when}`}${approved ? ", operator OK given" : ""}`
+                  : "Weather is fine. Waiting for the operator's OK"
             }
           />
           <div className="space-y-2">
           <div className="keep-grid grid grid-cols-3 gap-2">
-            <Tile Icon={Camera} label="Door" value={status === "ok" ? (wet ? "Puddles" : "Clear") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
-            <Tile Icon={CloudRain} label={when === "Now" ? "Rain now" : `Rain at ${when}`} value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
-            <Tile Icon={Timer} label={when === "Now" ? "Next hour" : "Hour after"} value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />
+            <Tile Icon={CloudRain} label={when === "Now" ? "Weather now" : `Weather at ${when}`} value={word(weather.observedRain)} ok={weather.observedRain === false} />
+            <Tile Icon={Timer} label="Hour after" value={word(weather.forecastRain)} ok={weather.forecastRain === false} />
+            <Tile Icon={Camera} label="Door" value={status === "ok" ? (wet ? (approved ? "OK given" : "Puddles") : "Clear") : busy ? "Checking" : "Not checked"} ok={status === "ok" && (!wet || approved)} />
           </div>
+          {result.operatorCheck && !approved && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-hold/10 px-3 py-2 text-sm ring-1 ring-hold/40">
+              <span className="min-w-0 flex-1">{result.operatorCheck}</span>
+              <Button size="sm" disabled={busy || status !== "ok"} onClick={() => setOkFor(`${frame}|${status}`)}>
+                Approve
+              </Button>
+            </div>
+          )}
           {/* The real door-camera frame, with the water model's boxes. */}
           <div className="flex items-center gap-3 rounded-lg bg-black/40 p-2 ring-1 ring-white/[0.06]">
             <div className={cn("relative h-20 shrink-0 overflow-hidden rounded", f.w === f.h ? "aspect-square" : "aspect-video")}>
@@ -145,7 +155,7 @@ export function DockDoor({ checks, source }: { checks: Check[]; source: string }
           </div>
           </div>
           <Why>
-            <p>Rule: rain now, rain in the next hour, wet ground at the door, or anything unknown holds Spot inside.</p>
+            <p>Rule: rain now, rain in the hour after, or unknown weather holds Spot inside. Water at the door does not hold: the operator OKs the route around it.</p>
             <p>Weather: {source}.</p>
             <p>
               Ground: water detector{" "}

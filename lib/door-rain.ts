@@ -19,16 +19,13 @@ export type DoorInput = {
   camera: { wetGround: boolean | null; status: "ok" | "stale" | "error" };
   weather: { observedRain: boolean | null; forecastRain: boolean | null };
 };
-export type DoorVerdict = { verdict: "GO" | "HOLD"; reasons: string[] };
+// HOLD is for weather only. Puddles (or an unchecked door camera) need an operator OK, not a hold: Spot can route around water.
+export type DoorVerdict = { verdict: "GO" | "HOLD"; reasons: string[]; operatorCheck: string | null };
 
-/** GO only when every source is known and dry. Rain now, rain in the next hour, wet ground at the door, or any unknown holds. */
+/** Rain now, rain in the next hour, or unknown weather holds Spot. Water at the door asks the operator instead. */
 export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   const hold: string[] = [];
   const ok: string[] = [];
-
-  if (camera.status !== "ok" || camera.wetGround === null) hold.push("Ground at the door unknown (camera not checked)");
-  else if (camera.wetGround) hold.push("Wet ground at the door (water model)");
-  else ok.push("Ground at the door looks dry");
 
   if (weather.observedRain === null) hold.push("Rain now unknown");
   else if (weather.observedRain) hold.push("Rain now at the site");
@@ -38,7 +35,11 @@ export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   else if (weather.forecastRain) hold.push("Rain forecast for the round");
   else ok.push("No rain forecast");
 
-  return hold.length ? { verdict: "HOLD", reasons: hold } : { verdict: "GO", reasons: ok };
+  const operatorCheck =
+    camera.status !== "ok" || camera.wetGround === null ? "Door camera not checked: operator looks at the door" : camera.wetGround ? "Puddles at the door: operator OKs the route around them" : null;
+  if (!operatorCheck) ok.push("Door camera sees no water");
+
+  return hold.length ? { verdict: "HOLD", reasons: hold, operatorCheck } : { verdict: "GO", reasons: ok, operatorCheck };
 }
 
 type Classifier = (image: string) => Promise<{ label: string; score: number }[]>;

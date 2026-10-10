@@ -7,14 +7,17 @@ const dry: DoorInput = { camera: { wetGround: false, status: "ok" }, weather: { 
 const v = (camera: Partial<DoorInput["camera"]>, weather: Partial<DoorInput["weather"]> = {}) =>
   doorVerdict({ camera: { ...dry.camera, ...camera }, weather: { ...dry.weather, ...weather } });
 
-test("all sources known and dry is GO", () => {
+test("all sources known and dry is GO with no operator check", () => {
   const r = doorVerdict(dry);
   assert.equal(r.verdict, "GO");
+  assert.equal(r.operatorCheck, null);
   assert.equal(r.reasons.length, 3);
 });
 
-test("wet ground at the door holds", () => {
-  assert.equal(v({ wetGround: true }).verdict, "HOLD");
+test("puddles at the door ask the operator; they do not hold", () => {
+  const r = v({ wetGround: true });
+  assert.equal(r.verdict, "GO");
+  assert.match(r.operatorCheck ?? "", /Puddles/);
 });
 
 test("advisory rain classifier: fp32 scores map onto the q8 scale at the threshold", async () => {
@@ -30,9 +33,12 @@ test("observed rain or forecast rain holds on its own", () => {
 });
 
 test("any unknown evidence holds", () => {
-  assert.equal(v({ wetGround: null }).verdict, "HOLD");
-  assert.equal(v({ status: "stale" }).verdict, "HOLD");
-  assert.equal(v({ status: "error" }).verdict, "HOLD");
+  // An unchecked or failed camera is not weather: it asks the operator to look instead of holding.
+  for (const c of [{ wetGround: null }, { status: "stale" as const }, { status: "error" as const }]) {
+    const r = v(c);
+    assert.equal(r.verdict, "GO");
+    assert.ok(r.operatorCheck);
+  }
   assert.equal(v({}, { observedRain: null }).verdict, "HOLD");
   assert.equal(v({}, { forecastRain: null }).verdict, "HOLD");
 });
@@ -44,9 +50,11 @@ test("dry ground never turns a weather HOLD into GO", () => {
   assert.equal(v({ wetGround: false }, { observedRain: true, forecastRain: null }).verdict, "HOLD");
 });
 
-test("every HOLD cause is listed", () => {
+test("every weather HOLD cause is listed, and puddles still ask the operator", () => {
   const r = v({ wetGround: true }, { observedRain: true, forecastRain: null });
-  assert.equal(r.reasons.length, 3);
+  assert.equal(r.verdict, "HOLD");
+  assert.equal(r.reasons.length, 2);
+  assert.ok(r.operatorCheck);
 });
 
 test("doorWeather: no feed or no step in a window is unknown", async () => {
