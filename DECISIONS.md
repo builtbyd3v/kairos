@@ -4,7 +4,7 @@ Each entry: what we chose, what we rejected, and why.
 
 ## Product
 1. **Data truth first, weather as the gate.** NextEra's written brief asks for insight from mission data, and the kit has no weather. Their engineer asked for weather in person. We made weather one input to a per-round verdict built on the kit's real health data. Rejected: a weather-only dashboard, which ignores the scored brief.
-2. **Operator confirms, the system advises.** Every verdict has Confirm and Override buttons, and both are logged. Rejected: automatic recall, because a NextEra operator owns go/no-go and a wrong automatic recall on stairs is its own hazard. Autowalk missions keep running on the robot when the link drops (Boston Dynamics Autowalk docs; confirmed at the NextEra workshop), so a recall has to be sent while Spot is still in coverage.
+2. **Operator confirms, the system advises.** Every verdict has Confirm and Override buttons, and both are logged. Rejected: automatic recall, because a NextEra operator owns go/no-go and a wrong automatic recall on stairs is its own hazard. Depending on the comms-loss policy and timeout, an Autowalk mission can keep running on the robot when the link drops (Boston Dynamics network configuration docs; confirmed at the NextEra workshop), so a recall has to be sent while Spot is still in coverage.
 3. **Weather only gates outdoor routes.** An indoor round stays GO in a storm. Rejected: holding every round on any alert, which would cry wolf and lose operator trust.
 4. **Unknown is never green.** Missing or stale weather holds outdoor rounds. Rejected: falling back to GO.
 

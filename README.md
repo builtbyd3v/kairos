@@ -1,6 +1,6 @@
 # Kairos
 
-**Spot's dispatcher.** Before every inspection round, Kairos combines Boston Dynamics Spot's real mission health with the weather and says **GO**, **HOLD** or **RECALL**, with a plain reason and the rule behind it. While Spot is out, it keeps watching, and it recalls Spot when a storm arrives.
+**Spot's dispatcher.** Before every inspection round, Kairos combines Boston Dynamics Spot's mission health (from NextEra's synthetic kit) with the weather and says **GO**, **HOLD** or **RECALL**, with a plain reason and the rule behind it. While Spot is out, it keeps watching, and it recommends a recall when a storm arrives; the operator confirms, and the Orbit calls are simulated.
 
 Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
 
@@ -10,7 +10,7 @@ Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Manag
 
 ## Why
 - **Mission status hides failures.** In NextEra's challenge data, 26 of 27 missions report COMPLETED, yet 46 inspections inside them failed, and 14 of 15 serious anomalies sit inside "successful" missions.
-- **Spot doesn't know the weather.** Spot is rated IP54 (splashes, light rain). Orbit has a weather scheduler that can block a launch, and it can send Spot back to the dock, but nothing decides *when* to call Spot home mid-round from lightning, wind, heat and battery together. Autowalk missions keep running when the radio link drops, so that call has to be made early.
+- **Spot doesn't know the weather.** Spot is rated IP54 (splashes, light rain). Orbit has a weather scheduler that can block a launch, and it can send Spot back to the dock, but nothing decides *when* to call Spot home mid-round from lightning, wind, heat and battery together. Depending on the comms-loss policy and timeout, an Autowalk mission can keep running when the radio link drops, so that call has to be made early.
 - **Water on the floor.** NextEra's Spot engineers told us small puddles and spills on the route are a real problem. No forecast can see the floor.
 
 ## What it does

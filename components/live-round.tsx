@@ -59,7 +59,8 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
 };
 // note: the kit has no camera frames, so the floor check runs on held-out sample images.
 const FRAMES = { dry: "/samples/test-dry-public-space.jpg", wet: "/samples/test-wet-public-space.jpg" };
-const FRAME_LICENSE = "CC0 (Kaggle public spaces)";
+// note: per-file source was not recorded when v1's test images were copied; both v1 sources are open licenses.
+const FRAME_LICENSE = "v1 held-out test image (Kaggle CC0 or Mendeley CC BY 4.0; per-file source not recorded)";
 // note: v1 model revision on the Hub; the v2 detector brings its own.
 const FLOOR_REVISION = "942bd9c786bcb4b0e3b1521c6763a88a66134e6e";
 
@@ -430,8 +431,9 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                           <p className="label-caps text-helper">Calls Kairos would make · SIMULATED, not sent</p>
                           <ul className="space-y-1 font-mono text-[11px] text-muted-foreground">
                             <li>Spot: CORE I/O Network Compute Bridge worker returns the water detection</li>
+                            <li>Spot: Autowalk Area Callback at {arrival.locationId} holds the walk until the operator answers</li>
                             <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {arrival.locationId}</li>
-                            <li>Orbit: {ORBIT_CALL.HOLD}</li>
+                            <li>Orbit: {ORBIT_CALL.HOLD}, so the next round does not launch</li>
                           </ul>
                         </div>
                       )}

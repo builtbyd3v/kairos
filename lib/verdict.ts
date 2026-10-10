@@ -154,6 +154,9 @@ export function visionReason(v: Vision): Reason {
   if (v.status !== "ok")
     return { verdict: "HOLD", text: `Floor at ${v.waypoint} is unknown: water model ${v.status === "pending" ? "still checking" : v.status}`, source: "Dispatcher rule: unknown is never GO" };
   const hit = v.boxes.filter(inPath).sort((a, b) => b.score - a.score)[0];
+  // A whole-frame box means an image classifier (v1): it says the frame looks wet, not where the water is.
+  if (hit && hit.w * hit.h > 0.99)
+    return { verdict: "HOLD", text: `Possible water at ${v.waypoint} (p=${hit.score.toFixed(2)}); location and size unknown with an image classifier: hold at this waypoint`, source };
   if (hit) return { verdict: "HOLD", text: `Water in Spot's path at ${v.waypoint} (score ${hit.score.toFixed(2)}, ${(hit.w * hit.h * 100).toFixed(1)}% of frame): hold at this waypoint`, source };
   if (v.boxes.length) return { verdict: "GO", text: `Water seen at ${v.waypoint}, outside Spot's path; check it after the round`, source };
   return { verdict: "GO", text: `No water seen at ${v.waypoint} (advisory only)`, source };
@@ -163,5 +166,5 @@ export function visionReason(v: Vision): Reason {
 export const ORBIT_CALL: Record<Verdict, string | null> = {
   GO: null,
   HOLD: "POST /api/v0/calendar/disable-enable (pause schedule)",
-  RECALL: "POST /api/v0/graph/send-robot then POST /api/v0/calendar/mission/dispatch (return to dock)",
+  RECALL: "POST /api/v0/graph/send-robot then POST /api/v0/calendar/mission/dispatch/{robot_nickname}?currentDriverId={driver_id} (return to dock)",
 };

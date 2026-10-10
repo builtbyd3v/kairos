@@ -34,8 +34,8 @@ console.log(`receipts backfilled: ${backfill.length}`);
 const V1 = { model_id: "builtbyd3v/spot-wetfloor-convnext-tiny", model_revision: "942bd9c786bcb4b0e3b1521c6763a88a66134e6e" };
 const KIT = "NextEra SPOT kit sample image (synthetic, hackathon use)";
 const DEMO = [
-  { frame_uri: "/samples/test-wet-public-space.jpg", frame_sha256: "dd4174af00f1cbc04524ddeb38faad9abf2f55ed34bcab55e0ead9ead18aa150", license: "CC0 (Kaggle public spaces)", score: 0.999, label: "confirm" },
-  { frame_uri: "/samples/test-wet-surface.jpg", frame_sha256: "ae2f55438365c3454c86cb4f318fafbcd324746e5fcead090563afcf6f2ca9bb", license: "CC BY 4.0 (Mendeley V4, Bhutad and Patil 2021)", score: 0.993, label: null },
+  { frame_uri: "/samples/test-wet-public-space.jpg", frame_sha256: "dd4174af00f1cbc04524ddeb38faad9abf2f55ed34bcab55e0ead9ead18aa150", license: "v1 held-out test image (Kaggle CC0 or Mendeley CC BY 4.0; per-file source not recorded)", score: 0.999, label: "confirm" },
+  { frame_uri: "/samples/test-wet-surface.jpg", frame_sha256: "ae2f55438365c3454c86cb4f318fafbcd324746e5fcead090563afcf6f2ca9bb", license: "v1 held-out test image (Kaggle CC0 or Mendeley CC BY 4.0; per-file source not recorded)", score: 0.993, label: null },
   { frame_uri: "/inspections/gauge_pressure_01.jpg", frame_sha256: "4f3ee405cb1a037bf97af40b6aebcd8eb4a4e5e49cde13513280aaf53113b41c", license: KIT, score: 0.506, label: "reject" },
   { frame_uri: "/inspections/thermal_pump_bearing_01.jpg", frame_sha256: "4d6bac3856971b17c285a7fc93deaa495a26d5d5effeeff9cfd44e6abe36f13c", license: KIT, score: 0.653, label: "reject" },
 ].map((d) => ({ ...d, ...V1, waypoint: null, source: "seed", box_x: 0, box_y: 0, box_w: 1, box_h: 1, area_frac: 1, rules_version: "seed", seeded: true }));
