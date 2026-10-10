@@ -93,7 +93,7 @@ export function decide(
     const cold = window.map((s) => s.tempC).filter((v): v is number => v !== null).reduce((a, b) => Math.min(a, b), Infinity);
 
     if (rain !== null && rain > LIMITS.moderateRainMmPerHour)
-      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61. Orbit's launch gate checks a forecast amount (up to 5 mm); this is a rate" });
+      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61. Orbit's launch gate checks the rain forecast; this checks the rain rate until Spot docks" });
     else if (rain !== null && rain > 0)
       reasons.push({ verdict: "GO", text: `Light rain (${rain.toFixed(1)} mm/h) is within Spot's rating, but expect wet, slippery floors after`, source: "Spot guide p.21-22" });
     const feed = weather.source ?? "NWS forecast grid";

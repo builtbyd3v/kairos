@@ -69,7 +69,7 @@ Every rule is in `lib/verdict.ts` and cited in the UI.
 Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind v4 · shadcn/ui · Neon Postgres (`@neondatabase/serverless`) · Hugging Face transformers.js + a fine-tuned ConvNeXt-Tiny · Vercel.
 
 ## Model
-Fine-tuned `facebook/convnext-tiny-224` on Mendeley water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Held-out test (752 images): 99.6% accuracy vs 71.8% for zero-shot CLIP. **Honest number:** 92.7% wet recall on single-source images, because the full score is partly inflated by dataset source. It flagged 2 of 6 dry NextEra kit images as wet. Details: `docs/model/RESULTS.md`.
+Fine-tuned `facebook/convnext-tiny-224` on Mendeley water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Held-out test (752 images): 99.6% accuracy vs 71.8% for zero-shot CLIP. **Honest number:** 90.2% wet recall (37 of 41) for the int8 model that runs in the browser on single-source images (92.7% at full precision), because the full score is partly inflated by dataset source. It flagged 2 of 6 dry NextEra kit images as wet. Details: `docs/model/RESULTS.md`.
 
 ## Run it
 ```bash

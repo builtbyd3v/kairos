@@ -51,8 +51,9 @@ export default function FloorCheckPage() {
               </tbody>
             </table>
             <p>
-              <span className="font-medium">Honest number: 92.7% wet recall</span> on images from a single source (41 wet, 2 scenes). The full score is partly
-              inflated because dry and wet images mostly come from different datasets.
+              <span className="font-medium">Honest number: 90.2% wet recall (37 of 41)</span> for the int8 model that runs in this browser, on images from a
+              single source (2 scenes). Full precision gets 92.7% (38 of 41). The full score is partly inflated because dry and wet images mostly come from
+              different datasets.
             </p>
             <p className="text-muted-foreground">
               Off-domain: in our Python evaluation it flagged 2 of 6 dry NextEra kit images as wet (gauge p=0.51, thermal p=0.63). In the browser the gauge
@@ -64,7 +65,11 @@ export default function FloorCheckPage() {
               <a className="text-link underline-offset-4 hover:underline" href="https://huggingface.co/builtbyd3v/spot-wetfloor-convnext-tiny">
                 builtbyd3v/spot-wetfloor-convnext-tiny
               </a>
-              . Data: Mendeley water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Base model facebook/convnext-tiny-224 (Apache-2.0).
+              . Data:{" "}
+              <a className="text-link underline-offset-4 hover:underline" href="https://doi.org/10.17632/y6zyrnxbfm.4">
+                Bhutad and Patil, Mendeley Data V4
+              </a>{" "}
+              water/wet-surface images (CC BY 4.0) and a CC0 Kaggle public-spaces set. Base model facebook/convnext-tiny-224 (Apache-2.0).
             </p>
           </CardContent>
         </Card>

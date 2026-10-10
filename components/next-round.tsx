@@ -110,7 +110,15 @@ export function WeatherStrip({ weather }: { weather: RoundPlan["weather"] }) {
   return (
     <div>
       <p className="mb-2 font-mono text-[11px] text-muted-foreground">
-        Live · {SITE.name.split(" (")[0]} · NWS + Open-Meteo · updated {et(new Date(weather.fetchedAt), { hour: "numeric", minute: "2-digit" })} ET
+        Live · {SITE.name.split(" (")[0]} ·{" "}
+        <a className="underline-offset-4 hover:underline" href="https://www.weather.gov/documentation/services-web-api">
+          NWS
+        </a>{" "}
+        +{" "}
+        <a className="underline-offset-4 hover:underline" href="https://open-meteo.com">
+          Open-Meteo (CC BY 4.0)
+        </a>{" "}
+        · updated {et(new Date(weather.fetchedAt), { hour: "numeric", minute: "2-digit" })} ET
         {weather.alerts.length > 0 && <> · active: {weather.alerts.join(", ")}</>}
       </p>
       <div className="panel-inset grid grid-cols-6 gap-1 p-1.5 text-center font-mono text-xs tabular-nums">
