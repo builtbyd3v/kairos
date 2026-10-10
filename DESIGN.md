@@ -1,4 +1,4 @@
-# Dogwatch design
+# Kairos design
 
 ## TL;DR
 - Dark by default. Accent is samehere.dev blue `#4f9fe8`. Neutrals are warm charcoal, not blue-black.

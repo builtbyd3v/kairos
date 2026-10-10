@@ -7,7 +7,7 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Dogwatch",
+  title: "Kairos",
   description: "Readiness board for Boston Dynamics Spot inspection rounds: true mission status plus weather go / hold / recall.",
 };
 

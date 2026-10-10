@@ -57,7 +57,7 @@
 }
 
 :root {
-    /* Dogwatch, dark by default. Warm charcoal neutrals, samehere.dev blue accent (#4f9fe8). All text pairs WCAG AA. See DESIGN.md. */
+    /* Kairos, dark by default. Warm charcoal neutrals, samehere.dev blue accent (#4f9fe8). All text pairs WCAG AA. See DESIGN.md. */
     --backdrop: #0f0f0f;
     --background: #1b1b1b;
     --foreground: #f5f5f4;

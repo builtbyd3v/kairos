@@ -1,6 +1,6 @@
-# Dogwatch
+# Kairos
 
-**Spot's dispatcher.** Before every inspection round, Dogwatch combines Boston Dynamics Spot's real mission health with the weather and says **GO**, **HOLD** or **RECALL**, with a plain reason and the rule behind it. While Spot is out, it keeps watching, and it recalls Spot when a storm arrives.
+**Spot's dispatcher.** Before every inspection round, Kairos combines Boston Dynamics Spot's real mission health with the weather and says **GO**, **HOLD** or **RECALL**, with a plain reason and the rule behind it. While Spot is out, it keeps watching, and it recalls Spot when a storm arrives.
 
 Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
 

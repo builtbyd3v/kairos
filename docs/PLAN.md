@@ -1,4 +1,4 @@
-# Dogwatch: plan
+# Kairos: plan
 
 ## TL;DR
 - **Idea (locked):** Spot's dispatcher. Before every inspection round, it combines Spot's real health (from NextEra's mission data) with the weather and says GO, HOLD or RECALL, with a plain reason and the rule behind it.

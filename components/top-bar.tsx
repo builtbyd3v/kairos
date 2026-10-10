@@ -35,7 +35,7 @@ export function TopBar({ search, openAnomalies, site }: { search: ReactNode; ope
   return (
     <div className="flex items-center gap-3 border-b border-white/[0.06] px-8 py-3 print:hidden">
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
-        <span className="text-muted-foreground">Dogwatch</span>
+        <span className="text-muted-foreground">Kairos</span>
         {crumbs.map((c, i) => (
           <span key={c.href} className="flex items-center gap-1.5">
             <ChevronRight aria-hidden className="size-3.5 text-helper" />
