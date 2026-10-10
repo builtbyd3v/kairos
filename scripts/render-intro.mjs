@@ -20,9 +20,9 @@ const TOTAL = 45.75;
 
 // Narration: one short line per moment, start times in clock seconds.
 const LINES = [
-  [0.4, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
-  [7.2, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
-  [13.0, "It also watches live radar around Saint Lucie while the round is running."],
+  [0.3, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
+  [7.5, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
+  [13.4, "It also watches live radar around Saint Lucie while the round is running."],
   [19.2, "When the weather turns mid-round, Kairos recalls Spot to the dock."],
   [28.8, "Here is how it works."],
   [31.9, "The water model runs in the browser, the Kairos dashboard plugs into Orbit, and every call is logged in Neon."],
@@ -34,8 +34,8 @@ const RAIN = [[21.0, 31.5]];
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 const seconds = (file) => Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]));
 
-// ElevenLabs premade voice: deep, calm American narrator.
-const ELEVEN = { name: "Brian", id: "nPczCjzI2devNBz1zQrb", model: "eleven_multilingual_v2" };
+// ElevenLabs voice, the user's pick from their own voices: "Misa - Sweet & Calm Conversations".
+const ELEVEN = { name: "Misa", id: "XlDdozLmuTofIxK4BjPD", model: "eleven_multilingual_v2" };
 
 async function elevenLabs(text, file) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN.id}?output_format=mp3_44100_128`, {
@@ -73,7 +73,7 @@ async function makeAudio() {
     const next = LINES[i + 1]?.[0] ?? TOTAL;
     if (end > next) console.warn(`line ${i + 1} ends at ${end.toFixed(2)} s, after the next cue at ${next} s`);
     inputs.push("-i", file);
-    chains.push(`[${i}:a]aresample=48000,aformat=channel_layouts=mono,volume=2,adelay=${Math.round(at * 1000)}[v${i}]`);
+    chains.push(`[${i}:a]aresample=48000,aformat=channel_layouts=mono,volume=2.5,adelay=${Math.round(at * 1000)}[v${i}]`);
   }
   RAIN.forEach(([from, to], j) => {
     const d = to - from;
