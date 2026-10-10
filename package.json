@@ -12,7 +12,9 @@
     "test": "node --test lib/*.test.mts",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mts",
     "db:score": "node --env-file=.env.local scripts/eval-branch.mts",
-    "db:branch-check": "node --env-file=.env.local scripts/neon-branch-check.mjs"
+    "db:branch-check": "node --env-file=.env.local scripts/neon-branch-check.mjs",
+    "db:snapshots": "node --env-file=.env.local scripts/snapshots.mts",
+    "db:sandbox-check": "node --env-file=.env.local scripts/visitor-sandbox-check.mts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.1",

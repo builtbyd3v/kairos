@@ -1,6 +1,7 @@
 "use server";
 
 import { neon } from "@neondatabase/serverless";
+import { readDb, writeDb } from "./operator.ts";
 import type { Verdict } from "./verdict";
 
 // Water evidence in Neon: every detection is a row, operators confirm or reject it, and eval scores come from a frozen branch.
@@ -75,8 +76,10 @@ function text(v: unknown, field: string, max: number, pattern?: RegExp): string 
   return typeof v === "string" && v.trim() && v.length <= max && (!pattern || pattern.test(v)) ? v.trim() : fail(field);
 }
 
-/** Saves one water detection and returns its id. Server-only write; the caller passes validated-or-not input and this checks every field. */
-// note: no auth, same as decisions and reviews. Fine for a demo console, not for a plant.
+/**
+ * Saves one water detection and returns its id. Server-only write; the caller passes validated-or-not input and this checks every field.
+ * Operator: main. Visitor: their own Neon branch (lib/operator.ts). No branch: throws the refusal, never writes main.
+ */
 export async function recordDetection(input: DetectionInput): Promise<{ id: number }> {
   if (typeof input !== "object" || input === null || typeof input.box !== "object" || input.box === null) fail("input");
   const { x, y, w, h } = input.box;
@@ -97,11 +100,14 @@ export async function recordDetection(input: DetectionInput): Promise<{ id: numb
     score: unit(input.score, "score"),
     areaFrac: unit(input.areaFrac, "areaFrac"),
   };
+  const target = await writeDb(true);
+  if ("refused" in target) throw new Error(target.refused);
+  const sql = target.sql;
   // Same frame, model revision and waypoint = same evidence: reuse the row, so replays of a round do not inflate n.
-  const [existing] = await db()`SELECT id::int AS id FROM detections WHERE frame_sha256 = ${row.frameSha256} AND model_revision = ${row.modelRevision}
+  const [existing] = await sql`SELECT id::int AS id FROM detections WHERE frame_sha256 = ${row.frameSha256} AND model_revision = ${row.modelRevision}
                                  AND waypoint IS NOT DISTINCT FROM ${row.waypoint} AND source = ${row.source} ORDER BY id LIMIT 1`;
   if (existing) return { id: existing.id as number };
-  const [{ id }] = await db()`INSERT INTO detections (frame_uri, frame_sha256, source, license, waypoint, model_id, model_revision, score,
+  const [{ id }] = await sql`INSERT INTO detections (frame_uri, frame_sha256, source, license, waypoint, model_id, model_revision, score,
                                 box_x, box_y, box_w, box_h, area_frac, weather, rules_version, verdict)
     VALUES (${row.frameUri}, ${row.frameSha256}, ${row.source}, ${row.license}, ${row.waypoint}, ${row.modelId}, ${row.modelRevision}, ${row.score},
             ${box.x}, ${box.y}, ${box.w}, ${box.h}, ${row.areaFrac}, ${weather}, ${row.rulesVersion}, ${input.verdict})
@@ -109,25 +115,30 @@ export async function recordDetection(input: DetectionInput): Promise<{ id: numb
   return { id: id as number };
 }
 
-/** Confirm/Reject form action. Labels are append-only; the latest one per detection counts. */
-export async function labelDetection(form: FormData) {
+/** Confirm/Reject action. Labels are append-only; the latest one per detection counts. Returns the refusal message when nothing was saved. */
+export async function labelDetection(form: FormData): Promise<{ refused?: string }> {
   const raw = String(form.get("detectionId") ?? "");
   const id = /^\d{1,12}$/.test(raw) ? Number(raw) : fail("detectionId");
   const label = String(form.get("label")) as Label;
   if (!LABELS.includes(label)) fail("label");
   const operator = text(String(form.get("operator") ?? "operator"), "operator", 40);
   const note = form.get("note") ? String(form.get("note")).slice(0, 280) : null;
-  const sql = db();
+  const target = await writeDb(true);
+  if ("refused" in target) return target;
+  const sql = target.sql;
   const [{ n }] = await sql`SELECT count(*)::int AS n FROM detections WHERE id = ${id}`;
   if (n === 0) fail("detectionId");
   await sql`INSERT INTO detection_labels (detection_id, label, operator, note) VALUES (${id}, ${label}, ${operator}, ${note})`;
   // note: imported here so node --test can load this file (plain Node cannot resolve the extensionless next/cache).
   (await import("next/cache")).refresh();
+  return {};
 }
 
-/** Newest detections first, each with its current label. */
+/** Newest detections first, each with its current label. A visitor reads their own branch. */
 export async function listDetections(limit = 50): Promise<EvidenceRow[]> {
-  return (await db()`SELECT d.id::int AS id, d.created_at::text AS created_at, d.frame_uri, d.source, d.license, d.waypoint, d.model_id, d.model_revision,
+  // note: a separate const, because the production build drops the parens in (await readDb())`...` and tags the promise.
+  const sql = await readDb();
+  return (await sql`SELECT d.id::int AS id, d.created_at::text AS created_at, d.frame_uri, d.source, d.license, d.waypoint, d.model_id, d.model_revision,
                             d.score, d.box_x, d.box_y, d.box_w, d.box_h, d.area_frac, d.verdict, d.seeded, l.label, l.operator, l.created_at::text AS labeled_at
                      FROM detections d
                      LEFT JOIN LATERAL (SELECT label, operator, created_at FROM detection_labels WHERE detection_id = d.id ORDER BY id DESC LIMIT 1) l ON true
