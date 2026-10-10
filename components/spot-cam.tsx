@@ -86,7 +86,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
           <span>
             capture {idx + 1}/{total}
           </span>
-          <span>{MODEL} q8</span>
+          <span>{MODEL}</span>
           {result && result !== "error" && <span>{result.ms} ms</span>}
           <span
             className={cn(
