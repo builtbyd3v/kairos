@@ -2,34 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ClipboardList, CloudLightning, FileText, Droplets, History, House, MapPin, Radio, ListChecks, Route } from "lucide-react";
+import { CloudLightning, Droplets, History, House, Radio, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const GROUPS = [
   {
     label: "Operate",
     items: [
-      { href: "/", label: "Today", Icon: House },
+      { href: "/", label: "Launch", Icon: House },
       { href: "/live", label: "Live round", Icon: Radio },
-      { href: "/anomalies", label: "Anomalies", Icon: ListChecks },
-      { href: "/missions", label: "Missions", Icon: Route },
-      { href: "/waypoints", label: "Waypoints", Icon: MapPin },
-      { href: "/work-orders", label: "Work orders", Icon: ClipboardList },
+      { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
+      { href: "/floor-check", label: "Water model", Icon: Droplets },
     ],
   },
+  // note: Orbit already covers anomalies, missions, waypoints, work orders, insights and shift handoff. Those pages stay reachable by URL, off the nav.
   {
-    label: "Analyze",
-    items: [
-      { href: "/insights", label: "Insights", Icon: BarChart3 },
-      { href: "/brief", label: "Shift handoff", Icon: FileText },
-      { href: "/review", label: "Incident review", Icon: History },
-    ],
-  },
-  {
-    label: "Tools",
+    label: "Drills",
     items: [
       { href: "/replay", label: "Storm drill", Icon: CloudLightning },
-      { href: "/floor-check", label: "Floor check", Icon: Droplets },
+      { href: "/review", label: "Incident review", Icon: History },
     ],
   },
 ];

@@ -66,16 +66,11 @@ async function Palette() {
   const loc = new Map(kit.locations.map((l) => [l.id, l.name]));
   const items: PaletteItem[] = [
     ...[
-      ["Today", "/"],
+      ["Launch", "/"],
       ["Live round", "/live"],
-      ["Anomalies", "/anomalies"],
-      ["Missions", "/missions"],
-      ["Waypoints", "/waypoints"],
-      ["Work orders", "/work-orders"],
-      ["Insights", "/insights"],
+      ["Evidence", "/evidence"],
+      ["Water model", "/floor-check"],
       ["Storm drill", "/replay"],
-      ["Floor check", "/floor-check"],
-      ["Shift handoff", "/brief"],
       ["Incident review", "/review"],
     ].map(([label, href]) => ({ label, hint: "", href, group: "Page" })),
     ...kit.missions.map((m) => ({ label: m.id, hint: `${m.start.replace("T", " ").slice(5, 16)} · ${m.config} · ${m.status}`, href: `/missions/${m.id}`, group: "Mission" })),

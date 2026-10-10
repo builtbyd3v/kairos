@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, House, ListChecks, Radio, Route } from "lucide-react";
+import { CloudLightning, Droplets, House, Radio, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/", label: "Today", Icon: House },
+  { href: "/", label: "Launch", Icon: House },
   { href: "/live", label: "Live", Icon: Radio },
-  { href: "/anomalies", label: "Anomalies", Icon: ListChecks },
-  { href: "/missions", label: "Missions", Icon: Route },
-  { href: "/insights", label: "Insights", Icon: BarChart3 },
+  { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
+  { href: "/floor-check", label: "Water", Icon: Droplets },
+  { href: "/replay", label: "Drill", Icon: CloudLightning },
 ];
 
 // Phone layout: the sidebar becomes a bottom tab bar.

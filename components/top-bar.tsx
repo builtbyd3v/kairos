@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { Bell, ChevronRight, Clock } from "lucide-react";
 
 const NAMES: Record<string, string> = {
-  "": "Today",
+  "": "Launch",
+  evidence: "Evidence",
   live: "Live round",
   anomalies: "Anomalies",
   missions: "Missions",
@@ -15,7 +16,7 @@ const NAMES: Record<string, string> = {
   insights: "Insights",
   brief: "Shift handoff",
   replay: "Storm drill",
-  "floor-check": "Floor check",
+  "floor-check": "Water model",
 };
 
 // Top bar inside the app panel: breadcrumb, search, plant clock, alerts.
