@@ -72,7 +72,7 @@ StratifiedGroupKFold, 7 folds, seed 0, stratified on source+label. Fold 0 = test
 
 - The pyenv Python 3.13 venv has no `_lzma`, so `torchvision` and `transformers.Trainer` crash on import. Fix: a new venv on Homebrew Python 3.14 (`ml-venv314`). Augmentation is hand-rolled with PIL (no torchvision).
 - transformers 5.x removed `warmup_ratio`. `warmup_steps=0.1` now means 10% warmup.
-- ONNX export worked first try (opset 17, max logit diff vs PyTorch 5e-7). Only fp32; no quantized file.
+- ONNX export worked first try (opset 17, max logit diff vs PyTorch 5e-7). An int8 version (MatMul/Gemm only) was added later; see "Quantized ONNX" below.
 
 ## Reproduce
 
@@ -93,3 +93,30 @@ cd ml
 ../ml-venv314/bin/python -I src/export_onnx.py out/model "<any image>"
 hf upload builtbyd3v/spot-wetfloor-convnext-tiny out/model .
 ```
+
+## Quantized ONNX
+
+- Uploaded: `onnx/model_quantized.onnx`, 33.8 MB (fp32 is 111.4 MB). transformers.js loads it with `{ dtype: "q8" }`.
+- Method: onnxruntime 1.31 `quantize_dynamic`, uint8 weights, MatMul/Gemm only. Convs stay fp32 (ops: `MatMulInteger`, `DynamicQuantizeLinear`, no `ConvInteger`).
+- Gate: accuracy drop <= 1 point and same-source wet hits within 1 image of fp32. Passed.
+- Rejected: all-ops QUInt8 (28.2 MB) and all-ops QInt8 per-channel (28.4 MB). Both lost 2 same-source wet images (36/41).
+- Eval: onnxruntime CPU, same 752-image test split, preprocessing from `preprocessor_config.json` via `ConvNextImageProcessor`. Script: `ml/src/quantize_eval.py` (scratchpad).
+
+| Weights | Size | Accuracy (752) | Wet recall (752) | Same-source acc (469) | Same-source wet recall (41) | Dry false alarms |
+|---|---|---|---|---|---|---|
+| fp32 ONNX | 111.4 MB | 99.6% | 99.1% (321/324) | 99.4% | 92.7% (38/41) | 0 |
+| q8 MatMul-only (shipped) | 33.8 MB | 99.5% | 98.8% (320/324) | 99.1% | 90.2% (37/41) | 0 |
+| q8 all ops (rejected) | 28.2 MB | 99.2% | 98.1% (318/324) | 98.9% | 87.8% (36/41) | 0 |
+
+q8 flips 1 of 752 test predictions vs fp32 (one more missed same-source puddle). Max p(wet) change: 0.12.
+
+Kit images (all dry), p(wet):
+
+| File | fp32 | q8 | q8 call |
+|---|---|---|---|
+| acoustic_valve_01.jpg | 0.237 | 0.241 | dry |
+| gauge_pressure_01.jpg | 0.507 | 0.505 | **wet (false alarm, same as fp32)** |
+| pipe_gallery_01.jpg | 0.152 | 0.149 | dry |
+| thermal_pump_bearing_01.jpg | 0.626 | 0.652 | **wet (false alarm, same as fp32)** |
+| valve_detail_01.jpg | 0.212 | 0.213 | dry |
+| visual_pump_motor_01.jpg | 0.095 | 0.094 | dry |

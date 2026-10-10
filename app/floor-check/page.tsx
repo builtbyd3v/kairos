@@ -33,7 +33,7 @@ export default function FloorCheckPage() {
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>How good is it?</CardTitle>
-            <CardDescription>752 held-out images (324 wet), 95% CIs in the model card</CardDescription>
+            <CardDescription>752 held-out images (324 wet), 95% CIs in the model card. The browser loads a 34 MB int8 version (99.5% accuracy).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <table className="w-full text-left">
@@ -59,8 +59,9 @@ export default function FloorCheckPage() {
               inflated because dry and wet images mostly come from different datasets.
             </p>
             <p className="text-muted-foreground">
-              Off-domain: it flagged 2 of 6 dry NextEra kit images as wet (gauge p=0.51, thermal p=0.63). Trained on public street scenes, not plant floors.
-              Next step: fine-tune on real Spot frames.
+              Off-domain: in our Python evaluation it flagged 2 of 6 dry NextEra kit images as wet (gauge p=0.51, thermal p=0.63). In the browser the gauge
+              lands just under 0.5 because image resizing differs slightly; the thermal image is still a false alarm. Trained on public street scenes, not plant
+              floors. Next step: fine-tune on real Spot frames.
             </p>
             <p className="text-xs text-helper">
               Model:{" "}
