@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { detectWater, WATER_MODEL_ID, WATER_THRESHOLD, type WaterDetection } from "@/lib/water-model";
+import { useEffect, useId, useState } from "react";
+import { detectWater, WATER_MODEL_ID, type WaterDetection } from "@/lib/water-model";
 import { inPath, laneAt, PATH, type Vision } from "@/lib/verdict";
 import { cn } from "@/lib/utils";
 
@@ -60,9 +60,10 @@ const K = 0.9; // bottom row = 1.5 m ahead
 const distance = (y: number) => K / Math.max(0.02, y - HORIZON);
 const LANE_M = 1.2; // ASSUMPTION: lane width on the ground
 
-/** The camera view: frame, lane, model boxes (solid), labeled truth (dashed), HUD, and a bird's-eye "path ahead". */
+/** The camera view: frame, heading glow, model boxes with real confidence, labeled truth as corner marks, HUD, and an "Around Spot" 360 radar. */
 export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<typeof useSpotCam>; frames: CamFrame[]; waypoint: string; total: number }) {
   const { frame, result, idx } = cam;
+  const gid = useId();
   const boxes = result && result !== "error" ? result.boxes : [];
   const blocked = boxes.some((d) => inPath(d.box));
   const standby = cam.vision === null;
@@ -70,9 +71,11 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
   const tone = state === "PATH CLEAR" ? "go" : state === "CHECKING" || standby ? "muted" : "recall";
   const square = frame.src.includes("approach");
   const [W, H] = square ? [100, 100] : [160, 90];
+  const lane = blocked ? "#ff6b6b" : "#2dd4bf";
+  const cx = ((PATH.topL + PATH.topR) / 2) * W;
 
   return (
-    <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_11rem]">
+    <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">
       <div className="overflow-hidden rounded-xl bg-black ring-1 ring-border">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 px-3 py-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
           <span className="text-foreground">SPOT CAM</span>
@@ -80,10 +83,8 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
           <span>
             capture {idx + 1}/{total}
           </span>
-          <span>
-            {MODEL} q8 · t {WATER_THRESHOLD}
-          </span>
-          {result && result !== "error" && <span>{result.ms} ms in browser</span>}
+          <span>{MODEL} q8</span>
+          {result && result !== "error" && <span>{result.ms} ms</span>}
           <span
             className={cn(
               "ml-auto rounded px-1.5 py-0.5 font-semibold",
@@ -95,29 +96,75 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
             {state}
           </span>
         </div>
-        <div className="relative flex aspect-video items-center justify-center">
+        <div className="relative flex aspect-video items-center justify-center overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element -- blurred fill behind a non-16:9 frame */}
+          <img src={frame.src} alt="" aria-hidden className="absolute inset-0 size-full scale-110 object-cover opacity-40 blur-2xl" />
           <div className={cn("relative h-full", square ? "aspect-square" : "aspect-video")}>
             {/* eslint-disable-next-line @next/next/no-img-element -- local capture frame; overlays need its exact box */}
             <img key={frame.src} src={frame.src} alt={`Capture ${idx + 1}`} className={cn("absolute inset-0 size-full object-fill transition-opacity", standby && "opacity-30")} />
             {/* Same aspect as the frame, so one unit is the same length on both axes and labels are not stretched. */}
             <svg viewBox={`0 0 ${W} ${H}`} aria-hidden className="absolute inset-0 size-full">
-              <polygon
-                points={`${PATH.topL * W},${PATH.top * H} ${PATH.topR * W},${PATH.top * H} ${PATH.botR * W},${H} ${PATH.botL * W},${H}`}
-                className={cn("transition-colors duration-300", blocked ? "fill-recall/20 stroke-recall" : "fill-[#2dd4bf]/12 stroke-[#2dd4bf]/70")}
-                strokeWidth="0.5"
-              />
-              {frame.truth.map(([x, y, w, h], i) => (
-                <rect key={`t${i}`} x={x * W} y={y * H} width={w * W} height={h * H} fill="none" stroke="#f4f4f4" strokeOpacity="0.85" strokeWidth="0.45" strokeDasharray="1.6 1.2" />
-              ))}
-              {boxes.map((d, i) => (
-                <g key={`m${i}`}>
-                  <rect x={d.box.x * W} y={d.box.y * H} width={d.box.w * W} height={d.box.h * H} rx="0.8" fill="none" stroke="#6ea8fe" strokeWidth="0.8" />
-                  <rect x={d.box.x * W} y={Math.max(0, d.box.y * H - 4.4)} width="19" height="4.4" rx="0.8" fill="#6ea8fe" />
-                  <text x={d.box.x * W + 1.2} y={Math.max(0, d.box.y * H - 4.4) + 3.2} fontSize="3.1" fontWeight="700" fill="#0b0d10" className="font-mono">
-                    water {d.score.toFixed(2)}
-                  </text>
-                </g>
-              ))}
+              <defs>
+                <linearGradient id={`${gid}-lane`} x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stopColor={lane} stopOpacity="0.32" />
+                  <stop offset={1 - PATH.top} stopColor={lane} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {!standby && (
+                <>
+                  {/* Heading glow: where Spot will walk, fading toward the horizon. */}
+                  <polygon
+                    points={`${PATH.topL * W},${PATH.top * H} ${PATH.topR * W},${PATH.top * H} ${PATH.botR * W},${H} ${PATH.botL * W},${H}`}
+                    fill={`url(#${gid}-lane)`}
+                  />
+                  {[0.9, 0.76, 0.63].map((y, i) => {
+                    const half = ((laneAt(y).r - laneAt(y).l) * W) / 7;
+                    return (
+                      <polyline
+                        key={y}
+                        points={`${cx - half},${y * H + half * 0.55} ${cx},${y * H} ${cx + half},${y * H + half * 0.55}`}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeOpacity={0.55 - i * 0.15}
+                        strokeWidth="0.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    );
+                  })}
+                </>
+              )}
+              {frame.truth.map(([x, y, w, h], i) => {
+                // Labeled truth as faint corner marks, so it never reads as a detection.
+                const c = Math.min(w * W, h * H) * 0.22;
+                const [x0, y0, x1, y1] = [x * W, y * H, (x + w) * W, (y + h) * H];
+                return (
+                  <path
+                    key={`t${i}`}
+                    d={`M${x0},${y0 + c}V${y0}H${x0 + c} M${x1 - c},${y0}H${x1}V${y0 + c} M${x1},${y1 - c}V${y1}H${x1 - c} M${x0 + c},${y1}H${x0}V${y1 - c}`}
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeOpacity="0.6"
+                    strokeWidth="0.5"
+                  />
+                );
+              })}
+              {boxes.map((d, i) => {
+                const [x, y, w, h] = [d.box.x * W, d.box.y * H, d.box.w * W, d.box.h * H];
+                const label = `water ${d.score.toFixed(2)}`;
+                const pillW = label.length * 1.86 + 2.6;
+                const pillY = y >= 5 ? y - 4.8 : y + 0.6;
+                return (
+                  <g key={`m${i}`}>
+                    <rect x={x} y={y} width={w} height={h} rx="1.4" fill="#6ea8fe" fillOpacity="0.08" stroke="#6ea8fe" strokeOpacity="0.25" strokeWidth="2.4" />
+                    <rect x={x} y={y} width={w} height={h} rx="1.4" fill="none" stroke="#8ab8ff" strokeWidth="0.75" />
+                    <rect x={x} y={pillY} width={pillW} height="4.2" rx="1.2" fill="#6ea8fe" />
+                    <text x={x + 1.3} y={pillY + 3.05} fontSize="3.1" fontWeight="700" fill="#0b0d10" className="font-mono">
+                      {label}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
             {standby && (
               <p className="absolute inset-0 grid place-items-center font-mono text-sm tracking-wide text-foreground">CAMERA STARTS AT {waypoint}</p>
@@ -126,17 +173,14 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-[11px] text-helper">
           <span>
-            <span className="text-[#6ea8fe]">■</span> model · <span className="text-foreground">┅</span> truth · <span className="text-[#2dd4bf]">■</span> path
+            <span className="text-[#8ab8ff]">▢</span> model + confidence · <span className="text-foreground">⌜⌟</span> labeled truth · <span className="text-[#2dd4bf]">▲</span> heading
           </span>
           <a className="ml-auto underline-offset-4 hover:underline" href={frame.url}>
             {frame.source === "scand" ? "Spot camera, UT Austin SCAND" : "Example photo, held out"} · {frame.license}
           </a>
         </div>
       </div>
-      <div className="space-y-3">
-        <BirdsEye boxes={boxes} />
-        <Compass boxes={boxes} />
-      </div>
+      <AroundSpot boxes={boxes} />
       <span className="sr-only" aria-live="polite">
         {state} at {waypoint}, capture {idx + 1} of {total}
       </span>
@@ -146,80 +190,71 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
   );
 }
 
-/** Top-down "path ahead": Spot at the bottom, the lane, and each detection's rough footprint on the ground. */
-function BirdsEye({ boxes }: { boxes: WaterDetection[] }) {
-  const PX_M = 22; // pixels per meter, 0 to 12 m ahead
-  const y0 = 290;
-  return (
-    <figure className="rounded-xl bg-black p-2 ring-1 ring-border">
-      <svg viewBox="0 0 200 300" className="w-full" role="img" aria-label="Path ahead, top-down">
-        <rect x="0" y="0" width="200" height="300" className="fill-[#0e1116]" />
-        <rect x={100 - (LANE_M / 2) * PX_M * 2} y="20" width={LANE_M * PX_M * 2} height={y0 - 20} className="fill-[#2dd4bf]/10 stroke-[#2dd4bf]/50" strokeDasharray="3 3" />
-        {[2, 4, 6, 8, 10, 12].map((m) => (
-          <g key={m}>
-            <line x1="20" x2="180" y1={y0 - m * PX_M} y2={y0 - m * PX_M} stroke="#ffffff" strokeOpacity="0.06" />
-            <text x="4" y={y0 - m * PX_M + 3} fontSize="9" fill="#8d8d8d" className="font-mono">
-              {m}m
-            </text>
-          </g>
-        ))}
-        {boxes.map((d, i) => {
-          const near = Math.min(1, d.box.y + d.box.h);
-          const far = Math.max(HORIZON + 0.03, d.box.y);
-          const { l, r } = laneAt(near);
-          const lat = ((d.box.x + d.box.w / 2 - (l + r) / 2) / (r - l)) * LANE_M; // meters right of the lane center
-          const width = (d.box.w / (r - l)) * LANE_M;
-          const dNear = distance(near);
-          const dFar = Math.min(12, distance(far));
-          if (dNear > 12) return null;
-          return (
-            <ellipse
-              key={i}
-              cx={100 + lat * PX_M * 2}
-              cy={y0 - ((dNear + dFar) / 2) * PX_M}
-              rx={Math.max(4, (width / 2) * PX_M * 2)}
-              ry={Math.max(3, ((dFar - dNear) / 2) * PX_M)}
-              className={cn(inPath(d.box) ? "fill-recall/45 stroke-recall" : "fill-[#6ea8fe]/40 stroke-[#6ea8fe]")}
-            />
-          );
-        })}
-        <polygon points={`100,${y0 - 12} 92,${y0 + 4} 108,${y0 + 4}`} className="fill-[#ffd60a]" />
-      </svg>
-      <figcaption className="mt-1 text-[11px] text-helper" title="Distances assume flat ground and a fixed, uncalibrated camera">Path ahead · approx.</figcaption>
-    </figure>
-  );
-}
-
 // note: ASSUMPTION: the demo frame is a 70 degree forward view. Spot CAM+ sees 360 degrees; Kairos would run the model on each slice.
 const FOV = 70;
+const RING_M = [2, 4, 6, 8];
+const PX_M = 11; // radar pixels per meter
 
-/** 360 ring around Spot: the slice this demo checks, and the bearing of each detection. */
-function Compass({ boxes }: { boxes: WaterDetection[] }) {
-  const R = 70;
-  const at = (deg: number, r = R) => ({ x: 100 + r * Math.sin((deg * Math.PI) / 180), y: 100 - r * Math.cos((deg * Math.PI) / 180) });
-  const a = at(-FOV / 2);
-  const b = at(FOV / 2);
+/** "Around Spot": top-down radar with Spot in the middle, the camera's slice of the 360 view, and each puddle at its bearing and distance. */
+function AroundSpot({ boxes }: { boxes: WaterDetection[] }) {
+  const gid = useId();
+  const C = 100;
+  const at = (deg: number, r: number) => ({ x: C + r * Math.sin((deg * Math.PI) / 180), y: C - r * Math.cos((deg * Math.PI) / 180) });
+  const R = RING_M.at(-1)! * PX_M;
+  const a = at(-FOV / 2, R);
+  const b = at(FOV / 2, R);
   return (
     <figure className="rounded-xl bg-black p-2 ring-1 ring-border">
-      <svg viewBox="0 0 200 200" className="w-full" role="img" aria-label="Spot CAM+ 360 view: front slice checked">
-        <circle cx="100" cy="100" r={R} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="10" />
-        <path d={`M100,100 L${a.x},${a.y} A${R},${R} 0 0 1 ${b.x},${b.y} Z`} className="fill-[#2dd4bf]/25" />
-        {["F", "R", "B", "L"].map((t, i) => {
-          const p = at(i * 90, R + 18);
+      <svg viewBox="0 0 200 200" className="w-full" role="img" aria-label="Around Spot: the camera slice and detected water, top-down">
+        <defs>
+          <radialGradient id={`${gid}-fov`} cx={C} cy={C} r={R} gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#2dd4bf" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#2dd4bf" stopOpacity="0.04" />
+          </radialGradient>
+        </defs>
+        <rect width="200" height="200" className="fill-[#0b0e13]" />
+        {/* Full 360: faint, tick every 30 degrees. */}
+        {RING_M.map((m) => (
+          <circle key={m} cx={C} cy={C} r={m * PX_M} fill="none" stroke="#ffffff" strokeOpacity={m === RING_M.at(-1) ? 0.18 : 0.07} />
+        ))}
+        {Array.from({ length: 12 }, (_, i) => {
+          const p = at(i * 30, R);
+          const q = at(i * 30, R - 4);
+          return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="#ffffff" strokeOpacity="0.25" />;
+        })}
+        <path d={`M${C},${C} L${a.x},${a.y} A${R},${R} 0 0 1 ${b.x},${b.y} Z`} fill={`url(#${gid}-fov)`} />
+        {RING_M.slice(0, -1).map((m) => (
+          <text key={m} x={C + 3} y={C + m * PX_M - 2} fontSize="7" fill="#6f6f6f" className="font-mono">
+            {m}m
+          </text>
+        ))}
+        <text x={C} y={C - R - 4} textAnchor="middle" fontSize="8" fill="#9a9a9a" className="font-mono">
+          FRONT
+        </text>
+        {boxes.map((d, i) => {
+          const near = Math.min(1, d.box.y + d.box.h);
+          const meters = Math.min(RING_M.at(-1)!, distance(near));
+          const { l, r } = laneAt(near);
+          const p = at((d.box.x + d.box.w / 2 - 0.5) * FOV, meters * PX_M);
+          const rx = Math.max(3, ((d.box.w / (r - l)) * LANE_M * PX_M) / 2);
+          const hit = inPath(d.box);
           return (
-            <text key={t} x={p.x} y={p.y + 4} textAnchor="middle" fontSize="12" fill="#8d8d8d" className="font-mono">
-              {t}
-            </text>
+            <g key={i}>
+              <ellipse cx={p.x} cy={p.y} rx={rx + 3} ry={rx * 0.6 + 3} fill={hit ? "#ff6b6b" : "#6ea8fe"} fillOpacity="0.18" />
+              <ellipse cx={p.x} cy={p.y} rx={rx} ry={rx * 0.6} fill={hit ? "#ff6b6b" : "#6ea8fe"} fillOpacity="0.75" />
+            </g>
           );
         })}
-        {boxes.map((d, i) => {
-          const p = at((d.box.x + d.box.w / 2 - 0.5) * FOV, R - 22);
-          return <circle key={i} cx={p.x} cy={p.y} r="6" className={inPath(d.box) ? "fill-recall" : "fill-[#6ea8fe]"} />;
-        })}
-        <polygon points="100,88 92,108 108,108" className="fill-[#ffd60a]" />
+        {/* Spot from above: body, head toward the front, four legs. */}
+        <g transform={`translate(${C} ${C})`}>
+          {[-1, 1].flatMap((sx) => [-1, 1].map((sy) => <rect key={`${sx}${sy}`} x={sx * 7 - 2} y={sy * 9 - 2.5} width="4" height="5" rx="1.5" fill="#1b1b1b" stroke="#3a3a3a" strokeWidth="0.6" />))}
+          <rect x="-6" y="-12" width="12" height="24" rx="4" fill="#ffd60a" />
+          <rect x="-4" y="-15" width="8" height="5" rx="2" fill="#1b1b1b" />
+        </g>
       </svg>
-      <figcaption className="mt-1 text-[11px] text-helper" title="Spot CAM+ sees all around; this demo checks the front slice">
-        CAM+ 360 · front checked
+      <figcaption className="mt-1 flex justify-between text-[11px] text-helper">
+        <span>Around Spot · 360°</span>
+        <span title="Distances assume flat ground and a fixed, uncalibrated camera">approx.</span>
       </figcaption>
     </figure>
   );
