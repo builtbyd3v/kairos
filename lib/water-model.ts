@@ -4,7 +4,7 @@ import type { RawImage, Tensor } from "@huggingface/transformers";
 
 export const WATER_MODEL_ID = "builtbyd3v/kairos-water-rtdetr";
 /** Score cutoff picked on the calibration split (never the test split). See docs/model/water-v2/RESULTS.md. */
-export const WATER_THRESHOLD = 0.5;
+export const WATER_THRESHOLD = 0.49;
 
 /** Box is normalized 0-1 (x, y = top-left). areaFrac = w * h, the share of the frame the box covers. */
 export type WaterDetection = { box: { x: number; y: number; w: number; h: number }; score: number; areaFrac: number };
