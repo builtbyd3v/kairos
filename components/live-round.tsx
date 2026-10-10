@@ -91,7 +91,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const truth = TRUTH_UI[s.truth];
   const TruthIcon = TRUTH_ICON[s.truth];
 
-  // Floor check: runs once Spot reaches the outdoor leg, again if the frame toggles. Never blocks playback.
+  // Floor check: runs once Spot reaches the outdoor leg, again if the frame toggles. While it runs, Spot waits at the waypoint (unknown floor is never GO).
   const arrival = outdoorArrival(s.events, outdoor);
   const frame = wetFrame ? FRAMES.wet : FRAMES.dry;
   const floorKey = arrival ? `${arrival.id}|${frame}` : null;
@@ -138,6 +138,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     setMissionId(id);
     setT(startOf(id));
     setPlaying(true);
+    setAnswer(null);
   };
 
   return (
@@ -377,7 +378,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                             ) : (
                               <>
                                 <Button size="sm" onClick={() => setAnswer({ key: floorKey!, label: "confirm" })}>
-                                  Confirm water: skip this waypoint
+                                  Confirm water: mark hazard, continue
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => setAnswer({ key: floorKey!, label: "reject" })}>
                                   Reject: floor is dry
@@ -395,7 +396,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                       )}
                       {answered && (
                         <p className="text-muted-foreground">
-                          Operator {answered.label === "confirm" ? "confirmed water; Spot skips this waypoint" : answered.label === "reject" ? "rejected the detection; Spot continues" : "overrode the missing floor check"}.
+                          Operator {answered.label === "confirm" ? "confirmed water; Kairos marks it as a hazard for Spot to avoid (simulated) and the round continues" : answered.label === "reject" ? "rejected the detection; Spot continues" : "overrode the missing floor check"}.
                         </p>
                       )}
                     </>

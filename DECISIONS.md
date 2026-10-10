@@ -11,7 +11,7 @@ Each entry: what we chose, what we rejected, and why.
 ## Rules
 5. **Battery rule comes from the kit's own data.** HOLD if Spot would reach the dock under 20%, using measured drain rates (V1 about 1.9%/min, V2 about 1.3%/min). Below 20%, kit inspections succeed 27% of the time. Rejected: the guide's "swap under 40%", which is a startup rule, not a launch rule.
 6. **Thresholds we invented are labeled as ours.** Thunder 30%, gust 50 km/h, 5 °C margin. Rejected: presenting them as NextEra or Boston Dynamics limits.
-7. **Rain limit 2.5 mm/h.** This is where "light rain" ends (AMS). The guide allows light rain only. Orbit's launch gate checks a forecast amount (configurable up to 5 mm), not a rate; we cite it next to ours.
+7. **Rain limit 2.5 mm/h.** This is where "light rain" ends (AMS). The guide allows light rain only. Orbit's launch gate checks the rain forecast at launch; ours is a rate checked until Spot docks.
 
 ## Replay
 8. **No hindsight.** At time T the replay sees only alerts already issued and observations up to T. Rejected: feeding the real future into the rules, which would make the dispatcher look prescient.

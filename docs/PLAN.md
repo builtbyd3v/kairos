@@ -11,7 +11,7 @@
 - **NextEra's written brief:** help operators understand what Spot is seeing, in real time and after a mission, and act on it without being technical experts.
 - **What a NextEra engineer told us in person:** they want weather solutions: Spot should see rain at the dock door, and catch small puddles and spills mid-route.
 - **What Orbit does today** (verified on Boston Dynamics' support site):
-  - Mission schedules can block a launch when the forecast rain is above a limit (up to 5 mm) or the rain chance over the next 3 hours is too high.
+  - Mission schedules can block a launch when the forecast rain is above a limit or the rain chance over the next 3 hours is too high.
   - In-progress missions are never paused or recalled when the forecast changes.
   - There is no temperature, lightning or wind check.
 
@@ -32,7 +32,7 @@
 |---|---|---|
 | NWS warning (severe thunderstorm, tornado, flash flood, extreme heat, tropical) | HOLD before launch, RECALL in mission | NWS alerts |
 | NWS watch or advisory | HOLD | NWS alerts |
-| Rain above 2.5 mm/h in the mission window | HOLD / RECALL | Spot guide p.22, p.61 (light rain only, IP54); Orbit's launch gate allows 5 mm |
+| Rain above 2.5 mm/h in the mission window | HOLD / RECALL | Spot guide p.22, p.61 (light rain only, IP54); Orbit's launch gate checks the rain forecast only at launch |
 | Route has no outdoor leg | Weather does not gate it | Route map |
 | Light rain | GO with a wet-floor caution | Spot guide p.21-22 |
 | Thunder chance ≥ 30% | HOLD / RECALL | Assumption (guide is silent) |
