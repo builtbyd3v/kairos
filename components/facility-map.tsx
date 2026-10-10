@@ -43,7 +43,12 @@ export function FacilityMap({
                 .map((s) => {
                   const pct = s.total ? Math.round((100 * s.ok) / s.total) : 100;
                   return (
-                    <g key={s.id}>
+                    <a
+                      key={s.id}
+                      href={`/waypoints/${s.id}`}
+                      aria-label={`${s.id} ${s.name}: ${pct}% inspections OK, ${s.anomalies} anomalies`}
+                      className="focus-visible:outline-none [&:focus-visible>circle]:stroke-foreground [&:hover>circle]:fill-opacity-40"
+                    >
                       <title>{`${s.id} ${s.name}: ${pct}% inspections OK (${s.ok}/${s.total}), ${s.anomalies} anomalies`}</title>
                       {outdoor.includes(s.id) && <circle cx={s.x} cy={s.y} r={6.5 + s.anomalies * 0.8} fill="none" stroke="#7ec4ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
                       <circle cx={s.x} cy={s.y} r={3.5 + s.anomalies * 0.8} fill={tone(pct)} fillOpacity={0.22} stroke={tone(pct)} strokeWidth="0.8" />
@@ -55,7 +60,7 @@ export function FacilityMap({
                           DOCK
                         </text>
                       )}
-                    </g>
+                    </a>
                   );
                 })}
               {spot && byId.get(spot)?.floor === floor && (

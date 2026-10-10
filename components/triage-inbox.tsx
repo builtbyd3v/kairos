@@ -4,6 +4,7 @@ import { ChevronRight, CircleAlert, Eye, Info, OctagonAlert, RotateCcw, Triangle
 import { analyze, pct, type Kit, type Severity } from "@/lib/kit";
 import { reviewAnomaly, type Review, type ReviewStatus } from "@/lib/reviews";
 import { SEVERITY_UI } from "@/components/status";
+import { InspectionImage } from "@/components/inspection-image";
 import { et } from "@/components/next-round";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -143,6 +144,7 @@ export function TriageInbox({ kit, reviews, tab, basePath, limit }: Props) {
                         />
                         <Fact label="Reading" value={reading ? `${reading.value} ${reading.unit} · ${reading.quality.toLowerCase()} quality` : "None recorded"} mono />
                         <Fact label="Battery" value={action ? `${action.battery}%` : "Unknown"} mono />
+                        {action && <InspectionImage type={action.type} assetType={q.assetName} className="mt-2" />}
                       </Facts>
                       <Facts title="Context">
                         <Fact label="Asset criticality" value={q.criticality.toLowerCase()} />

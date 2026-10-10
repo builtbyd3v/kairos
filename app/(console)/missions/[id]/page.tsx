@@ -5,6 +5,7 @@ import { analyze, loadKit } from "@/lib/kit";
 import { DOCK, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
 import { SEVERITY_UI, TRUTH_UI } from "@/components/status";
 import { PageHeader } from "@/components/page-header";
+import { InspectionImage } from "@/components/inspection-image";
 import { FacilityMap } from "@/components/facility-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -115,7 +116,13 @@ export default async function MissionPage({ params }: PageProps<"/missions/[id]"
                         <span className="font-mono text-xs text-helper">{x.locationId}</span> {loc.get(x.locationId)?.name}
                         <span className="block text-xs text-muted-foreground">{asset.get(x.assetId)?.name}</span>
                       </TableCell>
-                      <TableCell className="capitalize">{x.type.replace("_INSPECTION", "").replace("_", " ").toLowerCase()}</TableCell>
+                      <TableCell>
+                        <span className="capitalize">{x.type.replace("_INSPECTION", "").replace("_", " ").toLowerCase()}</span>
+                        <details className="mt-0.5">
+                          <summary className="cursor-pointer text-xs text-link">Sample image</summary>
+                          <InspectionImage type={x.type} assetType={asset.get(x.assetId)?.name} className="mt-1" />
+                        </details>
+                      </TableCell>
                       <TableCell>
                         {x.ok ? (
                           <span className="inline-flex items-center gap-1 text-go">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, CloudLightning, Droplets, House, Radio, ListChecks, Route } from "lucide-react";
+import { BarChart3, ClipboardList, CloudLightning, Droplets, House, MapPin, Radio, ListChecks, Route } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const GROUPS = [
@@ -13,6 +13,8 @@ const GROUPS = [
       { href: "/live", label: "Live round", Icon: Radio },
       { href: "/anomalies", label: "Anomalies", Icon: ListChecks },
       { href: "/missions", label: "Missions", Icon: Route },
+      { href: "/waypoints", label: "Waypoints", Icon: MapPin },
+      { href: "/work-orders", label: "Work orders", Icon: ClipboardList },
     ],
   },
   { label: "Analyze", items: [{ href: "/insights", label: "Insights", Icon: BarChart3 }] },
