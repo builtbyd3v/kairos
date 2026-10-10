@@ -14,7 +14,7 @@ import { DockDoor } from "@/components/dock-door";
 import { RainRadar } from "@/components/rain-radar";
 import { doorWeather } from "@/lib/door-rain";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function Launch() {
@@ -46,7 +46,7 @@ async function Dashboard() {
         title="Launch"
         subtitle={
           <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            Next round {et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET{" "}
+            Can Spot go out? Next round {et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET{" "}
             <VerdictChip verdict={plan.verdict} className={cn(plan.verdict === "RECALL" && "animate-pulse-soft")} />
             {plan.verdict !== "GO" && nextGo && <> · next safe launch {et(nextGo, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</>}
           </span>
@@ -73,7 +73,6 @@ async function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>St. Lucie weather, next 12 hours</CardTitle>
-                  <CardDescription>Live NWS forecast grid and Open-Meteo rain. Kairos checks this until Spot docks, not only at launch.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />

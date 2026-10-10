@@ -7,6 +7,7 @@ import { WeatherStrip } from "@/components/next-round";
 import { RainRadar } from "@/components/rain-radar";
 import { VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
+import { Why } from "@/components/why";
 
 const ROUND_MIN = 30; // ASSUMPTION: Spot needs up to 30 min to finish or return; the window the watch checks
 
@@ -39,11 +40,19 @@ async function Watch() {
       >
         <Icon aria-hidden className={cn("size-5 shrink-0", verdict === "RECALL" ? "animate-pulse-soft text-recall" : verdict === "HOLD" ? "text-hold" : "text-go")} />
         <VerdictChip verdict={verdict} />
-        <p className="min-w-0 flex-1">
-          <span className="font-semibold">Weather watch, live at {SITE.name.split(" (")[0]}:</span> {top?.text ?? "No weather hazard before Spot can dock"}.
-          {verdict === "RECALL" && <span className="block font-mono text-[11px] text-muted-foreground">Kairos would send (SIMULATED): {ORBIT_CALL.RECALL}. Operator confirms.</span>}
+        <p className="min-w-0 flex-1 text-base">
+          <span className="font-semibold">{verdict === "RECALL" ? "Bring Spot home" : verdict === "HOLD" ? "Hold Spot" : "Weather is clear"}</span>
+          <span className="text-muted-foreground"> · {top?.text.split(";")[0] ?? "nothing before Spot can dock"}</span>
         </p>
-        <span className="text-xs text-helper">Real weather now; the round below replays NextEra&apos;s kit data.</span>
+        <Why label="Details">
+          <p>Live weather at {SITE.name.split(" (")[0]}, checked as if Spot were out now ({ROUND_MIN} min to dock).</p>
+          {verdict === "RECALL" && <p className="font-mono">Orbit call: {ORBIT_CALL.RECALL}</p>}
+          {reasons.map((r) => (
+            <p key={r.text}>
+              {r.text}: {r.source}
+            </p>
+          ))}
+        </Why>
       </div>
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />

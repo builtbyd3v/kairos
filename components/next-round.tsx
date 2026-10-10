@@ -5,6 +5,7 @@ import { getLiveWeather, SITE } from "@/lib/weather";
 import { logDecision } from "@/lib/decisions";
 import { drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
 import { ReasonList, VerdictBlock, VerdictChip } from "@/components/status";
+import { Why } from "@/components/why";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -55,9 +56,7 @@ export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; str
       <CardHeader>
         <CardTitle>Next round</CardTitle>
         <CardDescription>
-          Launches {et(start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET · route of {last.id} ({route.length} stops,{" "}
-          {health.outdoor ? "includes the outdoor leg at WP01" : "indoors only"}) · back on the dock about {minutes} min later at ~
-          {Math.round(health.projectedEndPct)}% battery
+          {et(start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET · {route.length} stops · {minutes} min · docks at ~{Math.round(health.projectedEndPct)}%
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -74,7 +73,7 @@ export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; str
             )}
           </p>
         )}
-        <ReasonList reasons={reasons.slice(0, 3)} />
+        <ReasonList reasons={reasons.slice(0, 2)} />
         <form action={logDecision} className="flex flex-wrap gap-2">
           <input type="hidden" name="verdict" value={verdict} />
           <input type="hidden" name="source" value="live" />
@@ -91,24 +90,21 @@ export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; str
         </form>
         {indoorOnly && (
           <form action={logDecision} className="space-y-2 rounded-xl bg-go/10 p-3 ring-1 ring-go/40">
-            <p className="text-sm">
-              Indoor stops are not gated by weather. Skip the outdoor leg at {[...OUTDOOR_WAYPOINTS].join(", ")} ({reasons[0]?.text}) and run {kept} of {route.length} stops.
-            </p>
+            <p className="text-sm">Weather only blocks the outdoor stop.</p>
             <input type="hidden" name="verdict" value="GO" />
             <input type="hidden" name="source" value="live" />
             <input type="hidden" name="missionId" value={last.id} />
             {/* The indoor-only reason goes first, so the log reads "Confirmed GO, indoor only". */}
             <input type="hidden" name="reasons" value={JSON.stringify([indoorOnly, ...reasons])} />
             <Button name="action" value="confirmed" variant="outline">
-              Launch indoor only ({kept} of {route.length} stops)
+              Launch indoors only, skip {[...OUTDOOR_WAYPOINTS].join(", ")} ({kept} of {route.length} stops)
             </Button>
           </form>
         )}
         {ORBIT_CALL[verdict] && (
-          <details className="text-xs text-helper">
-            <summary className="cursor-pointer">Orbit call (simulated)</summary>
-            <code className="mt-1 block font-mono break-all">{ORBIT_CALL[verdict]}</code>
-          </details>
+          <Why label="Orbit call">
+            <code className="block font-mono break-all">{ORBIT_CALL[verdict]}</code>
+          </Why>
         )}
         {strip && <WeatherStrip weather={weather} />}
       </CardContent>

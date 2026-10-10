@@ -34,6 +34,7 @@ import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Why } from "@/components/why";
 
 type Mission = { id: string; name: string; config: string; plan: { id: string; locationId: string; type: string }[] };
 type Props = {
@@ -236,7 +237,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 Simulate wet entrance
               </label>
               <span className="ml-auto font-mono text-2xl font-medium tabular-nums">{kitClock(t)}</span>
-              <span className="text-xs text-helper">kit time · Live (simulated from NextEra&apos;s replay stream)</span>
+              <span className="text-xs text-helper">kit time</span>
             </div>
             <div className="panel-inset p-3">
               <ol aria-label="Mission actions" className="flex gap-1">
@@ -251,7 +252,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 })}
               </ol>
               <p className="mt-2 font-mono text-[11px] text-helper tabular-nums">
-                {s.done} of {mission.plan.length} actions done · green OK, red failed, gray pending
+                {s.done} of {mission.plan.length} actions done
               </p>
             </div>
           </CardContent>
@@ -285,9 +286,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           <Card className="animate-rise [--rise-delay:60ms]">
             <CardHeader>
               <CardTitle>Spot camera · {outdoor.join(", ")}</CardTitle>
-              <CardDescription>
-                {arrival ? "Every capture runs through the Kairos water model in your browser. Water in the lane holds Spot until the operator answers." : `Starts when Spot reaches ${outdoor.join(", ")}.`}
-              </CardDescription>
+              <CardDescription>{arrival ? "Water in the lane holds Spot" : `Starts at ${outdoor.join(", ")}`}</CardDescription>
             </CardHeader>
             <CardContent>
               <SpotCam cam={cam} frames={walk} waypoint={arrival?.locationId ?? outdoor[0]} total={walk.length} />
@@ -299,7 +298,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           <Card className="col-span-12 animate-rise [--rise-delay:80ms] lg:col-span-8">
             <CardHeader>
               <CardTitle>Where Spot is now</CardTitle>
-              <CardDescription>Planned route for {mission.id}; white marker = current waypoint</CardDescription>
+              <CardDescription>Route {mission.id}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FacilityMap sites={sites} route={mission.plan.map((a) => a.locationId)} spot={s.current?.locationId} wet={wet && answered?.label !== "reject" ? vision?.waypoint : undefined} outdoor={outdoor} dock={dock} />
@@ -350,7 +349,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
             <Card className="animate-rise [--rise-delay:160ms]">
               <CardHeader>
                 <CardTitle>True status so far</CardTitle>
-                <CardDescription>What the operator should believe, not what the robot reports</CardDescription>
+                <CardDescription>Reported vs actual</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p>
@@ -376,7 +375,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
             <Card className="animate-rise [--rise-delay:200ms]">
               <CardHeader>
                 <CardTitle>Floor check</CardTitle>
-                <CardDescription>Water model on Spot&apos;s camera at the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
+                <CardDescription>Operator decision at {outdoor.join(", ")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div aria-live="polite" className="space-y-2">
@@ -413,13 +412,14 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                               </>
                             )}
                           </div>
-                          <p className="label-caps text-helper">Calls Kairos would make · SIMULATED, not sent</p>
-                          <ul className="space-y-1 font-mono text-[11px] text-muted-foreground">
-                            <li>Spot: CORE I/O Network Compute Bridge worker returns the water detection</li>
-                            <li>Spot: Autowalk Area Callback at {arrival.locationId} holds the walk until the operator answers</li>
-                            <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {arrival.locationId}</li>
-                            <li>Orbit: {ORBIT_CALL.HOLD}, so the next round does not launch</li>
-                          </ul>
+                          <Why label="What Kairos sends">
+                            <ul className="space-y-1 font-mono">
+                              <li>Spot: CORE I/O Network Compute Bridge worker returns the water detection</li>
+                              <li>Spot: Autowalk Area Callback at {arrival.locationId} holds the walk until the operator answers</li>
+                              <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {arrival.locationId}</li>
+                              <li>Orbit: {ORBIT_CALL.HOLD}, so the next round does not launch</li>
+                            </ul>
+                          </Why>
                         </div>
                       )}
                       {answered && (

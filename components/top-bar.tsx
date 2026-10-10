@@ -54,6 +54,9 @@ export function TopBar({ search, openAnomalies, site }: { search: ReactNode; ope
       </nav>
       <div className="ml-auto flex items-center gap-2">
         <div className="hidden w-56 md:block">{search}</div>
+        <span title="Live weather; robot data, camera frames and Orbit calls are simulated or example data" className="rounded-md bg-hold/15 px-2 py-1 font-mono text-[11px] font-semibold tracking-wide text-hold ring-1 ring-hold/30">
+          DEMO DATA
+        </span>
         <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/[0.06] sm:flex">
           <Clock aria-hidden className="size-3.5" />
           {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET

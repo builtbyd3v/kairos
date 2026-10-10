@@ -1,4 +1,5 @@
 import { CircleCheckBig, Pause, TriangleAlert } from "lucide-react";
+import { Why } from "@/components/why";
 import type { Reason, Verdict } from "@/lib/verdict";
 import { cn } from "@/lib/utils";
 
@@ -42,12 +43,18 @@ export function ReasonList({ reasons }: { reasons: Reason[] }) {
       {reasons.map((r) => (
         <li key={r.text} className="flex items-start gap-2 text-sm">
           <VerdictChip verdict={r.verdict} className="mt-px" />
-          <span>
-            {r.text}
-            <span className="block text-xs text-helper">{r.source}</span>
-          </span>
+          <span>{r.text.split(";")[0]}</span>
         </li>
       ))}
+      <li>
+        <Why>
+          {reasons.map((r) => (
+            <p key={r.text}>
+              {r.text}: {r.source}
+            </p>
+          ))}
+        </Why>
+      </li>
     </ul>
   );
 }

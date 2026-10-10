@@ -122,15 +122,11 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-[11px] text-helper">
           <span>
-            <span className="text-[#6ea8fe]">solid</span> = model · dashed = labeled truth · <span className="text-[#2dd4bf]">lane</span> = Spot&apos;s path (assumed)
+            <span className="text-[#6ea8fe]">■</span> model · <span className="text-foreground">┅</span> truth · <span className="text-[#2dd4bf]">■</span> path
           </span>
-          <span className="ml-auto">
-            {frame.source === "scand" ? "UT Austin SCAND, camera on a Spot robot" : "Held-out test photo, never trained on"} ·{" "}
-            <a className="underline-offset-4 hover:underline" href={frame.url}>
-              {frame.license}
-            </a>{" "}
-            · not NextEra
-          </span>
+          <a className="ml-auto underline-offset-4 hover:underline" href={frame.url}>
+            {frame.source === "scand" ? "Spot camera, UT Austin SCAND" : "Example photo, held out"} · {frame.license}
+          </a>
         </div>
       </div>
       <BirdsEye boxes={boxes} />
@@ -182,7 +178,7 @@ function BirdsEye({ boxes }: { boxes: WaterDetection[] }) {
         })}
         <polygon points={`100,${y0 - 12} 92,${y0 + 4} 108,${y0 + 4}`} className="fill-[#ffd60a]" />
       </svg>
-      <figcaption className="mt-1 text-[11px] leading-snug text-helper">Path ahead, top-down. Distances assume flat ground and a fixed camera (no calibration).</figcaption>
+      <figcaption className="mt-1 text-[11px] text-helper" title="Distances assume flat ground and a fixed, uncalibrated camera">Path ahead · approx.</figcaption>
     </figure>
   );
 }

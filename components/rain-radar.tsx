@@ -66,15 +66,13 @@ export function RainRadar({ stamp, label }: { stamp: number; label: string }) {
         </span>
       </div>
       <figcaption className="text-[11px] text-helper">
-        NEXRAD composite via{" "}
         <a className="underline-offset-4 hover:underline" href="https://mesonet.agron.iastate.edu/">
-          Iowa Environmental Mesonet
-        </a>
-        , map ©{" "}
+          NEXRAD via IEM
+        </a>{" "}
+        · map ©{" "}
         <a className="underline-offset-4 hover:underline" href="https://www.openstreetmap.org/copyright">
-          OpenStreetMap contributors
+          OpenStreetMap
         </a>
-        . Loops the last 50 minutes.
       </figcaption>
     </figure>
   );

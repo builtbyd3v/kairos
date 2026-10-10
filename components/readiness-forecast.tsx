@@ -7,6 +7,7 @@ import { et } from "@/components/next-round";
 import { VerdictChip } from "@/components/status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Why } from "@/components/why";
 
 const W = 900;
 const TIP_W = 170;
@@ -53,9 +54,7 @@ async function ForecastCard() {
     <Card>
       <CardHeader>
         <CardTitle>Next 24 hours</CardTitle>
-        <CardDescription>
-          Each band is the verdict a round launched in that hour would get · {f.minutes} min round, {f.outdoor ? "includes the outdoor leg at WP01" : "indoors only"}
-        </CardDescription>
+        <CardDescription>The call for a round launched in each hour</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <ul aria-label="Legend" className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] tracking-wide text-muted-foreground uppercase">
@@ -140,17 +139,17 @@ async function ForecastCard() {
                 <VerdictChip verdict={r.verdict} />
               </div>
               <p className={cn("mt-1.5 text-sm", r.verdict === "GO" && "text-muted-foreground")}>
-                {r.verdict === "GO" ? "No blocking limits" : r.reasons[0]?.text}
+                {r.verdict === "GO" ? "No blocking limits" : r.reasons[0]?.text.split(";")[0]}
                 {r.indoorOnly && <span className="block text-xs text-go">Indoor only (skip WP01) is GO</span>}
               </p>
             </li>
           ))}
         </ul>
 
-        <p className="text-[11px] text-helper">
-          Assumes each round repeats the latest kit mission&apos;s route and start battery. Active NWS alerts count for every hour.
+        <Why label="Assumptions">
+          Each band is a {f.minutes} min round{f.outdoor ? " with the outdoor stop at WP01" : ""}, repeating the latest kit mission&apos;s route and start battery. Active NWS alerts count for every hour.
           {lastStep && f.to.getTime() > Date.parse(lastStep.time) + 3600000 && <> Forecast data ends {time(new Date(Date.parse(lastStep.time) + 3600000))} ET; later launches hold until it arrives.</>}
-        </p>
+        </Why>
       </CardContent>
     </Card>
   );

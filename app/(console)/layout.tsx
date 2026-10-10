@@ -30,8 +30,8 @@ export default function ConsoleLayout({ children }: LayoutProps<"/">) {
             <NavWithBadges />
           </Suspense>
           <div className="mt-auto space-y-1 rounded-xl bg-card p-3 text-xs text-muted-foreground ring-1 ring-white/[0.06]">
-            <p className="font-medium text-foreground">Operator console</p>
-            <p>Mission data: NextEra synthetic SPOT kit. Orbit link simulated.</p>
+            <p className="font-medium text-foreground">Demo</p>
+            <p>Live St. Lucie weather. Spot data is NextEra&apos;s synthetic kit, camera frames are public example photos, Orbit calls are simulated.</p>
           </div>
         </aside>
         <div className="min-w-0 flex-1 bg-background pb-20 lg:rounded-r-2xl lg:border-l lg:border-white/[0.06] lg:pb-0 print:border-0 print:bg-white">
