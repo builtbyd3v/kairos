@@ -13,6 +13,7 @@ export type WeatherStep = {
 
 export type Weather = {
   fetchedAt: string;
+  source?: string; // where the steps came from, shown next to weather reasons
   alerts: string[]; // NWS alert event names, e.g. "Severe Thunderstorm Warning"
   steps: WeatherStep[]; // covering at least the mission window
 };
@@ -89,10 +90,15 @@ export function decide(
       reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61; Orbit's own launch gate allows up to 5 mm" });
     else if (rain !== null && rain > 0)
       reasons.push({ verdict: "GO", text: `Light rain (${rain.toFixed(1)} mm/h) is within Spot's rating, but expect wet, slippery floors after`, source: "Spot guide p.21-22" });
+    const feed = weather.source ?? "NWS forecast grid";
     if (thunder !== null && thunder >= LIMITS.thunderPct)
-      reasons.push({ verdict: hazard, text: `${Math.round(thunder)}% chance of thunder before Spot can dock`, source: "NWS forecast grid; threshold is our assumption" });
+      reasons.push({
+        verdict: hazard,
+        text: thunder >= 100 ? "Thunder reported nearby" : `${Math.round(thunder)}% chance of thunder before Spot can dock`,
+        source: `${feed}; threshold is our assumption`,
+      });
     if (gust !== null && gust >= LIMITS.gustKmh)
-      reasons.push({ verdict: hazard, text: `Gusts up to ${Math.round(gust)} km/h`, source: "NWS forecast grid; threshold is our assumption" });
+      reasons.push({ verdict: hazard, text: `Gusts up to ${Math.round(gust)} km/h`, source: `${feed}; threshold is our assumption` });
     if (hot !== null && hot >= LIMITS.maxTempC - LIMITS.tempMarginC)
       reasons.push({ verdict: hazard, text: `Air temperature reaches ${Math.round(hot)} C; Spot's limit is ${LIMITS.maxTempC} C`, source: "Spot guide p.22" });
     if (cold <= LIMITS.minTempC + LIMITS.tempMarginC)

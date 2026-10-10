@@ -21,7 +21,7 @@ export function backtest(kit: Kit) {
       projectedEndPct: m.startBattery - drainPerMin(kit, m.config) * r.durationMin,
       routeRisk: [],
     };
-    const { verdict, reasons } = decide({ fetchedAt: start.toISOString(), alerts: r.alerts, steps: r.steps }, health, { now: start, start, end }, false);
+    const { verdict, reasons } = decide({ fetchedAt: start.toISOString(), source: "Open-Meteo ERA5 archive", alerts: r.alerts, steps: r.steps }, health, { now: start, start, end }, false);
     return { missionId: m.id, start: r.start, outdoor: health.outdoor, verdict: verdict as Verdict, reason: reasons.find((x) => x.verdict !== "GO")?.text ?? null };
   });
 }
