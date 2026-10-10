@@ -23,7 +23,7 @@ console.log(`additive schema: ${statements.length} statements`);
 
 // Receipts for decisions logged before receipts existed.
 const backfill = await sql`INSERT INTO receipts (kind, ref, at, body)
-  SELECT 'decision', d.id::text, d.created_at, to_jsonb(d) FROM decisions d
+  SELECT 'decision', d.id::text, d.created_at, to_jsonb(d) FROM decisions d WHERE d.source = 'live'
   ON CONFLICT (kind, ref, at) DO NOTHING RETURNING id`;
 console.log(`receipts backfilled: ${backfill.length}`);
 

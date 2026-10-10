@@ -97,6 +97,10 @@ export async function recordDetection(input: DetectionInput): Promise<{ id: numb
     score: unit(input.score, "score"),
     areaFrac: unit(input.areaFrac, "areaFrac"),
   };
+  // Same frame, model revision and waypoint = same evidence: reuse the row, so replays of a round do not inflate n.
+  const [existing] = await db()`SELECT id::int AS id FROM detections WHERE frame_sha256 = ${row.frameSha256} AND model_revision = ${row.modelRevision}
+                                 AND waypoint IS NOT DISTINCT FROM ${row.waypoint} AND source = ${row.source} ORDER BY id LIMIT 1`;
+  if (existing) return { id: existing.id as number };
   const [{ id }] = await db()`INSERT INTO detections (frame_uri, frame_sha256, source, license, waypoint, model_id, model_revision, score,
                                 box_x, box_y, box_w, box_h, area_frac, weather, rules_version, verdict)
     VALUES (${row.frameUri}, ${row.frameSha256}, ${row.source}, ${row.license}, ${row.waypoint}, ${row.modelId}, ${row.modelRevision}, ${row.score},

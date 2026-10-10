@@ -1,6 +1,6 @@
 // Scores every model revision's water detections against operator labels on a frozen Neon branch, then saves the scores to main.
 // The branch is a copy-on-write snapshot of main: every revision is scored on the same labels, even while operators keep labeling.
-// Run: npm run eval (reuses today's eval-frozen-<date> branch). npm run eval -- --refreeze replaces it with a fresh copy of main.
+// Run: npm run db:score (reuses today's eval-frozen-<date> branch). npm run db:score -- --refreeze replaces it with a fresh copy of main.
 import { neon } from "@neondatabase/serverless";
 import { connectionUri, createBranch, deleteBranch, getBranch, listBranches } from "../lib/neon-branch.ts";
 

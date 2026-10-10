@@ -3,7 +3,7 @@
 import { neon } from "@neondatabase/serverless";
 import { refresh } from "next/cache";
 import { cookies } from "next/headers";
-import { BRANCH_ID, createBranch, deleteBranch, drillRoute, getBranch, prune, type Branch } from "./neon-branch";
+import { BRANCH_ID, connectionUri, createBranch, deleteBranch, drillRoute, getBranch, prune, type Branch } from "./neon-branch";
 import { ORBIT_CALL, type Verdict } from "./verdict";
 
 const VERDICTS: Verdict[] = ["GO", "HOLD", "RECALL"];
@@ -66,19 +66,18 @@ export type Decision = {
 
 export async function recentDecisions(): Promise<Decision[]> {
   const rows = await db()`SELECT id, created_at::text AS created_at, mission_id, verdict, reasons, source, operator_action, orbit_call
-                          FROM decisions ORDER BY id DESC LIMIT 8`;
+                          FROM decisions WHERE source = 'live' ORDER BY id DESC LIMIT 8`;
   return rows as Decision[];
 }
 
-// Clears replay decisions so every judge sees the replay from a clean log, then gives the drill a fresh Neon branch. Live decisions are untouched.
+// Gives the drill a fresh Neon branch, so every judge sees the replay from a clean log. Main is never touched.
 export async function resetReplay() {
-  await db()`DELETE FROM decisions WHERE source = 'replay'`;
   await startDrill();
 }
 
 // Storm drill sessions run on their own copy-on-write Neon branch of main. The cookie holds "branchId~createMs".
 const DRILL_COOKIE = "drill_branch";
-export type DrillStatus = { name: string; ms: number } | { off: "no-key" | "no-branch"; error?: string };
+export type DrillStatus = { name: string; ms: number; saved?: number } | { off: "no-key" | "no-branch"; error?: string };
 
 async function drillBranch(): Promise<(Branch & { ms: number }) | null> {
   const [id, ms] = ((await cookies()).get(DRILL_COOKIE)?.value ?? "").split("~");
@@ -100,7 +99,11 @@ async function drillDb() {
 export async function drillStatus(): Promise<DrillStatus> {
   if (!process.env.NEON_API_KEY) return { off: "no-key" };
   const b = await drillBranch();
-  return b ? { name: b.name, ms: b.ms } : { off: "no-branch" };
+  if (!b) return { off: "no-branch" };
+  // Proof the drill click landed: count this branch's own drill decisions (the branch starts with none, see startDrill).
+  const drill = await drillDb();
+  const [{ n }] = drill ? ((await drill`SELECT count(*)::int AS n FROM decisions WHERE source = 'replay'`) as { n: number }[]) : [{ n: 0 }];
+  return { name: b.name, ms: b.ms, saved: n };
 }
 
 /** Replaces this session's drill branch with a fresh copy of main. Keeps at most 3 drill branches on the project. */
@@ -112,6 +115,8 @@ export async function startDrill(): Promise<DrillStatus> {
     if (old) await deleteBranch(old.id);
     await prune("drill-", 2);
     const b = await createBranch({ name: `drill-${Date.now().toString(36).slice(-6)}` });
+    // The copy may carry old replay rows from main; clear them on the branch only, so the drill starts from a clean log.
+    await neon(await connectionUri(b.id))`DELETE FROM decisions WHERE source = 'replay'`;
     store.set(DRILL_COOKIE, `${b.id}~${b.ms}`, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 86400 });
     refresh();
     return { name: b.name, ms: b.ms };

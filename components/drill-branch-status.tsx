@@ -19,7 +19,8 @@ async function Line() {
       <GitBranch aria-hidden className="size-4 text-muted-foreground" />
       {"name" in s ? (
         <p>
-          Running on Neon branch <span className="font-mono">{s.name}</span>, copied from main in <span className="font-mono">{s.ms} ms</span>
+          Running on Neon branch <span className="font-mono">{s.name}</span>, copied from main in <span className="font-mono">{s.ms} ms</span> ·{" "}
+          <span className="font-mono tabular-nums">{s.saved ?? 0}</span> drill {s.saved === 1 ? "decision" : "decisions"} saved on this branch, none on main
         </p>
       ) : (
         <p className="text-muted-foreground">
