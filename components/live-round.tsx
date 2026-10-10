@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,6 +10,7 @@ import {
   CircleCheck,
   CircleCheckBig,
   CircleX,
+  Droplets,
   Flag,
   FlagTriangleRight,
   Footprints,
@@ -20,10 +21,11 @@ import {
   TriangleAlert,
   WifiOff,
 } from "lucide-react";
-import { endOf, kitClock, kitDate, liveState, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
+import { checkFloor, floorModel, type FloorResult } from "@/lib/floor-model";
+import { endOf, kitClock, kitDate, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
-import { SEVERITY_UI, TRUTH_UI } from "@/components/status";
+import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -53,6 +55,8 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
   ACTION_FAILED: { Icon: CircleX, label: "Failed", tone: "text-recall" },
   MISSION_COMPLETED: { Icon: FlagTriangleRight, label: "Mission reported", tone: "text-primary" },
 };
+// note: the kit has no camera frames, so the floor check runs on held-out sample images.
+const FRAMES = { dry: "/samples/test-dry-public-space.jpg", wet: "/samples/test-wet-public-space.jpg" };
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
 export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor }: Props) {
@@ -61,6 +65,9 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [t, setT] = useState(() => startOf(defaultId));
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(30);
+  const [wetFrame, setWetFrame] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [floor, setFloor] = useState<{ key: string; result?: FloorResult; failed?: boolean } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
   const events = useMemo(() => stream.filter((e) => e.missionId === missionId), [stream, missionId]);
@@ -82,7 +89,29 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const truth = TRUTH_UI[s.truth];
   const TruthIcon = TRUTH_ICON[s.truth];
 
+  // Floor check: runs once Spot reaches the outdoor leg, again if the frame toggles. Never blocks playback.
+  const arrival = outdoorArrival(s.events, outdoor);
+  const frame = wetFrame ? FRAMES.wet : FRAMES.dry;
+  const floorKey = arrival ? `${arrival.id}|${frame}` : null;
+  useEffect(() => {
+    if (!floorKey) return;
+    let current = true;
+    checkFloor(frame, setProgress).then(
+      (result) => current && setFloor({ key: floorKey, result }),
+      () => current && setFloor({ key: floorKey, failed: true }),
+    );
+    return () => {
+      current = false;
+    };
+  }, [floorKey, frame]);
+  const check = floor?.key === floorKey ? floor : undefined;
+  const wet = check?.result !== undefined && check.result.pWet > 0.5;
+  const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
+  // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
+  const warm = () => void floorModel(setProgress).catch(() => {});
+
   const pick = (id: string) => {
+    warm();
     setMissionId(id);
     setT(startOf(id));
     setPlaying(true);
@@ -121,13 +150,21 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                   ))}
                 </select>
               </label>
-              <Button onClick={() => setPlaying((p) => !p)} disabled={t >= end} aria-label={running ? "Pause playback" : "Play playback"}>
+              <Button
+                onClick={() => {
+                  if (!running) warm();
+                  setPlaying((p) => !p);
+                }} disabled={t >= end} aria-label={running ? "Pause playback" : "Play playback"}>
                 {running ? <Pause aria-hidden /> : <Play aria-hidden />}
                 {running ? "Pause" : t >= end ? "Ended" : "Play"}
               </Button>
               <div role="group" aria-label="Playback speed" className="flex gap-1">
                 {SPEEDS.map((v) => (
-                  <Button key={v} size="sm" variant={speed === v ? "secondary" : "ghost"} aria-pressed={speed === v} onClick={() => setSpeed(v)}>
+                  <Button key={v} size="sm" variant={speed === v ? "secondary" : "ghost"} aria-pressed={speed === v} onClick={() => {
+                      warm();
+                      setSpeed(v);
+                    }}
+                  >
                     {v}x
                   </Button>
                 ))}
@@ -135,6 +172,15 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               <Button variant="outline" size="sm" onClick={() => pick(missionId)}>
                 <RotateCcw aria-hidden /> Restart
               </Button>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={wetFrame}
+                  onChange={(e) => setWetFrame(e.target.checked)}
+                  className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-ring"
+                />
+                Simulate wet entrance
+              </label>
               <span className="ml-auto font-mono text-2xl tabular-nums">{kitClock(t)}</span>
               <span className="text-xs text-helper">kit time · Live (simulated from NextEra&apos;s replay stream)</span>
             </div>
@@ -261,6 +307,49 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
 
             <Card>
               <CardHeader>
+                <CardTitle>Floor check</CardTitle>
+                <CardDescription>Wet-floor model on the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <p className="text-[11px] tracking-wider text-helper uppercase">Frame: sample image (the kit has no camera frames)</p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
+                <img src={frame} alt={wetFrame ? "Sample frame: wet entrance" : "Sample frame: dry entrance"} className="max-h-36 w-full rounded object-cover ring-1 ring-border" />
+                <div aria-live="polite" className="space-y-2">
+                  {!hasOutdoorLeg ? (
+                    <p className="text-muted-foreground">This route has no outdoor leg. No floor check runs.</p>
+                  ) : !arrival ? (
+                    <p className="text-muted-foreground">Runs when Spot reaches {outdoor.join(", ")}.</p>
+                  ) : check?.failed ? (
+                    <p className="flex items-center gap-2 text-hold">
+                      <TriangleAlert aria-hidden className="size-4" /> Floor model unavailable. Playback continues.
+                    </p>
+                  ) : !check?.result ? (
+                    <label className="block space-y-1 text-muted-foreground">
+                      {progress < 100 ? `Downloading floor model ${progress}%` : "Checking frame"}
+                      <progress value={progress} max={100} className="block h-1.5 w-full accent-primary" />
+                    </label>
+                  ) : (
+                    <>
+                      <p className="font-mono tabular-nums">
+                        p(wet) = {check.result.pWet.toFixed(2)} · {check.result.ms} ms in browser
+                      </p>
+                      {wet ? (
+                        <p className="flex items-start gap-2">
+                          <VerdictChip verdict="HOLD" /> Standing water at {arrival.locationId} entrance: hold this waypoint, operator confirms
+                        </p>
+                      ) : (
+                        <p className="flex items-center gap-2 text-muted-foreground">
+                          <Droplets aria-hidden className="size-4 text-helper" /> No water detected (advisory only)
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Event feed</CardTitle>
                 <CardDescription>Newest first</CardDescription>
               </CardHeader>
@@ -270,7 +359,17 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                     const ui = FEED[e.type];
                     const started = startedBy.get(e.actionId);
                     return (
-                      <li key={e.id} className="animate-row flex gap-2.5 rounded-md px-2 py-1.5 text-sm odd:bg-secondary/40">
+                      <Fragment key={e.id}>
+                        {wet && e.id === arrival?.id && (
+                          <li className="animate-row flex gap-2.5 rounded-md bg-hold/10 px-2 py-1.5 text-sm">
+                            <span className="pt-px font-mono text-xs text-helper tabular-nums">{kitClock(e.at)}</span>
+                            <Droplets aria-hidden className="mt-0.5 size-4 shrink-0 text-hold" />
+                            <p>
+                              Floor check: possible standing water at {e.locationId}, p={check!.result!.pWet.toFixed(2)}
+                            </p>
+                          </li>
+                        )}
+                      <li className="animate-row flex gap-2.5 rounded-md px-2 py-1.5 text-sm odd:bg-secondary/40">
                         <span className="pt-px font-mono text-xs text-helper tabular-nums">{kitClock(e.at)}</span>
                         <ui.Icon aria-hidden className={cn("mt-0.5 size-4 shrink-0", ui.tone)} />
                         <div className="min-w-0">
@@ -301,6 +400,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                             ))}
                         </div>
                       </li>
+                      </Fragment>
                     );
                   })}
                 </ol>

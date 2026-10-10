@@ -4,11 +4,9 @@ import { useRef, useState } from "react";
 import { Droplets, ImageUp, LoaderCircle } from "lucide-react";
 import { VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
+import { checkFloor } from "@/lib/floor-model";
 import { cn } from "@/lib/utils";
 
-const MODEL = "builtbyd3v/spot-wetfloor-convnext-tiny";
-
-type Classifier = (image: string) => Promise<{ label: string; score: number }[]>;
 type Result = { src: string; pWet: number; ms: number };
 
 const SAMPLES = [
@@ -19,37 +17,6 @@ const SAMPLES = [
   { src: "/samples/kit-gauge_pressure_01.jpg", label: "NextEra kit: gauge" },
   { src: "/samples/kit-thermal_pump_bearing_01.jpg", label: "NextEra kit: thermal" },
 ];
-
-// One classifier per page; transformers.js caches the model files in the browser after the first download.
-let classifier: Promise<Classifier> | null = null;
-
-async function load(onProgress: (pct: number) => void): Promise<Classifier> {
-  const { pipeline } = await import("@huggingface/transformers");
-  const progress_callback = (p: { status: string; progress?: number }) => {
-    if (p.status === "progress" && p.progress !== undefined) onProgress(Math.round(p.progress));
-  };
-  try {
-    // Smaller int8 weights first; fall back to full precision if the quantized file is not on the Hub.
-    return (await pipeline("image-classification", MODEL, { dtype: "q8", progress_callback })) as unknown as Classifier;
-  } catch {
-    return (await pipeline("image-classification", MODEL, { dtype: "fp32", progress_callback })) as unknown as Classifier;
-  }
-}
-
-// Loads the model once (module-level, outside React), then classifies one image.
-async function check(src: string, onProgress: (pct: number) => void): Promise<Omit<Result, "src">> {
-  if (!classifier) classifier = load(onProgress);
-  try {
-    const run = await classifier;
-    const started = performance.now();
-    const out = await run(src);
-    const pWet = out.find((x) => x.label === "wet")?.score ?? 1 - (out.find((x) => x.label === "dry")?.score ?? 0);
-    return { pWet, ms: Math.round(performance.now() - started) };
-  } catch (e) {
-    classifier = null; // let the next click retry the download
-    throw e;
-  }
-}
 
 export function FloorCheck() {
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
@@ -62,7 +29,7 @@ export function FloorCheck() {
     setBusy(true);
     if (status !== "ready") setStatus("loading");
     try {
-      const r = await check(src, setProgress);
+      const r = await checkFloor(src, setProgress);
       setStatus("ready");
       setResult({ src, ...r });
     } catch {

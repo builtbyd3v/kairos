@@ -92,3 +92,7 @@ export function liveState(events: LiveEvent[], t: number, anomalies: LiveAnomaly
 }
 
 export type LiveState = ReturnType<typeof liveState>;
+
+/** The first time Spot starts an action at an outdoor waypoint, among the events seen so far. */
+export const outdoorArrival = (seen: LiveEvent[], outdoor: string[]) =>
+  seen.find((e) => e.type === "ACTION_STARTED" && outdoor.includes(e.locationId!));

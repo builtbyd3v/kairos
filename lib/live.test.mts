@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { endOf, kitMs, liveState, parseEvents, STREAM_TIMEOUT_MS, type LiveAnomaly } from "./live.ts";
+import { endOf, kitMs, liveState, outdoorArrival, parseEvents, STREAM_TIMEOUT_MS, type LiveAnomaly } from "./live.ts";
 
 const all = parseEvents(readFileSync("data/kit/replay.ndjson", "utf8"));
 const anomalies: LiveAnomaly[] = readFileSync("data/kit/anomalies.csv", "utf8")
@@ -65,4 +65,11 @@ test("anomalies are never revealed before their action finishes", () => {
     }
   }
   assert.ok(checked > 0);
+});
+
+test("floor check triggers when Spot first reaches the outdoor leg (WP01), not before", () => {
+  const before = liveState(m001, kitMs("2026-09-01T18:15:29"), anomalies, []);
+  assert.equal(outdoorArrival(before.events, ["WP01"]), undefined);
+  const at = liveState(m001, kitMs("2026-09-01T18:15:30"), anomalies, []);
+  assert.equal(outdoorArrival(at.events, ["WP01"])?.actionId, "A0005");
 });
