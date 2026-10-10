@@ -111,7 +111,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [t, setT] = useState(() => openingOf(defaultId));
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(30);
-  const [wetFrame, setWetFrame] = useState(false);
+  const [wetFrame, setWetFrame] = useState(true);
   // Operator's answer to a floor HOLD, keyed to the waypoint visit it answers (one answer covers the rest of that walk).
   const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; saved?: number | "failed" } | null>(null);
 
@@ -235,7 +235,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                   onChange={(e) => setWetFrame(e.target.checked)}
                   className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-ring"
                 />
-                Simulate wet entrance
+                Puddle on route
               </label>
               <span className="ml-auto font-mono text-2xl font-medium tabular-nums">{kitClock(t)}</span>
               <span className="text-xs text-helper">kit time</span>
