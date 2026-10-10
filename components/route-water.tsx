@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CircleCheckBig, Droplets, TriangleAlert } from "lucide-react";
 import { listDetections } from "@/lib/evidence";
 import { waterLikelihood } from "@/lib/water-confidence";
 import { EvidenceLabelButtons } from "@/components/evidence-label-buttons";
-import { VerdictBlock } from "@/components/status";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Dashboard hero: water Spot's camera found on the route, newest first, waiting for an operator's Confirm or Reject. */
@@ -22,16 +22,27 @@ async function Water() {
   const waiting = rows.filter((d) => d.label === null);
   const d = waiting[0] ?? rows[0];
   const pct = d ? waterLikelihood(d.score)?.pct : undefined;
+  const hazards = rows.filter((r) => r.label === "confirm");
+  const where = (r: { waypoint: string | null }) => r.waypoint ?? "the route";
+  const state = waiting.length
+    ? { Icon: TriangleAlert, title: "Needs an operator", caption: `Water seen at ${where(waiting[0])}: Spot holds there until someone confirms or rejects it`, text: "text-hold", ring: "bg-hold/10 ring-hold/40" }
+    : hazards.length
+      ? { Icon: Droplets, title: `Hazard marked at ${where(hazards[0])}`, caption: "Confirmed water: Spot routes around it on the next rounds", text: "text-[#8ab8ff]", ring: "bg-[#6ea8fe]/10 ring-[#6ea8fe]/40" }
+      : { Icon: CircleCheckBig, title: "Route dry", caption: "No water seen on recent rounds", text: "text-go", ring: "bg-go/10 ring-go/40" };
   return (
     <Card className="animate-rise [--rise-delay:60ms]">
       <CardHeader>
         <CardTitle>Water on the route</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <VerdictBlock
-          verdict={waiting.length ? "HOLD" : "GO"}
-          caption={waiting.length ? `${waiting.length} puddle${waiting.length > 1 ? "s" : ""} waiting for an operator` : "No water waiting on the route"}
-        />
+        {/* The state says what the water IS: unanswered, a marked hazard, or none. Never "GO" next to a picture of water. */}
+        <div className={cn("rounded-xl px-5 py-4 ring-1", state.ring)}>
+          <p className={cn("flex items-center gap-2 text-2xl font-semibold tracking-tight", state.text)}>
+            <state.Icon aria-hidden className="size-6" />
+            {state.title}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{state.caption}</p>
+        </div>
         {d && (
           <>
             <p className="text-sm">
