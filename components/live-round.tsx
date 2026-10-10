@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -43,6 +43,7 @@ type Props = {
   sites: MapSite[];
   dock: string;
   outdoor: string[];
+  watch?: ReactNode; // server-rendered live weather watch
 };
 
 const TICK_MS = 250;
@@ -93,7 +94,7 @@ async function saveEvidence(frame: string, v: Vision, label: "confirm" | "reject
 }
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
-export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor }: Props) {
+export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch }: Props) {
   const startOf = (id: string) => stream.find((e) => e.missionId === id)!.at;
   // First paint opens three actions in, so the page shows a round in progress instead of "none yet". Restart still goes to the start.
   // note: capped just before the outdoor leg, so the floor model never downloads on first paint.
@@ -199,6 +200,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
         }
       />
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
+        {watch}
         <Card className="animate-rise">
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
