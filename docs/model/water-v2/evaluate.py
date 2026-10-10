@@ -17,6 +17,7 @@ from transformers import AutoImageProcessor
 
 PACK, V2, V1, V1_MANIFEST, OUT = sys.argv[1:6]
 QOPS = sys.argv[6] if len(sys.argv) > 6 else "all"
+TILES = os.environ.get("TILES") == "1"  # also score a tiled q8 variant (5 passes per frame)
 recs = [json.loads(l) for l in open(os.path.join(PACK, "labels.jsonl"))]
 recs = [r for r in recs if r["split"] in ("calib", "test")]
 recs = recs[:: int(os.environ.get("EVAL_STRIDE", "1"))]  # note: stride > 1 only for smoke runs of this script
@@ -44,17 +45,22 @@ def iou(a, b):
     return inter / (a[2] * a[3] + b[2] * b[3] - inter + 1e-9)
 
 
-def decode(logits, boxes, floor=0.05):
+def decode(logits, boxes, floor=0.05, top=100):
+    """Sigmoid, keep >= floor (top 100 by score), greedy NMS at IoU 0.5. Returns [([x, y, w, h], score)]."""
     s = 1 / (1 + np.exp(-logits[:, 0]))
+    idx = [q for q in np.argsort(-s)[:top] if s[q] >= floor]
+    cx, cy, w, h = boxes[idx].T
+    x1, y1 = np.clip(cx - w / 2, 0, 1), np.clip(cy - h / 2, 0, 1)
+    x2, y2 = np.clip(cx + w / 2, 0, 1), np.clip(cy + h / 2, 0, 1)
+    area = (x2 - x1) * (y2 - y1)
+    alive = np.ones(len(idx), bool)
     dets = []
-    for q in np.argsort(-s):
-        if s[q] < floor:
-            break
-        cx, cy, w, h = boxes[q]
-        x, y = max(0.0, cx - w / 2), max(0.0, cy - h / 2)
-        b = [x, y, min(1.0, cx + w / 2) - x, min(1.0, cy + h / 2) - y]
-        if all(iou(k[0], b) < 0.5 for k in dets):
-            dets.append((b, float(s[q])))
+    for i in range(len(idx)):
+        if not alive[i]:
+            continue
+        dets.append(([float(x1[i]), float(y1[i]), float(x2[i] - x1[i]), float(y2[i] - y1[i])], float(s[idx[i]])))
+        inter = np.clip(np.minimum(x2[i], x2) - np.maximum(x1[i], x1), 0, None) * np.clip(np.minimum(y2[i], y2) - np.maximum(y1[i], y1), 0, None)
+        alive &= inter / (area[i] + area - inter + 1e-9) < 0.5
     return dets
 
 
@@ -66,10 +72,22 @@ for i, r in enumerate(recs):
     for k, s in sess.items():
         lg, bx = s.run(["logits", "pred_boxes"], {"pixel_values": px})
         row[k] = decode(lg[0], bx[0])
+    if TILES:  # full frame + 4 overlapping 60% tiles (each upscaled to 640), merged by the same NMS
+        W, H = im.size
+        dets = list(row["q8"])
+        for ox, oy in ((0, 0), (0.4, 0), (0, 0.4), (0.4, 0.4)):
+            crop = im.crop((int(ox * W), int(oy * H), int((ox + 0.6) * W), int((oy + 0.6) * H)))
+            lg, bx = sess["q8"].run(["logits", "pred_boxes"], {"pixel_values": proc(crop, return_tensors="np")["pixel_values"].astype(np.float32)})
+            dets += [([ox + b[0] * 0.6, oy + b[1] * 0.6, b[2] * 0.6, b[3] * 0.6], sc) for b, sc in decode(lg[0], bx[0])]
+        dets.sort(key=lambda d: -d[1])
+        row["tiled_q8"] = []
+        for d in dets:
+            if all(iou(k[0], d[0]) < 0.5 for k in row["tiled_q8"]):
+                row["tiled_q8"].append(d)
     lv = v1.run(None, {v1.get_inputs()[0].name: v1proc(im, return_tensors="np")["pixel_values"].astype(np.float32)})[0][0]
     row["v1_pwet"] = float(np.exp(lv[v1_wet]) / np.exp(lv).sum())
     rows.append(row)
-    if i % 200 == 0:
+    if i % 100 == 0:
         print(i, len(recs), flush=True)
 
 
@@ -111,16 +129,24 @@ def score(split, key, thr):
 
 
 # Threshold from calib only (fp32 detections; q8 uses the same cutoff, as shipped).
-calib = [x for x in rows if x["r"]["split"] == "calib"]
-dry = [x for x in calib if not x["r"]["boxes"]]
-thr = 0.95
-for t in np.arange(0.05, 0.96, 0.01):
-    if sum(any(d[1] >= t for d in x["fp32"]) for x in dry) / len(dry) <= 0.05:
-        thr = round(float(t), 2)
-        break
+dry = [x for x in rows if x["r"]["split"] == "calib" and not x["r"]["boxes"]]
+
+
+def calibrate(key):
+    for t in np.arange(0.05, 0.96, 0.01):
+        if sum(any(d[1] >= t for d in x[key]) for x in dry) / len(dry) <= 0.05:
+            return round(float(t), 2)
+    return 0.95
+
+
+thr = calibrate("fp32")
 
 res = {"threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames", "threshold": thr,
        "quant_ops": QOPS, "calib": score("calib", "fp32", thr), "test_fp32": score("test", "fp32", thr), "test_q8": score("test", "q8", thr)}
+
+if TILES:
+    tthr = calibrate("tiled_q8")
+    res["tiled_q8"] = {"threshold": tthr, "calib": score("calib", "tiled_q8", tthr), "test": score("test", "tiled_q8", tthr)}
 
 # q8 vs fp32 parity on test: frames whose alarm flips, max score gap of the top detection.
 test = [x for x in rows if x["r"]["split"] == "test"]
