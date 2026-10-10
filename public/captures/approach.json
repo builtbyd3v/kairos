@@ -1,0 +1,149 @@
+{
+ "note": "Held-out test split of the water model (never trained on). Boxes are ground truth [x,y,w,h], normalized.",
+ "frames": [
+  {
+   "src": "/captures/approach-0.jpg",
+   "truth": [
+    [
+     0.37007,
+     0.13651,
+     0.15789,
+     0.12007
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-536-_jpg.rf.1b4681c48705c9706867b8beca54994b.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-1.jpg",
+   "truth": [
+    [
+     0.38651,
+     0.15625,
+     0.17763,
+     0.11678
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-535-_jpg.rf.662606312fc0dbf23c4a39dc02219096.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-2.jpg",
+   "truth": [
+    [
+     0.3602,
+     0.14474,
+     0.20724,
+     0.17434
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-534-_jpg.rf.fac41fefda20704e0786a26f754190a5.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-3.jpg",
+   "truth": [
+    [
+     0.37336,
+     0.10855,
+     0.20559,
+     0.21875
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-533-_jpg.rf.d1f71c4da113023eca6409c6da22da45.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-4.jpg",
+   "truth": [
+    [
+     0.34375,
+     0.11842,
+     0.23191,
+     0.24013
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-532-_jpg.rf.e9d270db63709dc5154563ffbd1ef636.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-5.jpg",
+   "truth": [
+    [
+     0.31743,
+     0.11349,
+     0.29112,
+     0.38816
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-531-_jpg.rf.cbb56c8fec07359b0161e54a3687f8ea.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-6.jpg",
+   "truth": [
+    [
+     0.25493,
+     0.12336,
+     0.38158,
+     0.4375
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-530-_jpg.rf.c21674e18d44bcefe64e7f049788282f.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-7.jpg",
+   "truth": [
+    [
+     0.2352,
+     0.15954,
+     0.41776,
+     0.68586
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-529-_jpg.rf.7189fe71cf44453bc1ba0983699eb9c3.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/approach-8.jpg",
+   "truth": [
+    [
+     0.1102,
+     0.02961,
+     0.53454,
+     0.97039
+    ]
+   ],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-528-_jpg.rf.f658ae3a8198644887aa93f9ccc26227.jpg",
+   "split": "test"
+  }
+ ]
+}

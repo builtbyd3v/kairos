@@ -1,0 +1,59 @@
+{
+ "note": "UT Austin SCAND, camera mounted on a Spot robot, CC0. No water in these frames.",
+ "frames": [
+  {
+   "src": "/captures/spot-dry-0.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651397525290542.jpg",
+   "split": "negatives"
+  },
+  {
+   "src": "/captures/spot-dry-1.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651402127875946.jpg",
+   "split": "negatives"
+  },
+  {
+   "src": "/captures/spot-dry-2.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651406694602541.jpg",
+   "split": "negatives"
+  },
+  {
+   "src": "/captures/spot-dry-3.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651411657373291.jpg",
+   "split": "negatives"
+  },
+  {
+   "src": "/captures/spot-dry-4.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651417124914506.jpg",
+   "split": "negatives"
+  },
+  {
+   "src": "/captures/spot-dry-5.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_Welch_Welch_Thu_Nov_11_70_1636651421694504446.jpg",
+   "split": "negatives"
+  }
+ ]
+}

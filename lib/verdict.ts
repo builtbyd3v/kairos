@@ -144,9 +144,21 @@ export function decide(
 export type Box = { x: number; y: number; w: number; h: number };
 export type Vision = { status: "ok" | "pending" | "stale" | "error"; waypoint: string; boxes: (Box & { score: number })[]; model: string };
 
-// note: ASSUMPTION: Spot's walking corridor is the middle 40% of the frame, lower half. No Spot camera calibration in the kit.
-export const PATH = { xMin: 0.3, xMax: 0.7, yMin: 0.5 } as const;
-export const inPath = (b: Box) => b.x < PATH.xMax && b.x + b.w > PATH.xMin && b.y + b.h > PATH.yMin;
+// note: ASSUMPTION: Spot's walking lane seen from a forward camera: a trapezoid from the bottom of the frame (near) to y = top (far).
+// No Spot camera calibration in the kit, so the lane is fixed in the frame.
+export const PATH = { top: 0.45, topL: 0.42, topR: 0.58, botL: 0.2, botR: 0.8 } as const;
+/** Lane edges at image row y (0 = top, 1 = bottom). */
+export const laneAt = (y: number) => {
+  const t = Math.min(1, Math.max(0, (y - PATH.top) / (1 - PATH.top)));
+  return { l: PATH.topL + (PATH.botL - PATH.topL) * t, r: PATH.topR + (PATH.botR - PATH.topR) * t };
+};
+/** A box is in the path when its near (bottom) edge is below the lane's far end and it overlaps the lane at that row. */
+export const inPath = (b: Box) => {
+  const near = Math.min(1, b.y + b.h);
+  if (near <= PATH.top) return false;
+  const { l, r } = laneAt(near);
+  return b.x < r && b.x + b.w > l;
+};
 
 /** Floor rule: water in Spot's path holds Spot at the waypoint until an operator confirms. Unknown floor is never GO. */
 export function visionReason(v: Vision): Reason {

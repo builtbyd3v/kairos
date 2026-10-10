@@ -21,8 +21,11 @@ import {
   TriangleAlert,
   WifiOff,
 } from "lucide-react";
-import { checkFloor, FLOOR_MODEL, floorModel, type FloorResult } from "@/lib/floor-model";
-import { ORBIT_CALL, PATH, inPath, visionReason, type Vision } from "@/lib/verdict";
+import { waterModel } from "@/lib/water-model";
+import { SpotCam, useSpotCam, type CamFrame } from "@/components/spot-cam";
+import approach from "@/public/captures/approach.json";
+import spotDry from "@/public/captures/spot-dry.json";
+import { ORBIT_CALL, inPath, visionReason, type Vision } from "@/lib/verdict";
 import { labelDetection, recordDetection } from "@/lib/evidence";
 import { endOf, kitClock, kitDate, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
@@ -58,31 +61,30 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
   ACTION_FAILED: { Icon: CircleX, label: "Failed", tone: "text-recall" },
   MISSION_COMPLETED: { Icon: FlagTriangleRight, label: "Mission reported", tone: "text-primary" },
 };
-// note: the kit has no camera frames, so the floor check runs on held-out sample images.
-const FRAMES = { dry: "/samples/test-dry-public-space.jpg", wet: "/samples/test-wet-public-space.jpg" };
-// note: per-file source was not recorded when v1's test images were copied; both v1 sources are open licenses.
-const FRAME_LICENSE = "v1 held-out test image (Kaggle CC0 or Mendeley CC BY 4.0; per-file source not recorded)";
-// note: v1 model revision on the Hub; the v2 detector brings its own.
-const FLOOR_REVISION = "942bd9c786bcb4b0e3b1521c6763a88a66134e6e";
+// note: the kit has no camera frames. Wet walk = held-out test photos approaching a puddle (never trained on);
+// dry walk = real frames from a camera on a Spot robot (UT Austin SCAND). Both labeled on screen.
+const WALKS: Record<"wet" | "dry", CamFrame[]> = { wet: approach.frames, dry: spotDry.frames };
+// note: Hub revision is "main" until the v2 card pins a commit; the evidence row also stores the frame hash.
+const WATER_REVISION = "main";
 
 /** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
-async function saveEvidence(frame: string, v: Vision, label: "confirm" | "reject") {
-  const bytes = await (await fetch(frame)).arrayBuffer();
+async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reject") {
+  const bytes = await (await fetch(frame.src)).arrayBuffer();
   const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
-  const { score, ...box } = v.boxes[0];
+  const { score, ...box } = v.boxes.filter(inPath).sort((a, b) => b.score - a.score)[0] ?? v.boxes[0];
   const { id } = await recordDetection({
     box,
     score,
     areaFrac: box.w * box.h,
-    frameUri: frame,
+    frameUri: frame.src,
     frameSha256: hash,
     source: "live",
-    license: FRAME_LICENSE,
+    license: `${frame.license} (${frame.source})`,
     waypoint: v.waypoint,
     modelId: v.model,
-    modelRevision: FLOOR_REVISION,
+    modelRevision: WATER_REVISION,
     weather: null,
-    rulesVersion: "verdict.ts vision v1",
+    rulesVersion: "verdict.ts vision v2 lane",
     verdict: "HOLD",
   });
   const form = new FormData();
@@ -108,9 +110,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(30);
   const [wetFrame, setWetFrame] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [floor, setFloor] = useState<{ key: string; result?: FloorResult; failed?: boolean } | null>(null);
-  // Operator's answer to a floor HOLD, keyed to the waypoint + frame it answers.
+  // Operator's answer to a floor HOLD, keyed to the waypoint visit it answers (one answer covers the rest of that walk).
   const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; saved?: number | "failed" } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
@@ -125,36 +125,21 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const truth = TRUTH_UI[s.truth];
   const TruthIcon = TRUTH_ICON[s.truth];
 
-  // Floor check: runs once Spot reaches the outdoor leg, again if the frame toggles. While it runs, Spot waits at the waypoint (unknown floor is never GO).
+  // Floor check: once Spot reaches the outdoor leg, its camera captures the walk and the water model checks every capture.
+  // While a capture is being checked, Spot waits (unknown floor is never GO).
   const arrival = outdoorArrival(s.events, outdoor);
-  const frame = wetFrame ? FRAMES.wet : FRAMES.dry;
-  const floorKey = arrival ? `${arrival.id}|${frame}` : null;
-  useEffect(() => {
-    if (!floorKey) return;
-    let current = true;
-    checkFloor(frame, setProgress).then(
-      (result) => current && setFloor({ key: floorKey, result }),
-      () => current && setFloor({ key: floorKey, failed: true }),
-    );
-    return () => {
-      current = false;
-    };
-  }, [floorKey, frame]);
-  const check = floor?.key === floorKey ? floor : undefined;
-  // note: v1 is an image classifier, so a wet frame becomes one full-frame box. The v2 detector returns real boxes.
-  const vision: Vision | null = arrival
-    ? {
-        status: check?.failed ? "error" : check?.result ? "ok" : "pending",
-        waypoint: arrival.locationId!,
-        model: FLOOR_MODEL,
-        boxes: check?.result && check.result.pWet > 0.5 ? [{ x: 0, y: 0, w: 1, h: 1, score: check.result.pWet }] : [],
-      }
-    : null;
+  const floorKey = arrival ? `${arrival.id}|${wetFrame ? "wet" : "dry"}` : null;
+  const answered = answer?.key === floorKey ? answer : null;
+  const walk = WALKS[wetFrame ? "wet" : "dry"];
+  // Held is derived below from the camera's own verdict; the camera stops capturing while Spot is held.
+  const [camHeld, setCamHeld] = useState(false);
+  const cam = useSpotCam(walk, { active: !!arrival, paused: camHeld, waypoint: arrival?.locationId ?? "" });
+  const vision = cam.vision;
   const floorCall = vision ? visionReason(vision) : null;
   const wet = vision?.boxes.some(inPath) ?? false;
-  const answered = answer?.key === floorKey ? answer : null;
   // Spot waits at the waypoint while the floor is wet or unknown, until the operator answers. Playback is the stand-in for Spot.
   const held = floorCall?.verdict === "HOLD" && !answered;
+  if (held !== camHeld) setCamHeld(held); // render-time sync: the camera reads last render's hold
   const running = playing && t < end && !held;
 
   // Playback clock: the interval is the outside system. It stops itself at the mission's end or a floor hold.
@@ -167,14 +152,14 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     const key = floorKey!;
     setAnswer({ key, label });
     if (label === "override" || !vision?.boxes.length) return;
-    saveEvidence(frame, vision, label).then(
+    saveEvidence(cam.frame, vision, label).then(
       (saved) => setAnswer((a) => (a?.key === key ? { ...a, saved } : a)),
       () => setAnswer((a) => (a?.key === key ? { ...a, saved: "failed" } : a)),
     );
   };
   const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
   // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
-  const warm = () => void floorModel(setProgress).catch(() => {});
+  const warm = () => void waterModel().catch(() => {});
 
   const pick = (id: string) => {
     warm();
@@ -182,6 +167,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     setT(startOf(id));
     setPlaying(true);
     setAnswer(null);
+    cam.restart();
   };
 
   return (
@@ -295,6 +281,20 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </div>
         )}
 
+        {hasOutdoorLeg && (
+          <Card className="animate-rise [--rise-delay:60ms]">
+            <CardHeader>
+              <CardTitle>Spot camera · {outdoor.join(", ")}</CardTitle>
+              <CardDescription>
+                {arrival ? "Every capture runs through the Kairos water model in your browser. Water in the lane holds Spot until the operator answers." : `Starts when Spot reaches ${outdoor.join(", ")}.`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SpotCam cam={cam} frames={walk} waypoint={arrival?.locationId ?? outdoor[0]} total={walk.length} />
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-12 gap-5">
           <Card className="col-span-12 animate-rise [--rise-delay:80ms] lg:col-span-8">
             <CardHeader>
@@ -376,38 +376,21 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
             <Card className="animate-rise [--rise-delay:200ms]">
               <CardHeader>
                 <CardTitle>Floor check</CardTitle>
-                <CardDescription>Wet-floor model on the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
+                <CardDescription>Water model on Spot&apos;s camera at the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <p className="label-caps text-helper">Frame: public sample image, not NextEra (the kit has no camera frames)</p>
-                <div className="relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
-                  <img src={frame} alt={wetFrame ? "Sample frame: wet entrance" : "Sample frame: dry entrance"} className="max-h-36 w-full rounded object-cover ring-1 ring-border" />
-                  <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden className="pointer-events-none absolute inset-0 size-full">
-                    <rect x={PATH.xMin} y={PATH.yMin} width={PATH.xMax - PATH.xMin} height={1 - PATH.yMin} fill="none" stroke="#f4f4f4" strokeOpacity="0.6" strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-                    {vision?.boxes.map((b, i) => (
-                      <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} fill="var(--hold)" fillOpacity="0.15" stroke="var(--hold)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-                    ))}
-                  </svg>
-                </div>
-                <p className="text-xs text-helper">Dashed box: Spot&apos;s assumed walking path (our assumption, no camera calibration in the kit).</p>
                 <div aria-live="polite" className="space-y-2">
                   {!hasOutdoorLeg ? (
                     <p className="text-muted-foreground">This route has no outdoor leg. No floor check runs.</p>
                   ) : !arrival ? (
                     <p className="text-muted-foreground">Runs when Spot reaches {outdoor.join(", ")}.</p>
-                  ) : !check ? (
+                  ) : !cam.result ? (
                     <label className="block space-y-1 text-muted-foreground">
-                      Spot waits at {arrival.locationId}: {progress < 100 ? `downloading water model ${progress}%` : "checking frame"}
-                      <progress value={progress} max={100} className="block h-1.5 w-full accent-primary" />
+                      Spot waits at {arrival.locationId}: {cam.progress > 0 && cam.progress < 100 ? `downloading water model ${cam.progress}%` : "checking capture"}
+                      <progress value={cam.progress} max={100} className="block h-1.5 w-full accent-primary" />
                     </label>
                   ) : (
                     <>
-                      {check.result && (
-                        <p className="font-mono tabular-nums">
-                          p(wet) = {check.result.pWet.toFixed(2)} · {check.result.ms} ms in browser
-                        </p>
-                      )}
                       <p className="flex items-start gap-2">
                         <VerdictChip verdict={floorCall!.verdict} /> {floorCall!.text}
                       </p>
@@ -415,7 +398,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                         <div className="panel-inset space-y-2 p-3">
                           <p className="font-medium">Operator: is there water in Spot&apos;s path?</p>
                           <div className="flex flex-wrap gap-2">
-                            {check.failed ? (
+                            {cam.result === "error" ? (
                               <Button size="sm" variant="outline" onClick={() => answerFloor("override")}>
                                 Continue without floor check
                               </Button>
@@ -474,7 +457,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                             <span className="pt-px font-mono text-xs text-helper tabular-nums">{kitClock(e.at)}</span>
                             <Droplets aria-hidden className="mt-0.5 size-4 shrink-0 text-hold" />
                             <p>
-                              Floor check: possible standing water at {e.locationId}, p={check!.result!.pWet.toFixed(2)}
+                              Floor check: water in Spot&apos;s path at {e.locationId}, score {Math.max(...vision!.boxes.filter(inPath).map((b) => b.score)).toFixed(2)}
                             </p>
                           </li>
                         )}
