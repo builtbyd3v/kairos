@@ -3,13 +3,37 @@ import { connection } from "next/server";
 import { CloudLightning, CloudSun, TriangleAlert } from "lucide-react";
 import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
-import { WeatherStrip } from "@/components/next-round";
 import { RainRadar } from "@/components/rain-radar";
 import { VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Why } from "@/components/why";
 
 const ROUND_MIN = 30; // ASSUMPTION: Spot needs up to 30 min to finish or return; the window the watch checks
+
+/** Radar card for the live round. Reads the clock (radar cache-buster), so it carries its own Suspense. */
+export function LiveRadar() {
+  return (
+    <Suspense fallback={<Card className="aspect-square animate-pulse" />}>
+      <RadarCard />
+    </Suspense>
+  );
+}
+
+async function RadarCard() {
+  await connection();
+  const now = new Date();
+  return (
+    <Card className="animate-rise [--rise-delay:160ms]">
+      <CardHeader>
+        <CardTitle>Radar · last 50 min</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
+      </CardContent>
+    </Card>
+  );
+}
 
 /** Mid-round weather watch: re-checks live weather as if Spot were out right now, and shows the recall Kairos would recommend. */
 export function WeatherWatch() {
@@ -53,10 +77,6 @@ async function Watch() {
             </p>
           ))}
         </Why>
-      </div>
-      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
-        <WeatherStrip weather={weather} />
       </div>
     </section>
   );

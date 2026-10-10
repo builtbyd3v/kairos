@@ -47,7 +47,8 @@ type Props = {
   sites: MapSite[];
   dock: string;
   outdoor: string[];
-  watch?: ReactNode; // server-rendered live weather watch
+  watch?: ReactNode; // server-rendered live weather banner
+  radar?: ReactNode; // server-rendered radar card
 };
 
 const TICK_MS = 250;
@@ -97,7 +98,7 @@ async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reje
 }
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
-export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch }: Props) {
+export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch, radar }: Props) {
   const startOf = (id: string) => stream.find((e) => e.missionId === id)!.at;
   // First paint opens three actions in, so the page shows a round in progress instead of "none yet". Restart still goes to the start.
   // note: capped just before the outdoor leg, so the floor model never downloads on first paint.
@@ -282,6 +283,8 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </div>
         )}
 
+        <div className="grid grid-cols-12 items-start gap-5">
+          <div className="col-span-12 space-y-5 lg:col-span-8">
         {hasOutdoorLeg && (
           <Card className="animate-rise [--rise-delay:60ms]">
             <CardHeader>
@@ -294,8 +297,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </Card>
         )}
 
-        <div className="grid grid-cols-12 gap-5">
-          <Card className="col-span-12 animate-rise [--rise-delay:80ms] lg:col-span-8">
+          <Card className="animate-rise [--rise-delay:80ms]">
             <CardHeader>
               <CardTitle>Where Spot is now</CardTitle>
               <CardDescription>Route {mission.id}</CardDescription>
@@ -315,63 +317,9 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               </div>
             </CardContent>
           </Card>
+          </div>
 
           <div className="col-span-12 space-y-5 lg:col-span-4">
-            <Card className="animate-rise [--rise-delay:120ms]">
-              <CardHeader>
-                <CardTitle>Now</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="panel-inset grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-4 py-3 text-sm [&_dt]:font-mono [&_dt]:text-[11px] [&_dt]:tracking-wider [&_dt]:uppercase">
-                  <dt className="text-muted-foreground">Phase</dt>
-                  <dd className="capitalize">{s.phase}</dd>
-                  <dt className="text-muted-foreground">Action</dt>
-                  <dd className="capitalize">{s.current ? words(s.current.actionType) : "none yet"}</dd>
-                  <dt className="text-muted-foreground">Last reading</dt>
-                  <dd className="tabular-nums">
-                    {s.lastReading ? (
-                      <>
-                        {words(s.lastReading.type)}: {s.lastReading.value} {s.lastReading.unit}{" "}
-                        <span className={s.lastReading.quality === "GOOD" ? "text-muted-foreground" : "text-hold"}>({words(s.lastReading.quality)})</span>
-                      </>
-                    ) : (
-                      "none yet"
-                    )}
-                  </dd>
-                  <dt className="text-muted-foreground">Battery</dt>
-                  <dd>
-                    <BatteryStatus pct={s.battery} />
-                  </dd>
-                </dl>
-              </CardContent>
-            </Card>
-
-            <Card className="animate-rise [--rise-delay:160ms]">
-              <CardHeader>
-                <CardTitle>True status so far</CardTitle>
-                <CardDescription>Reported vs actual</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Reported: </span>
-                  {s.phase === "stream ended" ? "no signal" : words(s.reported)}
-                </p>
-                <p aria-live="polite" className={cn("flex items-center gap-2 text-xl font-semibold", truth.text)}>
-                  <TruthIcon aria-hidden className="size-5" />
-                  <span>
-                    <span className="sr-only">As of now: </span>
-                    {s.truth}
-                  </span>
-                </p>
-                <p className="tabular-nums">
-                  Failed <span className={s.failed ? "text-recall" : ""}>{s.failed}</span> of {s.done} inspections so far
-                </p>
-                <p className="tabular-nums">
-                  <span className={s.serious ? "text-recall" : ""}>{s.serious}</span> serious anomalies (high or critical), {s.anomalies.length} total
-                </p>
-              </CardContent>
-            </Card>
-
             <Card className="animate-rise [--rise-delay:200ms]">
               <CardHeader>
                 <CardTitle>Floor check</CardTitle>
@@ -440,13 +388,40 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               </CardContent>
             </Card>
 
+            {radar}
+            <Card className="animate-rise [--rise-delay:160ms]">
+              <CardHeader>
+                <CardTitle>True status so far</CardTitle>
+                <CardDescription>Reported vs actual</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  <span className="text-muted-foreground">Reported: </span>
+                  {s.phase === "stream ended" ? "no signal" : words(s.reported)}
+                </p>
+                <p aria-live="polite" className={cn("flex items-center gap-2 text-xl font-semibold", truth.text)}>
+                  <TruthIcon aria-hidden className="size-5" />
+                  <span>
+                    <span className="sr-only">As of now: </span>
+                    {s.truth}
+                  </span>
+                </p>
+                <p className="tabular-nums">
+                  Failed <span className={s.failed ? "text-recall" : ""}>{s.failed}</span> of {s.done} inspections so far
+                </p>
+                <p className="tabular-nums">
+                  <span className={s.serious ? "text-recall" : ""}>{s.serious}</span> serious anomalies (high or critical), {s.anomalies.length} total
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="animate-rise [--rise-delay:240ms]">
               <CardHeader>
                 <CardTitle>Event feed</CardTitle>
                 <CardDescription>Newest first</CardDescription>
               </CardHeader>
               <CardContent>
-                <ol className="max-h-96 space-y-1 overflow-y-auto pr-1">
+                <ol className="max-h-72 space-y-1 overflow-y-auto pr-1">
                   {s.events.toReversed().map((e) => {
                     const ui = FEED[e.type];
                     const started = startedBy.get(e.actionId);

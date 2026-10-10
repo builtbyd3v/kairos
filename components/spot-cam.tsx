@@ -65,13 +65,14 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
   const { frame, result, idx } = cam;
   const boxes = result && result !== "error" ? result.boxes : [];
   const blocked = boxes.some((d) => inPath(d.box));
-  const state = result === undefined ? "CHECKING" : result === "error" ? "MODEL FAILED" : blocked ? "WATER IN PATH" : "PATH CLEAR";
-  const tone = state === "PATH CLEAR" ? "go" : state === "CHECKING" ? "muted" : "recall";
+  const standby = cam.vision === null;
+  const state = standby ? "STANDBY" : result === undefined ? "CHECKING" : result === "error" ? "MODEL OFFLINE" : blocked ? "WATER IN PATH" : "PATH CLEAR";
+  const tone = state === "PATH CLEAR" ? "go" : state === "CHECKING" || standby ? "muted" : "recall";
   const square = frame.src.includes("approach");
   const [W, H] = square ? [100, 100] : [160, 90];
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_13rem]">
+    <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_11rem]">
       <div className="overflow-hidden rounded-xl bg-black ring-1 ring-border">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 px-3 py-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
           <span className="text-foreground">SPOT CAM</span>
@@ -97,7 +98,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
         <div className="relative flex aspect-video items-center justify-center">
           <div className={cn("relative h-full", square ? "aspect-square" : "aspect-video")}>
             {/* eslint-disable-next-line @next/next/no-img-element -- local capture frame; overlays need its exact box */}
-            <img key={frame.src} src={frame.src} alt={`Capture ${idx + 1}`} className="absolute inset-0 size-full object-fill" />
+            <img key={frame.src} src={frame.src} alt={`Capture ${idx + 1}`} className={cn("absolute inset-0 size-full object-fill transition-opacity", standby && "opacity-30")} />
             {/* Same aspect as the frame, so one unit is the same length on both axes and labels are not stretched. */}
             <svg viewBox={`0 0 ${W} ${H}`} aria-hidden className="absolute inset-0 size-full">
               <polygon
@@ -118,6 +119,9 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
                 </g>
               ))}
             </svg>
+            {standby && (
+              <p className="absolute inset-0 grid place-items-center font-mono text-sm tracking-wide text-foreground">CAMERA STARTS AT {waypoint}</p>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-[11px] text-helper">

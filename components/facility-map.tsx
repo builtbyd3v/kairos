@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Why } from "@/components/why";
 
 export type MapSite = { id: string; name: string; floor: number; x: number; y: number; ok: number; total: number; anomalies: number };
 
@@ -91,10 +92,12 @@ export function FacilityMap({
           </figure>
         );
       })}
-      <p className="col-span-2 text-xs text-helper">
-        Color = share of inspections OK there (green ≥ 85%, yellow ≥ 70%, red below). Size = anomaly count.
-        {outdoor.length > 0 && " Dashed ring = outdoor leg (assumed)."}
-      </p>
+      <div className="col-span-2">
+        <Why label="Legend">
+          Color = share of inspections OK there (green ≥ 85%, yellow ≥ 70%, red below). Size = anomaly count.
+          {outdoor.length > 0 && " Dashed ring = outdoor leg (assumed)."}
+        </Why>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { analyze, loadKit } from "@/lib/kit";
 import { parseEvents } from "@/lib/live";
 import { DOCK, OUTDOOR_WAYPOINTS } from "@/lib/route";
 import { LiveRound } from "@/components/live-round";
-import { WeatherWatch } from "@/components/weather-watch";
+import { LiveRadar, WeatherWatch } from "@/components/weather-watch";
 
 // note: reads NextEra's replay stream from the kit file once per server start (same rows as Neon's replay_events).
 const EVENTS = parseEvents(readFileSync(join(process.cwd(), "data/kit/replay.ndjson"), "utf8"));
@@ -33,6 +33,7 @@ export default async function LivePage() {
       dock={DOCK}
       outdoor={[...OUTDOOR_WAYPOINTS]}
       watch={<WeatherWatch />}
+      radar={<LiveRadar />}
     />
   );
 }

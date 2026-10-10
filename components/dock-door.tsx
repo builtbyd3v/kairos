@@ -59,11 +59,11 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
           <Door aria-hidden className="size-5 text-primary" /> Dock door
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <div className="space-y-2">
-          <div className="relative overflow-hidden rounded-lg ring-1 ring-border">
+      <CardContent className="grid flex-1 gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-2">
+          <div className="relative min-h-56 flex-1 overflow-hidden rounded-lg ring-1 ring-border">
             {/* eslint-disable-next-line @next/next/no-img-element -- local example frame */}
-            <img src={FRAMES[frame].src} alt={frame === "rain" ? "Door camera: rainy street" : "Door camera: dry road"} className="aspect-video w-full object-cover" />
+            <img src={FRAMES[frame].src} alt={frame === "rain" ? "Door camera: rainy street" : "Door camera: dry road"} className="absolute inset-0 size-full object-cover" />
             <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide">DOOR CAM</span>
             {shown?.pRain !== undefined && (
               <div className="absolute inset-x-2 bottom-2 rounded bg-background/85 px-2 py-1.5">

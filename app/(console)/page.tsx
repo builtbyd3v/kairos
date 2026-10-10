@@ -11,7 +11,7 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
 import { DockDoor } from "@/components/dock-door";
-import { RainRadar } from "@/components/rain-radar";
+import { LiveRadar } from "@/components/weather-watch";
 import { doorWeather } from "@/lib/door-rain";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,30 +63,27 @@ async function Dashboard() {
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
-        <DockDoor weather={doorWeather(plan.weather, now)} source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid" />
-        <div className="grid grid-cols-[minmax(0,1fr)_24rem] items-start gap-5">
-          <div className="min-w-0 space-y-5">
-            <div className="animate-rise">
-              <ReadinessForecast />
-            </div>
-            <div className="grid animate-rise items-start gap-5 [--rise-delay:60ms] xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-              <Card>
-                <CardHeader>
-                  <CardTitle>St. Lucie weather, next 12 hours</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
-                  <WeatherStrip weather={plan.weather} />
-                </CardContent>
-              </Card>
-              <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
-                <ActivityFeed now={now} />
-              </Suspense>
-            </div>
-          </div>
-          <aside aria-label="Next round" className="animate-rise [--rise-delay:120ms]">
-            <NextRound plan={plan} strip={false} nextGo={nextGo} />
-          </aside>
+        {/* Rows of matching height, so card edges line up: decision, outlook, details. */}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
+          <DockDoor weather={doorWeather(plan.weather, now)} source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid" />
+          <NextRound plan={plan} strip={false} nextGo={nextGo} />
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
+          <ReadinessForecast />
+          <LiveRadar />
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
+          <Card className="animate-rise">
+            <CardHeader>
+              <CardTitle>Next 12 hours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WeatherStrip weather={plan.weather} />
+            </CardContent>
+          </Card>
+          <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
+            <ActivityFeed now={now} />
+          </Suspense>
         </div>
       </main>
     </>
