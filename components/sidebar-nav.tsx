@@ -9,7 +9,7 @@ const GROUPS = [
   {
     label: "Operate",
     items: [
-      { href: "/", label: "Launch", Icon: House },
+      { href: "/", label: "Dashboard", Icon: House },
       { href: "/live", label: "Live round", Icon: Radio },
     ],
   },

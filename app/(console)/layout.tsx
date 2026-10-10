@@ -67,7 +67,7 @@ async function Palette() {
   const loc = new Map(kit.locations.map((l) => [l.id, l.name]));
   const items: PaletteItem[] = [
     ...[
-      ["Launch", "/"],
+      ["Dashboard", "/"],
       ["Live round", "/live"],
       ["Evidence", "/evidence"],
       ["Water model", "/floor-check"],

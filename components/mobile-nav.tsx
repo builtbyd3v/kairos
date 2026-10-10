@@ -6,7 +6,7 @@ import { CloudLightning, Droplets, House, Radio, ShieldCheck } from "lucide-reac
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/", label: "Launch", Icon: House },
+  { href: "/", label: "Home", Icon: House },
   { href: "/live", label: "Live", Icon: Radio },
   { href: "/replay", label: "Drill", Icon: CloudLightning },
   { href: "/floor-check", label: "Water", Icon: Droplets },

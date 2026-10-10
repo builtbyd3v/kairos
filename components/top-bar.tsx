@@ -8,7 +8,7 @@ import { setScenario } from "@/lib/scenario-actions";
 import { cn } from "@/lib/utils";
 
 const NAMES: Record<string, string> = {
-  "": "Launch",
+  "": "Dashboard",
   evidence: "Evidence",
   live: "Live round",
   anomalies: "Anomalies",

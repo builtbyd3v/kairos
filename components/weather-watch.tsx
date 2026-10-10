@@ -40,19 +40,20 @@ async function RadarCard() {
 }
 
 /** Mid-round weather watch: re-checks live weather as if Spot were out right now, and shows the recall Kairos would recommend. */
-export function WeatherWatch() {
+/** at "now": a round on route right now (the dashboard). at "next": the live round, which runs at the next safe launch when recorded. */
+export function WeatherWatch({ at: mode = "next" }: { at?: "now" | "next" }) {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Checking live weather…</p>}>
-      <Watch />
+      <Watch mode={mode} />
     </Suspense>
   );
 }
 
-async function Watch() {
+async function Watch({ mode }: { mode: "now" | "next" }) {
   await connection();
   const [{ weather, now, scenario }, kit] = await Promise.all([weatherNow(), loadKit()]);
   // Recorded story: this is the round at the next safe launch (the storm has passed). Live: as if Spot were out right now.
-  const nextGo = scenario === "recorded" ? forecast(weather, kit, now).nextGo : null;
+  const nextGo = scenario === "recorded" && mode === "next" ? forecast(weather, kit, now).nextGo : null;
   const at = nextGo ?? now;
   // Weather only: full battery and no route risk, so the verdict here is the weather's alone.
   const health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
@@ -72,6 +73,7 @@ async function Watch() {
         <Icon aria-hidden className={cn("size-5 shrink-0", verdict === "RECALL" ? "animate-pulse-soft text-recall" : verdict === "HOLD" ? "text-hold" : "text-go")} />
         <VerdictChip verdict={verdict} />
         <p className="min-w-0 flex-1 text-base">
+          {mode === "now" && <span className="text-muted-foreground">Spot on route now: </span>}
           <span className="font-semibold">{verdict === "RECALL" ? "Bring Spot home" : verdict === "HOLD" ? "Hold Spot" : "Weather is clear"}</span>
           <span className="text-muted-foreground">
             {" "}
