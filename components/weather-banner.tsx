@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { CloudAlert, CloudOff, TriangleAlert } from "lucide-react";
 import { HOLD_ALERTS, RECALL_ALERTS } from "@/lib/verdict";
-import { getLiveWeather, SITE } from "@/lib/weather";
+import { SITE } from "@/lib/weather";
+import { weatherNow } from "@/lib/scenario";
 import { cn } from "@/lib/utils";
 
 /** Plant-wide strip under the page header: active NWS alerts that gate outdoor rounds, or missing live weather. */
@@ -14,7 +15,7 @@ export function WeatherBanner() {
 }
 
 async function Banner() {
-  const weather = await getLiveWeather();
+  const { weather } = await weatherNow();
   if (!weather)
     return (
       <div role="status" className="flex items-center gap-2 border-b border-border bg-secondary/40 px-8 py-2.5 text-sm text-muted-foreground">

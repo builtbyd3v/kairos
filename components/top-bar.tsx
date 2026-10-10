@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, ChevronRight, Clock } from "lucide-react";
+import { setScenario } from "@/lib/scenario-actions";
+import { cn } from "@/lib/utils";
 
 const NAMES: Record<string, string> = {
   "": "Launch",
@@ -20,18 +22,19 @@ const NAMES: Record<string, string> = {
 };
 
 // Top bar inside the app panel: breadcrumb, search, plant clock, alerts.
-export function TopBar({ search, openAnomalies, site }: { search: ReactNode; openAnomalies: number; site: string }) {
+export function TopBar({ search, openAnomalies, site, recordedAt }: { search: ReactNode; openAnomalies: number; site: string; recordedAt?: string }) {
   const parts = usePathname().split("/").filter(Boolean);
   const crumbs = [{ href: "/", label: NAMES[parts[0] ?? ""] ?? parts[0] }, ...(parts[1] ? [{ href: `/${parts[0]}/${parts[1]}`, label: parts[1] }] : [])];
 
   // Plant clock: rendered after mount so server and browser never disagree on the time.
   const [clock, setClock] = useState<string | null>(null);
   useEffect(() => {
-    const tick = () => setClock(new Date().toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }));
+    // Recorded scenario: the clock stops at the moment the storm was captured, like every rule on the page.
+    const tick = () => setClock(new Date(recordedAt ?? Date.now()).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }));
     tick();
     const id = setInterval(tick, 30000);
     return () => clearInterval(id);
-  }, []);
+  }, [recordedAt]);
 
   return (
     <div className="flex items-center gap-3 border-b border-white/[0.06] px-8 py-3 print:hidden">
@@ -54,9 +57,16 @@ export function TopBar({ search, openAnomalies, site }: { search: ReactNode; ope
       </nav>
       <div className="ml-auto flex items-center gap-2">
         <div className="hidden w-56 md:block">{search}</div>
-        <span title="Live weather; robot data, camera frames and Orbit calls are simulated or example data" className="rounded-md bg-hold/15 px-2 py-1 font-mono text-[11px] font-semibold tracking-wide text-hold ring-1 ring-hold/30">
-          DEMO DATA
-        </span>
+        <form action={setScenario} className="flex rounded-lg bg-card p-0.5 font-mono text-[11px] font-semibold tracking-wide ring-1 ring-white/[0.06]" title="Recorded: a real St. Lucie storm captured Sat 5:56 PM, replayed. Live: weather right now. Robot data, camera frames and Orbit calls are demo data in both.">
+          {(["recorded", "live"] as const).map((v) => {
+            const on = (v === "recorded") === Boolean(recordedAt);
+            return (
+              <button key={v} name="scenario" value={v} aria-pressed={on} className={cn("rounded-md px-2 py-1 transition-colors", on ? (v === "live" ? "bg-go/20 text-go" : "bg-hold/20 text-hold") : "text-muted-foreground hover:text-foreground")}>
+                {v === "recorded" ? "RECORDED STORM" : "LIVE"}
+              </button>
+            );
+          })}
+        </form>
         <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/[0.06] sm:flex">
           <Clock aria-hidden className="size-3.5" />
           {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET

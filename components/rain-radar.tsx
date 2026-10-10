@@ -20,7 +20,9 @@ const radar = (f: string, x: number, y: number, stamp: number) =>
 const base = (x: number, y: number) => `https://tile.openstreetmap.org/${Z}/${x}/${y}.png`;
 
 /** Live rain radar around the plant: the last 50 minutes on a loop, so a storm's direction is visible at a glance. */
-export function RainRadar({ stamp, label }: { stamp: number; label: string }) {
+export function RainRadar({ stamp, label, recorded = false }: { stamp: number; label: string; recorded?: boolean }) {
+  // Recorded scenario: the frames captured with the weather snapshot, served from public/demo/radar.
+  const tile = (f: string, x: number, y: number) => (recorded ? `/demo/radar/${f || "now"}-${x}-${y}.png` : radar(f, x, y, stamp));
   const [step, setStep] = useState(FRAMES.length - 1); // first paint shows the live frame
   // The loop timer is the outside system; people who prefer reduced motion keep the live frame.
   useEffect(() => {
@@ -43,7 +45,7 @@ export function RainRadar({ stamp, label }: { stamp: number; label: string }) {
           <div key={f || "now"} aria-hidden className={cn("absolute inset-0 grid grid-cols-3 transition-opacity duration-300", i === frame ? "opacity-80" : "opacity-0")}>
             {YS.flatMap((y) => XS.map((x) => (
               // eslint-disable-next-line @next/next/no-img-element -- third-party radar tiles
-              <img key={`${x}-${y}`} src={radar(f, x, y, stamp)} alt="" className="size-full" />
+              <img key={`${x}-${y}`} src={tile(f, x, y)} alt="" className="size-full" />
             )))}
           </div>
         ))}

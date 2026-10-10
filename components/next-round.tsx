@@ -1,7 +1,8 @@
 import { CloudLightning, Thermometer, Wind } from "lucide-react";
 import { analyze, pct, type Kit } from "@/lib/kit";
 import { decide, ORBIT_CALL } from "@/lib/verdict";
-import { getLiveWeather, SITE } from "@/lib/weather";
+import { SITE } from "@/lib/weather";
+import { weatherNow } from "@/lib/scenario";
 import { logDecision } from "@/lib/decisions";
 import { drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
 import { ReasonList, VerdictBlock, VerdictChip } from "@/components/status";
@@ -28,7 +29,7 @@ function nextRoundStart(now: Date): Date {
 
 /** The verdict for the next scheduled round. Callers read the clock, so they sit behind connection() + Suspense. */
 export async function planNextRound(kit: Kit, now: Date) {
-  const weather = await getLiveWeather();
+  const { weather } = await weatherNow();
   // note: the next round repeats the latest kit route and starts at that mission's battery; the kit has no live telemetry.
   const last = kit.missions.at(-1)!;
   const route = routeOf(kit, last.id);

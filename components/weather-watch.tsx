@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { CloudLightning, CloudSun, TriangleAlert } from "lucide-react";
 import { decide, ORBIT_CALL } from "@/lib/verdict";
-import { getLiveWeather, SITE } from "@/lib/weather";
+import { SITE } from "@/lib/weather";
+import { weatherNow } from "@/lib/scenario";
 import { RainRadar } from "@/components/rain-radar";
 import { VerdictChip } from "@/components/status";
 import { cn } from "@/lib/utils";
@@ -22,14 +23,14 @@ export function LiveRadar() {
 
 async function RadarCard() {
   await connection();
-  const now = new Date();
+  const { now, scenario } = await weatherNow();
   return (
     <Card className="animate-rise [--rise-delay:160ms]">
       <CardHeader>
         <CardTitle>Radar · last 50 min</CardTitle>
       </CardHeader>
       <CardContent>
-        <RainRadar stamp={Math.floor(now.getTime() / 300000)} label="Live rain radar around the St. Lucie plant" />
+        <RainRadar stamp={Math.floor(now.getTime() / 300000)} recorded={scenario === "recorded"} label="Rain radar around the St. Lucie plant" />
       </CardContent>
     </Card>
   );
@@ -46,8 +47,7 @@ export function WeatherWatch() {
 
 async function Watch() {
   await connection();
-  const now = new Date();
-  const weather = await getLiveWeather();
+  const { weather, now } = await weatherNow();
   // Weather only: full battery and no route risk, so the verdict here is the weather's alone.
   const health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
   const { verdict, reasons } = decide(weather, health, { now, start: now, end: new Date(now.getTime() + ROUND_MIN * 60000) }, true);

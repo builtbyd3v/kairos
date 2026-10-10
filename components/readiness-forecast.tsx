@@ -1,7 +1,7 @@
 import { Suspense, type CSSProperties } from "react";
 import { connection } from "next/server";
 import { loadKit } from "@/lib/kit";
-import { getLiveWeather } from "@/lib/weather";
+import { weatherNow } from "@/lib/scenario";
 import { forecast, NO_DATA, type Slot } from "@/lib/forecast";
 import { et } from "@/components/next-round";
 import { VerdictChip } from "@/components/status";
@@ -36,8 +36,7 @@ export function ReadinessForecast() {
 
 async function ForecastCard() {
   await connection();
-  const now = new Date();
-  const [kit, weather] = await Promise.all([loadKit(), getLiveWeather()]);
+  const [kit, { weather, now }] = await Promise.all([loadKit(), weatherNow()]);
   const f = forecast(weather, kit, now);
   const x = (d: Date) => ((d.getTime() - f.from.getTime()) / (f.to.getTime() - f.from.getTime())) * W;
   const ticks = f.bands.filter((b) => b.start.getTime() % 3600000 === 0 && hourEt(b.start) % 3 === 0 && x(b.start) > 36);

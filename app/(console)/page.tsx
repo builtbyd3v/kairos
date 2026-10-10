@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { ArrowRight } from "lucide-react";
 import { loadKit } from "@/lib/kit";
 import { forecast } from "@/lib/forecast";
+import { weatherNow } from "@/lib/scenario";
 import { PageHeader } from "@/components/page-header";
 import { VerdictChip } from "@/components/status";
 import { et, NextRound, planNextRound, WeatherStrip } from "@/components/next-round";
@@ -35,7 +36,7 @@ export default function Launch() {
 // note: Orbit already shows anomalies, missions, insights and shift handoff. This page shows only what Kairos adds: weather + health before launch.
 async function Dashboard() {
   await connection();
-  const now = new Date();
+  const { now } = await weatherNow();
   const kit = await loadKit();
   const plan = await planNextRound(kit, now);
   const { nextGo } = forecast(plan.weather, kit, now);

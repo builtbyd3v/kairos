@@ -8,6 +8,7 @@ import { SidebarNav } from "@/components/sidebar-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { CommandPalette, type PaletteItem } from "@/components/command-palette";
 import { TopBar } from "@/components/top-bar";
+import { getScenario, RECORDED_AT } from "@/lib/scenario";
 import { SITE } from "@/lib/weather";
 
 // Console shell: sidebar navigation plus the page. Every operator page lives under app/(console).
@@ -48,9 +49,9 @@ export default function ConsoleLayout({ children }: LayoutProps<"/">) {
 
 async function Top() {
   await connection();
-  const [kit, reviews] = await Promise.all([loadKit(), currentReviews()]);
+  const [kit, reviews, scenario] = await Promise.all([loadKit(), currentReviews(), getScenario()]);
   const open = kit.anomalies.filter((a) => a.reviewRequired && !reviews[a.id]).length;
-  return <TopBar search={<Palette />} openAnomalies={open} site={SITE.name.split(",")[0]} />;
+  return <TopBar search={<Palette />} openAnomalies={open} site={SITE.name.split(",")[0]} recordedAt={scenario === "recorded" ? RECORDED_AT : undefined} />;
 }
 
 async function NavWithBadges() {
