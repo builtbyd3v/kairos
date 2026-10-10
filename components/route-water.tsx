@@ -39,9 +39,9 @@ async function Water() {
               <span className="text-muted-foreground"> · {d.label === "confirm" ? "confirmed" : d.label === "reject" ? "rejected" : "needs an answer"}</span>
             </p>
             {/* The overlay sits on the image's own box, so normalized coordinates map for any aspect ratio. */}
-            <div className="relative overflow-hidden rounded-lg ring-1 ring-border">
+            <div className="relative mx-auto w-fit overflow-hidden rounded-lg ring-1 ring-border">
               {/* eslint-disable-next-line @next/next/no-img-element -- stored frame URI */}
-              <img src={d.frame_uri} alt={`Spot camera at ${d.waypoint ?? "the route"}`} className="block h-auto w-full" />
+              <img src={d.frame_uri} alt={`Spot camera at ${d.waypoint ?? "the route"}`} className="block h-auto max-h-56 w-auto" />
               <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full">
                 <rect x={d.box_x} y={d.box_y} width={d.box_w} height={d.box_h} fill="#6ea8fe" fillOpacity="0.1" stroke="#8ab8ff" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
               </svg>
