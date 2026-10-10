@@ -50,7 +50,7 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
           <div className="relative overflow-hidden rounded-lg ring-1 ring-border">
             {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
             <img src={FRAMES[frame].src} alt={frame === "rain" ? "Door camera sample: rainy street" : "Door camera sample: dry road"} className="aspect-video w-full object-cover" />
-            <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide">DOOR CAM · SAMPLE</span>
+            <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide">DOOR CAM · SAMPLE PHOTO, NOT ST. LUCIE</span>
             {shown?.pRain !== undefined && (
               <div className="absolute inset-x-2 bottom-2 rounded bg-background/85 px-2 py-1.5">
                 <div className="flex justify-between font-mono text-[11px] tabular-nums">
@@ -76,10 +76,12 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
         </div>
         <div className="space-y-3 text-sm">
           <dl className="panel-inset grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-4 py-3 [&_dt]:font-mono [&_dt]:text-[11px] [&_dt]:tracking-wider [&_dt]:uppercase">
+            <dt className="col-span-2 text-helper normal-case tracking-normal">Door camera (the sample photo on the left)</dt>
             <dt className="text-muted-foreground">Camera</dt>
             <dd className={cn(status !== "ok" && "text-hold")}>
               {status === "ok" ? (shown!.pRain! >= DOOR_RAIN_THRESHOLD ? "rain" : "no rain") : status === "error" ? "model failed" : "not checked yet"}
             </dd>
+            <dt className="col-span-2 pt-1 text-helper normal-case tracking-normal">St. Lucie plant, live weather (not the photo)</dt>
             <dt className="text-muted-foreground">Rain now</dt>
             <dd className={cn(weather.observedRain !== false && "text-hold")}>{yesNo(weather.observedRain)}</dd>
             <dt className="text-muted-foreground">Next hour</dt>

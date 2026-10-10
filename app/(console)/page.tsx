@@ -5,14 +5,14 @@ import { ArrowRight } from "lucide-react";
 import { loadKit } from "@/lib/kit";
 import { PageHeader } from "@/components/page-header";
 import { VerdictChip } from "@/components/status";
-import { et, NextRound, planNextRound } from "@/components/next-round";
+import { et, NextRound, planNextRound, WeatherStrip } from "@/components/next-round";
 import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
 import { DockDoor } from "@/components/dock-door";
 import { doorWeather } from "@/lib/door-rain";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function Launch() {
@@ -61,18 +61,27 @@ async function Dashboard() {
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
         <DockDoor weather={doorWeather(plan.weather, now)} source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid" />
         <div className="grid grid-cols-[minmax(0,1fr)_24rem] items-start gap-5">
-          <div className="min-w-0 animate-rise space-y-5">
-            <ReadinessForecast />
-          </div>
-          <aside aria-label="Next round and activity" className="space-y-5">
-            <div className="animate-rise [--rise-delay:60ms]">
-              <NextRound plan={plan} />
+          <div className="min-w-0 space-y-5">
+            <div className="animate-rise">
+              <ReadinessForecast />
             </div>
-            <div className="animate-rise [--rise-delay:120ms]">
+            <div className="grid animate-rise items-start gap-5 [--rise-delay:60ms] xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+              <Card>
+                <CardHeader>
+                  <CardTitle>St. Lucie weather, next 12 hours</CardTitle>
+                  <CardDescription>Live NWS forecast grid and Open-Meteo rain. Kairos checks this until Spot docks, not only at launch.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <WeatherStrip weather={plan.weather} />
+                </CardContent>
+              </Card>
               <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>
                 <ActivityFeed now={now} />
               </Suspense>
             </div>
+          </div>
+          <aside aria-label="Next round" className="animate-rise [--rise-delay:120ms]">
+            <NextRound plan={plan} strip={false} />
           </aside>
         </div>
       </main>

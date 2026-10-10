@@ -47,7 +47,7 @@ export async function planNextRound(kit: Kit, now: Date) {
 
 export type RoundPlan = Awaited<ReturnType<typeof planNextRound>>;
 
-export function NextRound({ plan }: { plan: RoundPlan }) {
+export function NextRound({ plan, strip = true }: { plan: RoundPlan; strip?: boolean }) {
   const { verdict, reasons, indoorOnly, last, route, minutes, start, health, weather } = plan;
   const kept = route.filter((id) => !OUTDOOR_WAYPOINTS.has(id)).length;
   return (
@@ -98,7 +98,7 @@ export function NextRound({ plan }: { plan: RoundPlan }) {
             <code className="mt-1 block font-mono break-all">{ORBIT_CALL[verdict]}</code>
           </details>
         )}
-        <WeatherStrip weather={weather} />
+        {strip && <WeatherStrip weather={weather} />}
       </CardContent>
     </Card>
   );
