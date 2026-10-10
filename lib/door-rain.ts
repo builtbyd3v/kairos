@@ -72,9 +72,12 @@ export async function classifyDoor(image: string): Promise<{ pRain: number; ms: 
 }
 
 /**
- * Weather half of the door check, from the live feed. Rain now = the latest step that started in the last 15 minutes
- * (Open-Meteo's 15-minute nowcast); forecast = any rain in the next hour. No feed, or no step in a window, is unknown (null).
+ * Weather half of the door check. Rain now = the newest step that started in the last hour (Open-Meteo's 15-minute
+ * nowcast when present, else the hourly NWS step); forecast = any rain in the next hour. No feed, or no step in a window, is unknown (null).
  */
+// note: ASSUMPTION: below 0.25 mm/h is a trace, not rain at the door. NWS spreads 6-hour totals over hours, so most hours carry a trace.
+export const RAIN_MM_H = 0.25;
+
 export function doorWeather(
   weather: { steps: { time: string; precipMmPerHour: number | null }[] } | null,
   now: Date,
@@ -82,7 +85,8 @@ export function doorWeather(
   if (!weather) return { observedRain: null, forecastRain: null };
   const t = now.getTime();
   const known = weather.steps.filter((s) => s.precipMmPerHour !== null).map((s) => ({ at: Date.parse(s.time), mm: s.precipMmPerHour! }));
-  const current = known.filter((s) => s.at <= t && s.at > t - 15 * 60000).sort((a, b) => b.at - a.at)[0];
+  // The newest step covering t: a 15-minute nowcast step when there is one, else the hourly NWS step.
+  const current = known.filter((s) => s.at <= t && s.at > t - 60 * 60000).sort((a, b) => b.at - a.at)[0];
   const ahead = known.filter((s) => s.at > t && s.at <= t + 3600000);
-  return { observedRain: current ? current.mm > 0 : null, forecastRain: ahead.length ? ahead.some((s) => s.mm > 0) : null };
+  return { observedRain: current ? current.mm >= RAIN_MM_H : null, forecastRain: ahead.length ? ahead.some((s) => s.mm >= RAIN_MM_H) : null };
 }

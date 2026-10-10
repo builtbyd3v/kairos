@@ -55,7 +55,13 @@ async function Dashboard() {
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
         {/* Rows of matching height, so card edges line up: decision, outlook, details. */}
         <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
-          <DockDoor weather={doorWeather(plan.weather, now)} source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid" />
+          <DockDoor
+            checks={[
+              { label: "Now", weather: doorWeather(plan.weather, now) },
+              ...(nextGo ? [{ label: et(nextGo, { hour: "numeric", minute: "2-digit" }), weather: doorWeather(plan.weather, nextGo) }] : []),
+            ]}
+            source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid"
+          />
           <NextRound plan={plan} strip={false} nextGo={nextGo} />
         </div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">

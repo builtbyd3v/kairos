@@ -2,6 +2,7 @@
 // Pure: weather, kit and the clock come in as arguments.
 import type { Kit } from "./kit";
 import { decide, type Health, type Reason, type Verdict, type Weather } from "./verdict.ts";
+import { doorWeather } from "./door-rain.ts";
 import { drainPerMin, isOutdoor, routeOf } from "./route.ts";
 
 const HOUR = 3600000;
@@ -62,8 +63,13 @@ export function forecast(weather: Weather | null, kit: Kit, now: Date) {
     const band = slot(new Date(t));
     bands.push({ ...band, end: new Date(Math.min(Math.floor(t / HOUR) * HOUR + HOUR, now.getTime() + DAY)) });
   }
-  // The next safe step after a HOLD: the first hour a full round would launch GO. Null if none in the next 24 h.
-  const nextGo = bands.find((b) => b.verdict === "GO")?.start ?? null;
+  // The next safe step after a HOLD: the first hour a full round would launch GO and the dock door rule sees no rain then
+  // or in the hour after (Spot does not walk out into rain). Null if none in the next 24 h.
+  const doorDry = (t: Date) => {
+    const w = doorWeather(weather, t);
+    return w.observedRain === false && w.forecastRain === false;
+  };
+  const nextGo = bands.find((b) => b.verdict === "GO" && doorDry(b.start))?.start ?? null;
   return { from: now, to: new Date(now.getTime() + DAY), minutes, outdoor: health.outdoor, rounds, bands, nextGo };
 }
 

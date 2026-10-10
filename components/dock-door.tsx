@@ -34,7 +34,13 @@ function Tile({ Icon, label, value, ok }: { Icon: typeof Camera; label: string; 
 const word = (v: boolean | null, yes: string) => (v === null ? "Unknown" : v ? yes : "Dry");
 
 /** The dock door check: Spot leaves only if the camera and the weather both say dry. Any rain or any unknown holds. */
-export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; source: string }) {
+/** One moment to check the door at: now, or the next safe launch. */
+type Check = { label: string; weather: DoorInput["weather"] };
+
+export function DockDoor({ checks, source }: { checks: Check[]; source: string }) {
+  // Default to the next safe launch: the storm has passed, so the door camera is what decides.
+  const [at, setAt] = useState(checks.length - 1);
+  const { weather, label: when } = checks[Math.min(at, checks.length - 1)];
   const [frame, setFrame] = useState<keyof typeof FRAMES>("dry");
   const [camera, setCamera] = useState<Camera | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,6 +70,20 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Door aria-hidden className="size-5 text-primary" /> Dock door
+          {checks.length > 1 && (
+            <span role="group" aria-label="Check the door at" className="ml-auto flex rounded-lg bg-secondary p-0.5 normal-case tracking-normal">
+              {checks.map((c, i) => (
+                <button
+                  key={c.label}
+                  onClick={() => setAt(i)}
+                  aria-pressed={at === i}
+                  className={cn("rounded-md px-2 py-0.5 font-mono text-[11px]", at === i ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
+                  {i === 0 ? c.label : `Next launch ${c.label}`}
+                </button>
+              ))}
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4">
@@ -84,21 +104,19 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
             verdict={result.verdict}
             caption={
               result.verdict === "GO"
-                ? "Spot can walk out"
-                : weather.observedRain
-                  ? "Raining at the plant now"
-                  : weather.forecastRain
-                    ? "Rain in the next hour"
-                    : wet
-                      ? "Wet ground at the door"
-                      : "Check the door camera"
+                ? `Door clear and no rain: Spot can walk out ${when === "Now" ? "now" : `at ${when}`}`
+                : wet
+                  ? `Puddles at the door${weather.observedRain || weather.forecastRain ? ", and rain due" : ""}`
+                  : weather.observedRain || weather.forecastRain
+                    ? `${wet === false ? "Door is clear, but " : ""}rain ${weather.observedRain ? (when === "Now" ? "now" : `at ${when}`) : "in the hour after"} holds Spot`
+                    : "Check the door camera first"
             }
           />
           <div className="space-y-2">
           <div className="keep-grid grid grid-cols-3 gap-2">
-            <Tile Icon={Camera} label="Ground" value={status === "ok" ? (wet ? "Wet" : "Dry") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
-            <Tile Icon={CloudRain} label="Rain now" value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
-            <Tile Icon={Timer} label="Next hour" value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />
+            <Tile Icon={Camera} label="Door" value={status === "ok" ? (wet ? "Puddles" : "Clear") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
+            <Tile Icon={CloudRain} label={when === "Now" ? "Rain now" : `Rain at ${when}`} value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
+            <Tile Icon={Timer} label={when === "Now" ? "Next hour" : "Hour after"} value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />
           </div>
           {/* The real door-camera frame, with the water model's boxes. */}
           <div className="flex items-center gap-3 rounded-lg bg-black/40 p-2 ring-1 ring-white/[0.06]">

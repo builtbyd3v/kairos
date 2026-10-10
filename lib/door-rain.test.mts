@@ -60,3 +60,13 @@ test("doorWeather: no feed or no step in a window is unknown", async () => {
   assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true });
   assert.deepEqual(doorWeather({ steps: [] }, now), { observedRain: null, forecastRain: null });
 });
+
+test("doorWeather: a trace below 0.25 mm/h is not rain at the door", async () => {
+  const { doorWeather } = await import("./door-rain.ts");
+  const now = new Date("2026-10-10T20:00:00Z");
+  const steps = [
+    { time: "2026-10-10T20:00:00Z", precipMmPerHour: 0.08 },
+    { time: "2026-10-10T20:30:00Z", precipMmPerHour: 0.3 },
+  ];
+  assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true });
+});
