@@ -1,0 +1,41 @@
+{
+ "note": "Held-out test split (never trained on). Obviously dry floors and walkways; SCAND is a camera on a real Spot robot. No water in these frames.",
+ "frames": [
+  {
+   "src": "/captures/demo-dry-0.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "A_Spot_Union_Union_Wed_Nov_10_53_1636568870514485173.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-dry-1.jpg",
+   "truth": [],
+   "source": "scand",
+   "license": "CC0 1.0",
+   "url": "https://doi.org/10.18738/T8/0PRYRH",
+   "orig": "B_Spot_SAC_SAC_Wed_Nov_10_49_1636562765020056241.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-dry-2.jpg",
+   "truth": [],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-546-_jpg.rf.84ea9fbe9a077a9f05a76f047fee4795.jpg",
+   "split": "test"
+  },
+  {
+   "src": "/captures/demo-dry-3.jpg",
+   "truth": [],
+   "source": "kaggle",
+   "license": "CC0 1.0",
+   "url": "https://www.kaggle.com/datasets/muftirestumahesa/obstacles-in-public-spaces-for-dist-yolo",
+   "orig": "gambar-564-_jpg.rf.e6f31bd10e9d7c7c0d90d19c6e3a479d.jpg",
+   "split": "test"
+  }
+ ]
+}
