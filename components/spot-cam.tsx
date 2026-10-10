@@ -44,7 +44,7 @@ export function useSpotCam(frames: CamFrame[], idx: number | null, waypoint: str
         boxes: result && result !== "error" ? result.boxes.map((d) => ({ ...d.box, score: d.score })) : [],
       }
     : null;
-  return { idx: idx ?? 0, frame, result, vision, progress };
+  return { idx: idx ?? 0, frame, result, vision, progress, results };
 }
 
 // note: ASSUMPTION: flat ground and a fixed camera; row y maps to distance d = K / (y - HORIZON). Rough, for the picture only.
@@ -54,7 +54,21 @@ const distance = (y: number) => K / Math.max(0.02, y - HORIZON);
 const LANE_M = 1.2; // ASSUMPTION: lane width on the ground
 
 /** The camera view: frame, heading glow, model boxes with real confidence, labeled truth as corner marks, HUD, and an "Around Spot" 360 radar. */
-export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<typeof useSpotCam>; frames: CamFrame[]; waypoint: string; total: number }) {
+export function SpotCam({
+  cam,
+  frames,
+  waypoint,
+  total,
+  around = true,
+  credit,
+}: {
+  cam: ReturnType<typeof useSpotCam>;
+  frames: CamFrame[];
+  waypoint: string;
+  total: number;
+  around?: boolean; // the "Around Spot" radar beside the frame
+  credit?: string; // replaces the per-photo source line
+}) {
   const { frame, result, idx } = cam;
   const gid = useId();
   const boxes = result && result !== "error" ? result.boxes : [];
@@ -68,7 +82,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
   const cx = ((PATH.topL + PATH.topR) / 2) * W;
 
   return (
-    <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">
+    <div className={cn("grid items-start gap-3", around && "lg:grid-cols-[minmax(0,1fr)_14rem]")}>
       <div className="overflow-hidden rounded-xl bg-black ring-1 ring-border">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 px-3 py-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
           <span className="text-foreground">SPOT CAM</span>
@@ -171,11 +185,11 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
             <span className="text-[#8ab8ff]">▢</span> water % = how often boxes like this were real water · <span className="text-foreground">⌜⌟</span> labeled truth · <span className="text-[#2dd4bf]">▲</span> heading
           </span>
           <a className="ml-auto underline-offset-4 hover:underline" href={frame.url}>
-            {frame.source === "scand" ? "Spot camera, UT Austin SCAND" : "Example photo, held out"} · {frame.license}
+            {credit ?? (frame.source === "scand" ? "Spot camera, UT Austin SCAND" : "Example photo, held out")} · {frame.license}
           </a>
         </div>
       </div>
-      <AroundSpot boxes={boxes} />
+      {around && <AroundSpot boxes={boxes} />}
       <span className="sr-only" aria-live="polite">
         {state} at {waypoint}, capture {idx + 1} of {total}
       </span>

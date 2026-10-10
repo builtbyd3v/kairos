@@ -1,77 +1,48 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BatteryLow,
-  BatteryMedium,
-  BatteryWarning,
-  CircleCheck,
-  CircleCheckBig,
-  CircleX,
-  Droplets,
-  Flag,
-  FlagTriangleRight,
-  Footprints,
-  OctagonAlert,
-  Pause,
-  Play,
-  RotateCcw,
-  TriangleAlert,
-  WifiOff,
-} from "lucide-react";
+import { Check, CloudRain, House, Pause, Play, RotateCcw, TriangleAlert } from "lucide-react";
 import { waterModel, WATER_REVISION } from "@/lib/water-model";
 import { SpotCam, useSpotCam, type CamFrame } from "@/components/spot-cam";
-import demoWet from "@/public/captures/demo-wet.json";
-import demoDry from "@/public/captures/demo-dry.json";
-import spotDry from "@/public/captures/spot-dry.json";
-import { ORBIT_CALL, inPath, visionReason, type Vision } from "@/lib/verdict";
+import approach from "@/public/captures/approach.json";
+import { decide, inPath, LIMITS, ORBIT_CALL, visionReason, type Health, type Vision, type Weather, type WeatherStep } from "@/lib/verdict";
 import { labelDetection, recordDetection } from "@/lib/evidence";
-import { endOf, kitClock, liveState, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
-import { FacilityMap, type MapSite } from "@/components/facility-map";
+import { legTime, walk, walkAt, type Pt } from "@/lib/live";
+import { FacilityMap, pos, type MapPath, type MapSite } from "@/components/facility-map";
+import { RADAR_FRAMES, StormRadar } from "@/components/storm-radar";
 import { PageHeader } from "@/components/page-header";
-import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
+import { VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import { Why } from "@/components/why";
+import { cn } from "@/lib/utils";
 
-type Mission = { id: string; name: string; config: string; plan: { id: string; locationId: string; type: string }[] };
 type Props = {
-  missions: Mission[];
-  defaultId: string;
-  events: LiveEvent[];
-  anomalies: LiveAnomaly[];
-  readings: LiveReading[];
-  names: Record<string, string>;
+  mission: string;
+  stops: string[]; // planned waypoints after the dock, ending at the first outdoor stop
   sites: MapSite[];
   dock: string;
   outdoor: string[];
-  watch?: ReactNode; // server-rendered live weather banner
-  radar?: ReactNode; // server-rendered radar card
+  steps: WeatherStep[]; // recorded 15-minute rain steps, oldest first
+  alerts: string[];
+  recordedAt: string;
 };
+type Answer = { run: number; stop: number; label: "confirm" | "reject" | "override"; saved?: number | "failed" };
 
-const TICK_MS = 250;
-const SPEEDS = [10, 30, 60]; // kit seconds per real second
-const words = (s = "") => s.replaceAll("_", " ").toLowerCase();
-
-const TRUTH_ICON: Record<Truth, typeof Flag> = { CLEAN: CircleCheckBig, DEGRADED: TriangleAlert, "NEEDS REVIEW": OctagonAlert };
-const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }> = {
-  MISSION_STARTED: { Icon: Flag, label: "Mission started", tone: "text-primary" },
-  ACTION_STARTED: { Icon: Footprints, label: "Started", tone: "text-muted-foreground" },
-  ACTION_COMPLETED: { Icon: CircleCheck, label: "OK", tone: "text-go" },
-  ACTION_FAILED: { Icon: CircleX, label: "Failed", tone: "text-recall" },
-  MISSION_COMPLETED: { Icon: FlagTriangleRight, label: "Mission reported", tone: "text-primary" },
-};
-// note: the kit has no camera frames. One capture per waypoint, all held-out test photos the model never trained on,
-// checked by eye: the outdoor stop gets an unmistakable puddle (when "Puddle on route" is on), every other stop a clearly dry floor.
-const DRY: CamFrame[] = [...demoDry.frames, ...spotDry.frames];
-const PUDDLE: CamFrame = demoWet.frames[1];
-const capturesFor = (plan: Mission["plan"], outdoor: string[], puddle: boolean) => {
-  let d = 0;
-  return plan.map((a) => (puddle && outdoor.includes(a.locationId) ? PUDDLE : DRY[d++ % DRY.length]));
-};
+const SPEEDS = [1, 2, 4];
+// One continuous walk toward a puddle: 9 consecutive held-out photos of one path (Kaggle scene k:13, CC0), never trained on.
+const FRAMES: CamFrame[] = approach.frames;
+// note: first frame whose model box overlaps Spot's lane (checked in the browser); earlier frames show the puddle ahead, outside the lane.
+const HOLD_FRAME = 6;
+// Weather only, like the weather watch: full battery, no route risk, so the verdict is the weather's alone.
+const HEALTH: Health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
+const WATCH_MIN = 15; // ASSUMPTION: Spot is at most 15 min from the dock on this route
+// note: the replay clock is scaled so the recorded storm reaches the plant while Spot walks the leg to the outdoor stop.
+const RECALL_AT = 0.45;
+const TURN_S = 1; // Spot stops and turns around before walking home
+const clock = (ms: number) => new Date(ms).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
+const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 /** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
 async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reject") {
@@ -100,406 +71,371 @@ async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reje
   await labelDetection(form);
   return id;
 }
-const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
-export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch, radar }: Props) {
-  // Open at the first waypoint, so the camera shows a capture from the first second.
-  const openingOf = (id: string) => {
-    const evs = stream.filter((e) => e.missionId === id);
-    return evs.find((e) => e.type === "ACTION_STARTED")?.at ?? evs[0].at;
-  };
-  const [missionId, setMissionId] = useState(defaultId);
-  const [t, setT] = useState(() => openingOf(defaultId));
+/** The simulated round: Spot walks the route, the camera checks the floor at each stop, and the recorded storm plays on the same clock. */
+export function LiveRound({ mission, stops, sites, dock, outdoor, steps, alerts, recordedAt }: Props) {
+  const [s, setS] = useState(0); // round seconds; stops while Spot waits on the floor check or the operator
   const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState(30);
-  const [wetFrame, setWetFrame] = useState(true);
-  // Operator's answer to a floor HOLD, keyed to the waypoint visit (action) it answers.
-  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; frame: string; saved?: number | "failed" } | null>(null);
+  const [speed, setSpeed] = useState(1);
+  const [run, setRun] = useState(0);
+  const [answer, setAnswer] = useState<Answer | null>(null);
 
-  const mission = missions.find((m) => m.id === missionId)!;
-  const events = useMemo(() => stream.filter((e) => e.missionId === missionId), [stream, missionId]);
-  const start = events[0].at;
-  const end = endOf(events);
+  const plan = useMemo(() => {
+    const byId = new Map(sites.map((x) => [x.id, x]));
+    const pt = (id: string): Pt => ({ ...pos(byId.get(id)!), floor: byId.get(id)!.floor });
+    const ids = [dock, ...stops, dock];
+    const out = walk(ids.map(pt));
+    const node = (stop: number) => out.nodes.findIndex((n) => n.stop === stop);
+    const outdoorStop = ids.findIndex((id) => outdoor.includes(id));
+    const hold = outdoorStop - 1; // last indoor stop: the puddle reaches Spot's lane here
+    const holdAt = out.arrive[node(hold)];
+    // No hindsight: at replay time ms the dispatcher sees only the recorded steps up to ms.
+    const t0 = Date.parse(steps[0].time);
+    const weatherAt = (ms: number): Weather => ({
+      fetchedAt: new Date(ms).toISOString(),
+      source: "Open-Meteo 15-min rain, recorded Sat 5:56 PM",
+      alerts,
+      steps: steps.filter((x) => Date.parse(x.time) <= ms),
+    });
+    const verdictAt = (ms: number) => decide(weatherAt(ms), HEALTH, { now: new Date(ms), start: new Date(ms), end: new Date(ms + WATCH_MIN * 60000) }, true);
+    const recallStep = steps.find((x) => verdictAt(Date.parse(x.time)).verdict === "RECALL");
+    const sRecall = recallStep && outdoorStop > 0 ? legTime(out, outdoorStop, RECALL_AT) : null;
+    const rate = recallStep && sRecall ? (Date.parse(recallStep.time) - t0) / sRecall : 60000; // replay ms per round second
+    const home = sRecall === null ? null : walk([walkAt(out, sRecall).pt, pt(dock)], sRecall + TURN_S, 0);
+    const end = (home ?? out).arrive.at(-1)!;
+    // Camera: frames advance as Spot walks toward the hold stop, frozen while Spot stands at a stop.
+    const frameAt = (t: number) => (t >= holdAt ? HOLD_FRAME : Math.min(HOLD_FRAME - 1, Math.floor((HOLD_FRAME * t) / holdAt)));
+    return { ids, out, node, hold, holdAt, t0, rate, verdictAt, sRecall, home, end, frameAt };
+  }, [sites, stops, dock, outdoor, steps, alerts]);
+  const { ids, out, node, hold, sRecall, home, end } = plan;
 
-  const s = liveState(events, t, anomalies, readings);
-  const startedBy = new Map(events.filter((e) => e.type === "ACTION_STARTED").map((e) => [e.actionId, e]));
-  const anomaliesBy = Map.groupBy(s.anomalies, (a) => a.actionId);
-  const where = (e?: LiveEvent) => (e ? `${e.locationId} ${names[e.locationId!] ?? ""} · ${e.assetId} ${names[e.assetId!] ?? ""}` : "");
-  const truth = TRUTH_UI[s.truth];
-  const TruthIcon = TRUTH_ICON[s.truth];
-
-  // Floor check at every waypoint: Spot's camera captures the floor ahead and the water model checks it before Spot moves on.
-  // While a capture is being checked, Spot waits (unknown floor is never GO). The map, camera and decision share this one index.
-  const captures = useMemo(() => capturesFor(mission.plan, outdoor, wetFrame), [mission.plan, outdoor, wetFrame]);
-  const stop = s.phase === "done" || !s.current ? null : mission.plan.findIndex((a) => a.id === s.current!.actionId);
-  const at = stop !== null && stop >= 0 ? mission.plan[stop] : null;
-  const cam = useSpotCam(captures, at ? stop : null, at?.locationId ?? "");
-  const floorKey = at ? `${missionId}|${at.id}|${wetFrame ? "wet" : "dry"}` : null;
-  const answered = answer?.key === floorKey ? answer : null;
-  const arrival = at ? { id: at.id, locationId: at.locationId } : null;
-  const vision = cam.vision;
+  const recalled = sRecall !== null && s >= sRecall;
+  const docked = recalled && s >= end;
+  const w = recalled && home ? walkAt(home, s) : walkAt(out, s);
+  const dwelling = recalled ? undefined : w.dwelling;
+  const checking = dwelling !== undefined && dwelling > 0 && dwelling < ids.length - 1;
+  const frame = plan.frameAt(dwelling !== undefined ? out.arrive[w.k] : recalled ? end : s);
+  const waypoint = ids[recalled ? plan.hold : (dwelling ?? w.reached)];
+  const cam = useSpotCam(FRAMES, frame, waypoint);
+  const vision = checking ? cam.vision : null;
   const floorCall = vision ? visionReason(vision) : null;
-  const wet = vision?.boxes.some(inPath) ?? false;
-  // Spot waits at the waypoint while the floor is wet or unknown, until the operator answers. Playback is the stand-in for Spot.
-  const held = floorCall?.verdict === "HOLD" && !answered;
-  const running = playing && t < end && !held;
+  const answered = answer?.run === run && answer.stop === dwelling ? answer : null;
+  const cleared = !checking || floorCall?.verdict === "GO" || !!answered;
+  const held = checking && vision?.status !== "pending" && floorCall?.verdict === "HOLD" && !answered;
+  // Spot cannot leave a stop until its floor is known and clear, or the operator answered.
+  const gate = cleared ? end : out.depart[w.k];
 
-  // Playback clock: the interval is the outside system. It stops itself at the mission's end or a floor hold.
+  const ms = Math.round(plan.t0 + s * plan.rate);
+  const weather = plan.verdictAt(ms);
+  const rainNow = steps.findLast((x) => Date.parse(x.time) <= ms)?.precipMmPerHour ?? null;
+  const radar = sRecall ? Math.min(RADAR_FRAMES.length - 1, Math.floor(((RADAR_FRAMES.length - 1) * s) / sRecall)) : RADAR_FRAMES.length - 1;
+
+  // Playback clock: the animation frame loop is the outside system. It stops at the gate and at the dock.
+  const done = s >= end;
   useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setT((prev) => Math.min(end, prev + speed * TICK_MS)), TICK_MS);
-    return () => clearInterval(id);
-  }, [running, speed, end]);
-  const answerFloor = (label: "confirm" | "reject" | "override") => {
-    const key = floorKey!;
-    setAnswer({ key, label, frame: cam.frame.src });
-    if (label === "override" || !vision?.boxes.length) return;
-    saveEvidence(cam.frame, vision, label).then(
-      (saved) => setAnswer((a) => (a?.key === key ? { ...a, saved } : a)),
-      () => setAnswer((a) => (a?.key === key ? { ...a, saved: "failed" } : a)),
-    );
-  };
-  const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
-  // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
-  const warm = () => void waterModel().catch(() => {});
-  // Start the model download as soon as the page opens, so the camera stop never waits on venue wifi.
+    if (!playing || done) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      setS((v) => Math.min(gate, v + dt * speed));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, done, speed, gate]);
+  // Start the model download as soon as the page opens, so the first stop never waits on venue wifi.
   useEffect(() => {
     void waterModel().catch(() => {});
   }, []);
 
-  const pick = (id: string) => {
-    warm();
-    setMissionId(id);
-    setT(openingOf(id));
-    setPlaying(true);
-    setAnswer(null);
+  const answerFloor = (label: Answer["label"]) => {
+    if (dwelling === undefined || !vision) return;
+    const key = { run, stop: dwelling };
+    setAnswer({ ...key, label });
+    if (label === "override" || !vision.boxes.length) return;
+    const same = (a: Answer | null) => a?.run === key.run && a.stop === key.stop;
+    saveEvidence(cam.frame, vision, label).then(
+      (saved) => setAnswer((a) => (same(a) ? { ...a!, saved } : a)),
+      () => setAnswer((a) => (same(a) ? { ...a!, saved: "failed" } : a)),
+    );
   };
+  const restart = () => {
+    setS(0);
+    setRun((r) => r + 1);
+    setAnswer(null);
+    setPlaying(true);
+  };
+
+  // What each indoor stop's floor check found, from the cached model results.
+  const stopResult = (i: number) => {
+    const r = cam.results[FRAMES[plan.frameAt(out.arrive[node(i)])].src];
+    return r === undefined ? null : r === "error" ? "error" : r.boxes.some((d) => inPath(d.box)) ? "water" : "dry";
+  };
+  const holdAnswer = answer?.run === run && answer.stop === hold ? answer : null;
+  const holdSeen = !!holdAnswer || (dwelling === hold && held);
+  const story: { label: string; done: boolean; tone: "go" | "hold" | "recall" }[] = [
+    { label: "Round started", done: s > 0, tone: "go" },
+    ...ids.slice(1, hold).map((id, j) => {
+      const r = stopResult(j + 1);
+      return { label: r === "water" ? `${id} water` : r === "error" ? `${id} unchecked` : `${id} floor dry`, done: s > out.depart[node(j + 1)], tone: r === "dry" ? ("go" as const) : ("hold" as const) };
+    }),
+    { label: `Water in path at ${ids[hold]}: HOLD`, done: holdSeen, tone: "hold" },
+    {
+      label: holdAnswer?.label === "reject" ? "Operator: floor is dry" : holdAnswer?.label === "override" ? "Operator overrode" : "Operator confirmed",
+      done: !!holdAnswer,
+      tone: "go",
+    },
+    { label: "Storm reached the plant", done: recalled, tone: "recall" },
+    { label: "RECALL sent", done: recalled && weather.verdict === "RECALL", tone: "recall" },
+    { label: "Docked", done: docked, tone: "go" },
+  ];
+
+  // Map paths: walked in blue, planned dashed; after a recall the rest of the route is cancelled and the way home is red.
+  const atRecall = sRecall !== null ? walkAt(out, recalled ? sRecall : s) : w;
+  const paths: MapPath[] = recalled
+    ? [
+        { pts: atRecall.ahead, tone: "cancelled" },
+        { pts: w.ahead, tone: "home" },
+        { pts: atRecall.trail, tone: "walked" },
+        { pts: w.trail, tone: "homeWalked" },
+      ]
+    : [
+        { pts: w.ahead, tone: "planned" },
+        { pts: w.trail, tone: "walked" },
+      ];
+  const next = w.next !== undefined ? ids[w.next] : dock;
+  const status = docked
+    ? `Docked at ${dock}`
+    : recalled
+      ? `Recalled: walking the shortest way back to ${dock}`
+      : held
+        ? `Holding at ${ids[dwelling!]}: waiting for the operator`
+        : checking && !cleared
+          ? `Checking the floor at ${ids[dwelling!]}`
+          : checking
+            ? `Floor clear at ${ids[dwelling!]}`
+            : s === 0
+              ? `On the dock at ${dock}`
+              : `Walking to ${next}${outdoor.includes(next) ? " (outdoor)" : ""}`;
+  const running = playing && !docked && s < gate;
 
   return (
     <>
       <PageHeader
         title="Live round"
-        subtitle={`${mission.name} · route ${mission.id}`}
-        actions={
-          <span
-            className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary ring-1 ring-primary/40"
-            title="Live (simulated from NextEra's replay stream)"
-          >
-            <span aria-hidden className={cn("size-2 rounded-full bg-recall", running && "animate-pulse-soft")} />
-            LIVE · simulated
-          </span>
-        }
+        subtitle={`Route ${mission} · St. Lucie · weather watch and floor check in one round`}
+        actions={<span className="rounded-full bg-secondary px-2.5 py-1 font-mono text-[11px] tracking-wide text-muted-foreground uppercase ring-1 ring-border">Simulation</span>}
       />
-      <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
-        {watch}
-        <Card className="animate-rise">
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                Mission
-                <select
-                  value={missionId}
-                  onChange={(e) => pick(e.target.value)}
-                  className="h-8 rounded-lg bg-secondary px-2 text-sm text-foreground ring-1 ring-border focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  {missions.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.id} · {m.name} · {m.config}
-                    </option>
+      <main className="mx-auto max-w-[1440px] space-y-4 px-4 py-5 sm:px-8">
+        <div className="grid gap-4 lg:grid-cols-12">
+          <Card className="animate-rise lg:col-span-5">
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setPlaying((p) => !p)} disabled={docked} aria-label={running ? "Pause" : "Play"}>
+                  {running ? <Pause aria-hidden /> : <Play aria-hidden />}
+                  {docked ? "Ended" : playing ? (running ? "Pause" : "Waiting") : "Play"}
+                </Button>
+                <Button variant="outline" onClick={restart}>
+                  <RotateCcw aria-hidden /> Restart
+                </Button>
+                <div role="group" aria-label="Playback speed" className="flex gap-1 rounded-lg bg-panel p-0.5">
+                  {SPEEDS.map((v) => (
+                    <Button key={v} size="sm" variant={speed === v ? "secondary" : "ghost"} aria-pressed={speed === v} onClick={() => setSpeed(v)}>
+                      {v}x
+                    </Button>
                   ))}
-                </select>
-              </label>
-              <Button
-                onClick={() => {
-                  if (!running) warm();
-                  setPlaying((p) => !p);
-                }} disabled={t >= end} aria-label={running ? "Pause playback" : "Play playback"}>
-                {running ? <Pause aria-hidden /> : <Play aria-hidden />}
-                {running ? "Pause" : t >= end ? "Ended" : held ? "Held" : "Play"}
-              </Button>
-              <div role="group" aria-label="Playback speed" className="flex gap-1">
-                {SPEEDS.map((v) => (
-                  <Button key={v} size="sm" variant={speed === v ? "secondary" : "ghost"} aria-pressed={speed === v} onClick={() => {
-                      warm();
-                      setSpeed(v);
-                    }}
-                  >
-                    {v}x
-                  </Button>
-                ))}
-              </div>
-              <Button variant="outline" size="sm" onClick={() => pick(missionId)}>
-                <RotateCcw aria-hidden /> Restart
-              </Button>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={wetFrame}
-                  onChange={(e) => setWetFrame(e.target.checked)}
-                  className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-ring"
-                />
-                Puddle on route
-              </label>
-              <span className="ml-auto font-mono text-2xl font-medium tabular-nums">
-                {String(Math.floor((t - start) / 60000)).padStart(2, "0")}:{String(Math.floor(((t - start) % 60000) / 1000)).padStart(2, "0")}
-              </span>
-              <span className="text-xs text-helper">into the round</span>
-            </div>
-            <div className="panel-inset p-3">
-              <ol aria-label="Mission actions" className="flex gap-1">
-                {mission.plan.map((a, i) => {
-                  const r = s.results[a.id] ?? "pending";
-                  const text = `Action ${i + 1}, ${words(a.type)} at ${a.locationId}: ${r === "ok" ? "OK" : r}`;
-                  return (
-                    <li key={a.id} title={text} className={cn("h-2.5 flex-1 rounded-[3px] transition-colors duration-300", SEGMENT[r], s.current?.actionId === a.id && "ring-2 ring-foreground/70")}>
-                      <span className="sr-only">{text}</span>
-                    </li>
-                  );
-                })}
-              </ol>
-              <p className="mt-2 font-mono text-[11px] text-helper tabular-nums">
-                {s.done} of {mission.plan.length} actions done
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {s.phase === "done" && (
-          <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl bg-card px-5 py-4 ring-1 ring-foreground/10">
-            <TruthIcon aria-hidden className={cn("size-5", truth.text)} />
-            <p className="text-sm">
-              Mission reported {s.reported} · actually <span className={cn("font-semibold", truth.text)}>{truth.label}</span>:{" "}
-              <span className="tabular-nums">
-                {s.failed} failed inspections, {s.anomalies.length} anomalies
-              </span>
-            </p>
-            <Link href={`/missions/${mission.id}`} className="ml-auto inline-flex items-center gap-1 text-sm text-link hover:underline focus-visible:outline-2 focus-visible:outline-link">
-              Open mission report <ArrowRight aria-hidden className="size-4" />
-            </Link>
-          </div>
-        )}
-        {s.phase === "stream ended" && (
-          <div role="alert" className="flex items-center gap-3 rounded-xl bg-recall/10 px-5 py-4 text-sm ring-1 ring-recall/50">
-            <WifiOff aria-hidden className="size-5 text-recall" />
-            <span>
-              <span className="font-semibold text-recall">Stream ended mid-mission: no completion event received.</span> Last event at{" "}
-              <span className="font-mono tabular-nums">{kitClock(events.at(-1)!.at)}</span>. Treat Spot&apos;s position and status as unknown.
-            </span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-12 items-start gap-5">
-          <div className="col-span-12 space-y-5 lg:col-span-8">
-        {hasOutdoorLeg && (
-          <Card className="animate-rise [--rise-delay:60ms]">
-            <CardHeader>
-              <CardTitle>Spot camera · {outdoor.join(", ")}</CardTitle>
-              <CardDescription>{arrival ? "Water in the lane holds Spot" : `Starts at ${outdoor.join(", ")}`}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SpotCam cam={cam} frames={captures} waypoint={at?.locationId ?? mission.plan[0].locationId} total={mission.plan.length} />
-            </CardContent>
-          </Card>
-        )}
-
-          <Card className="animate-rise [--rise-delay:80ms]">
-            <CardHeader>
-              <CardTitle>Where Spot is now</CardTitle>
-              <CardDescription>Route {mission.id}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FacilityMap sites={sites} route={mission.plan.map((a) => a.locationId)} spot={s.current?.locationId} wet={wet && answered?.label !== "reject" ? vision?.waypoint : undefined} outdoor={outdoor} dock={dock} />
-              <div className="panel-inset flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm">
-                <span>
-                  <span className="text-muted-foreground">Action </span>
-                  {s.current ? words(s.current.actionType) : s.phase}
-                </span>
-                <span className="min-w-0 truncate">
-                  <span className="text-muted-foreground">At </span>
-                  {where(s.current) || "not started"}
-                </span>
-                <BatteryStatus pct={s.battery} className="ml-auto" />
-              </div>
-            </CardContent>
-          </Card>
-          </div>
-
-          <div className="col-span-12 space-y-5 lg:col-span-4">
-            <Card className="animate-rise [--rise-delay:200ms]">
-              <CardHeader>
-                <CardTitle>Floor check</CardTitle>
-                <CardDescription>Operator decision at {outdoor.join(", ")}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div aria-live="polite" className="space-y-2">
-                  {!hasOutdoorLeg ? (
-                    <p className="text-muted-foreground">This route has no outdoor leg. No floor check runs.</p>
-                  ) : !arrival ? (
-                    <p className="text-muted-foreground">Runs when Spot reaches {outdoor.join(", ")}.</p>
-                  ) : !cam.result ? (
-                    <label className="block space-y-1 text-muted-foreground">
-                      Spot waits at {arrival.locationId}: {cam.progress > 0 && cam.progress < 100 ? `downloading water model ${cam.progress}%` : "checking capture"}
-                      <progress value={cam.progress} max={100} className="block h-1.5 w-full accent-primary" />
-                    </label>
-                  ) : (
-                    <>
-                      <p className="flex items-start gap-2">
-                        <VerdictChip verdict={floorCall!.verdict} /> {floorCall!.text}
-                      </p>
-                      {held && (
-                        <div className="panel-inset space-y-2 p-3">
-                          <p className="font-medium">Operator: is there water in Spot&apos;s path?</p>
-                          <div className="flex flex-wrap gap-2">
-                            {cam.result === "error" ? (
-                              <Button size="sm" variant="outline" onClick={() => answerFloor("override")}>
-                                Continue without floor check
-                              </Button>
-                            ) : (
-                              <>
-                                <Button size="sm" onClick={() => answerFloor("confirm")}>
-                                  Confirm water: mark hazard, continue
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => answerFloor("reject")}>
-                                  Reject: floor is dry
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                          <Why label="What Kairos sends">
-                            <ul className="space-y-1 font-mono">
-                              <li>Spot: CORE I/O Network Compute Bridge worker returns the water detection</li>
-                              <li>Spot: Autowalk Area Callback at {arrival.locationId} holds the walk until the operator answers</li>
-                              <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {arrival.locationId}</li>
-                              <li>Orbit: {ORBIT_CALL.HOLD}, so the next round does not launch</li>
-                            </ul>
-                          </Why>
-                        </div>
-                      )}
-                      {answered && (
-                        <p className="text-muted-foreground">
-                          {answered.saved === "failed" ? (
-                            <span className="text-hold">Could not save to the evidence log. </span>
-                          ) : answered.saved ? (
-                            <Link href="/evidence" className="text-link hover:underline">
-                              Saved to Neon as evidence #{answered.saved}.{" "}
-                            </Link>
-                          ) : null}
-                          Operator {answered.label === "confirm" ? "confirmed water; Kairos marks it as a hazard for Spot to avoid (simulated) and the round continues" : answered.label === "reject" ? "rejected the detection; Spot continues" : "overrode the missing floor check"}.
-                        </p>
-                      )}
-                    </>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
-
-            {radar}
-            <details className="group rounded-2xl bg-card ring-1 ring-white/[0.06]">
-              <summary className="cursor-pointer list-none px-4 py-3 font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase hover:text-foreground">
-                Round details: status and event feed
-              </summary>
-              <div className="space-y-5 p-1">
-            <Card className="animate-rise [--rise-delay:160ms]">
-              <CardHeader>
-                <CardTitle>True status so far</CardTitle>
-                <CardDescription>Reported vs actual</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Reported: </span>
-                  {s.phase === "stream ended" ? "no signal" : words(s.reported)}
-                </p>
-                <p aria-live="polite" className={cn("flex items-center gap-2 text-xl font-semibold", truth.text)}>
-                  <TruthIcon aria-hidden className="size-5" />
-                  <span>
-                    <span className="sr-only">As of now: </span>
-                    {s.truth}
-                  </span>
-                </p>
-                <p className="tabular-nums">
-                  Failed <span className={s.failed ? "text-recall" : ""}>{s.failed}</span> of {s.done} inspections so far
-                </p>
-                <p className="tabular-nums">
-                  <span className={s.serious ? "text-recall" : ""}>{s.serious}</span> serious anomalies (high or critical), {s.anomalies.length} total
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="animate-rise [--rise-delay:240ms]">
-              <CardHeader>
-                <CardTitle>Event feed</CardTitle>
-                <CardDescription>Newest first</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ol className="max-h-72 space-y-1 overflow-y-auto pr-1">
-                  {s.events.toReversed().map((e) => {
-                    const ui = FEED[e.type];
-                    const started = startedBy.get(e.actionId);
-                    return (
-                      <Fragment key={e.id}>
-                        {wet && e.id === arrival?.id && (
-                          <li className="animate-row flex gap-2.5 rounded-md bg-hold/10 px-2 py-1.5 text-sm">
-                            <span className="pt-px font-mono text-xs text-helper tabular-nums">{kitClock(e.at)}</span>
-                            <Droplets aria-hidden className="mt-0.5 size-4 shrink-0 text-hold" />
-                            <p>
-                              Floor check: water in Spot&apos;s path at {e.locationId}, score {Math.max(...vision!.boxes.filter(inPath).map((b) => b.score)).toFixed(2)}
-                            </p>
-                          </li>
-                        )}
-                      <li className="animate-row flex gap-2.5 rounded-md px-2 py-1.5 text-sm odd:bg-secondary/40">
-                        <span className="pt-px font-mono text-xs text-helper tabular-nums">{kitClock(e.at)}</span>
-                        <ui.Icon aria-hidden className={cn("mt-0.5 size-4 shrink-0", ui.tone)} />
-                        <div className="min-w-0">
-                          <p className={cn(e.type === "ACTION_FAILED" && "text-recall")}>
-                            {ui.label}
-                            {e.type === "MISSION_COMPLETED" && ` ${e.status}`}
-                            {e.type === "ACTION_FAILED" && `: ${words(e.failureType)}`}
-                            {started && (
-                              <span className="text-muted-foreground">
-                                {" "}
-                                · {words(started.actionType)} at {started.locationId} {started.assetId}
-                              </span>
-                            )}
-                          </p>
-                          {e.type !== "ACTION_STARTED" &&
-                            anomaliesBy.get(e.actionId!)?.map((a) => (
-                              <Link
-                                key={a.id}
-                                href="/anomalies"
-                                className={cn(
-                                  "mt-1 mr-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ring-1 hover:underline focus-visible:outline-2 focus-visible:outline-link",
-                                  SEVERITY_UI[a.severity],
-                                )}
-                              >
-                                <TriangleAlert aria-hidden className="size-3" />
-                                {a.severity} · {words(a.type)}
-                              </Link>
-                            ))}
-                        </div>
-                      </li>
-                      </Fragment>
-                    );
-                  })}
-                </ol>
-              </CardContent>
-            </Card>
+                <span className="ml-auto text-right font-mono text-sm tabular-nums">
+                  <span className="text-2xl font-medium">{mmss(s)}</span>
+                  <span className="block text-[11px] text-helper">{clock(ms)} at the plant (replayed)</span>
+                </span>
               </div>
-            </details>
-          </div>
+              <ol aria-label="What Kairos did this round" className="flex flex-wrap gap-1.5">
+                {story.map((m) => (
+                  <li
+                    key={m.label}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ring-1 transition-colors duration-300",
+                      !m.done && "text-helper ring-border",
+                      m.done && m.tone === "go" && "bg-go/10 text-go ring-go/40",
+                      m.done && m.tone === "hold" && "bg-hold/10 text-hold ring-hold/40",
+                      m.done && m.tone === "recall" && "bg-recall/10 text-recall ring-recall/50",
+                    )}
+                  >
+                    {m.done ? <Check aria-hidden className="size-3.5" /> : <span aria-hidden className="size-1.5 rounded-full bg-current" />}
+                    {m.label}
+                    <span className="sr-only">{m.done ? ", done" : ", not yet"}</span>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+
+          <Card className={cn("animate-rise [--rise-delay:60ms] lg:col-span-7", recalled && !docked && "ring-recall/60", docked && "ring-go/40")}>
+            <CardContent className="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
+              <StormRadar frame={radar} stamp={`${radar + 1}/${RADAR_FRAMES.length}`} className="mx-auto w-32 sm:w-full" />
+              <div aria-live="polite" className="min-w-0 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="label-caps">Weather watch</span>
+                  <VerdictChip verdict={weather.verdict} />
+                  <span className="ml-auto text-[11px] text-helper">Recorded Sat 5:56 PM storm, replayed</span>
+                </div>
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+                  <p className="flex items-baseline gap-2">
+                    <CloudRain aria-hidden className={cn("size-5 self-center", recalled ? "text-recall" : "text-muted-foreground")} />
+                    <span className="font-mono text-3xl font-medium tabular-nums">{rainNow === null ? "--" : rainNow.toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground">mm/h rain now</span>
+                  </p>
+                  <RainMeter mm={rainNow} />
+                </div>
+                {docked ? (
+                  <p className="flex items-start gap-2 rounded-lg bg-go/10 px-3 py-2 text-sm ring-1 ring-go/40">
+                    <House aria-hidden className="mt-0.5 size-4 shrink-0 text-go" />
+                    <span>
+                      <span className="font-semibold text-go">Spot is docked at {dock}.</span> The storm cut the round short; the outdoor leg did not run.
+                    </span>
+                  </p>
+                ) : recalled ? (
+                  <div role="alert" className="space-y-1 rounded-lg bg-recall/10 px-3 py-2 text-sm ring-1 ring-recall/50">
+                    <p className="flex items-start gap-2">
+                      <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 animate-pulse-soft text-recall" />
+                      <span>
+                        <span className="font-semibold text-recall">RECALL:</span> {(weather.reasons.find((r) => r.verdict === "RECALL")?.text ?? "storm at the plant").split(";")[0]}. Spot walks the shortest way back to the dock.
+                      </span>
+                    </p>
+                    <p className="font-mono text-[11px] break-all text-muted-foreground">Orbit (simulated): {ORBIT_CALL.RECALL}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {weather.verdict === "GO"
+                      ? `Dry or light rain: Spot is IP54, so it keeps walking. Kairos recalls it above ${LIMITS.moderateRainMmPerHour} mm/h or ${LIMITS.thunderPct}% thunder.`
+                      : (weather.reasons[0]?.text.split(";")[0] ?? "Weather unknown: hold")}
+                  </p>
+                )}
+                <Why>
+                  <p>Rain: Open-Meteo 15-minute steps for the plant from the Sat 5:56 PM snapshot, played in order. The dispatcher sees only steps up to the replay time. Thunder is not in the 15-minute feed.</p>
+                  <p>Radar: NEXRAD via IEM, the six frames recorded {clock(Date.parse(recordedAt) - 50 * 60000)} to {clock(Date.parse(recordedAt))}, played oldest to newest. Map © OpenStreetMap.</p>
+                  <p>Rules: lib/verdict.ts decide(), the same rules as the dashboard. Replay clock is sped up to fit the round.</p>
+                </Why>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid items-start gap-4 lg:grid-cols-12">
+          <Card className="animate-rise [--rise-delay:120ms] lg:col-span-7">
+            <CardContent className="space-y-3">
+              <p aria-live="polite" className="flex items-center gap-2 text-sm">
+                <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-[#ffd60a]" />
+                <span className="font-medium">{status}</span>
+              </p>
+              <FacilityMap
+                sites={sites}
+                paths={paths}
+                spotAt={w.pt}
+                wet={holdSeen && holdAnswer?.label !== "reject" ? ids[hold] : undefined}
+                outdoor={outdoor}
+                dock={dock}
+                neutral={ids}
+              />
+              <p className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-helper">
+                <span>
+                  <span className="text-[#4f9fe8]">━</span> walked
+                </span>
+                <span>┄ planned</span>
+                <span>
+                  <span className="text-recall">━</span> back to dock
+                </span>
+                <span>dashed ring = outdoor leg</span>
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="animate-rise [--rise-delay:180ms] lg:col-span-5">
+            <CardContent className="space-y-3">
+              <SpotCam cam={cam} frames={FRAMES} waypoint={waypoint} total={FRAMES.length} around={false} credit="Example walk, public photos" />
+              <div aria-live="polite" className="min-h-24 text-sm">
+                {held ? (
+                  <div className="space-y-2 rounded-lg bg-hold/10 p-3 ring-1 ring-hold/50">
+                    <p className="flex items-start gap-2">
+                      <VerdictChip verdict="HOLD" />
+                      <span>{floorCall!.text}</span>
+                    </p>
+                    <p className="font-medium">Operator: is there water in Spot&apos;s path?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {vision?.status === "error" ? (
+                        <Button size="sm" variant="outline" onClick={() => answerFloor("override")}>
+                          Continue without floor check
+                        </Button>
+                      ) : (
+                        <>
+                          <Button size="sm" onClick={() => answerFloor("confirm")}>
+                            Confirm water: mark hazard, continue
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => answerFloor("reject")}>
+                            Reject: floor is dry
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <Why label="What Kairos sends">
+                      <ul className="space-y-1 font-mono">
+                        <li>Spot: Autowalk Area Callback at {ids[dwelling!]} holds the walk until the operator answers</li>
+                        <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {ids[dwelling!]}</li>
+                        <li>Orbit: {ORBIT_CALL.HOLD}</li>
+                      </ul>
+                    </Why>
+                  </div>
+                ) : checking && !cleared ? (
+                  <label className="block space-y-1 text-muted-foreground">
+                    Spot waits at {ids[dwelling!]}: {cam.progress > 0 && cam.progress < 100 ? `downloading the water model ${cam.progress}%` : "checking the floor"}
+                    <progress value={cam.progress} max={100} className="block h-1.5 w-full accent-primary" />
+                  </label>
+                ) : holdAnswer ? (
+                  <p className="text-muted-foreground">
+                    At {ids[hold]} the operator {holdAnswer.label === "confirm" ? "confirmed water: Kairos marks a hazard so Spot walks around it" : holdAnswer.label === "reject" ? "rejected the detection" : "overrode the missing floor check"}.{" "}
+                    {holdAnswer.saved === "failed" ? (
+                      <span className="text-hold">Could not save to the evidence log.</span>
+                    ) : holdAnswer.saved ? (
+                      <Link href="/evidence" className="text-link hover:underline">
+                        Saved to Neon as evidence #{holdAnswer.saved}.
+                      </Link>
+                    ) : holdAnswer.label !== "override" ? (
+                      "Saving to Neon..."
+                    ) : null}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">Kairos checks the floor ahead at every stop. Water in Spot&apos;s lane holds Spot there until an operator answers.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </>
   );
 }
 
-function BatteryStatus({ pct, className }: { pct?: number; className?: string }) {
-  if (pct === undefined) return <span className={className}>Battery unknown</span>;
-  const [Icon, tone, word] = pct < 20 ? [BatteryWarning, "text-recall", "critical"] : pct < 40 ? [BatteryLow, "text-hold", "low"] : [BatteryMedium, "text-muted-foreground", ""];
+/** Rain rate against Spot's light-rain limit: 10 cells of 0.5 mm/h, the limit after cell 5. No inline styles. */
+function RainMeter({ mm }: { mm: number | null }) {
+  const cells = Array.from({ length: 10 }, (_, i) => (i + 1) * 0.5);
   return (
-    <span className={cn("inline-flex items-center gap-1.5 tabular-nums", className)}>
-      <Icon aria-hidden className={cn("size-4", tone)} />
-      <span className="sr-only">Battery</span>
-      {pct}%{word && <span className={tone}>{word}</span>}
-    </span>
+    <div className="space-y-1">
+      <div className="flex items-center gap-0.5" role="img" aria-label={`Rain ${mm ?? "unknown"} mm/h; Spot's limit is ${LIMITS.moderateRainMmPerHour} mm/h`}>
+        {cells.map((c, i) => (
+          <span
+            key={c}
+            className={cn(
+              "h-3 w-3 rounded-[2px] transition-colors duration-300",
+              mm !== null && mm >= c - 0.25 && mm > 0 ? (c > LIMITS.moderateRainMmPerHour ? "bg-recall" : "bg-primary") : "bg-secondary",
+              i === 5 && "ml-1.5",
+            )}
+          />
+        ))}
+      </div>
+      <p className="font-mono text-[10px] text-helper">limit {LIMITS.moderateRainMmPerHour} mm/h (IP54, light rain)</p>
+    </div>
   );
 }
