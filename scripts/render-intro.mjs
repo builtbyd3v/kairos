@@ -1,12 +1,14 @@
 // Render the Kairos intro (/intro): narration audio, then the 1920x1080 30 fps video with that audio muxed in.
-//   node scripts/render-intro.mjs --audio   audio only: public/intro/vo-*.aiff (one per line) and narration.m4a (the mix the page plays)
-//   node scripts/render-intro.mjs 3078      audio, then video: public/intro/intro.mp4
+//   node --env-file=.env.local scripts/render-intro.mjs --audio   audio only: public/intro/vo-*.mp3 (one per line) and narration.m4a (the mix the page plays)
+//   node --env-file=.env.local scripts/render-intro.mjs 3078      audio, then video: public/intro/intro.mp4
+// Voice: ElevenLabs when ELEVENLABS_API_KEY is set, else the best installed macOS voice.
+// note: existing vo-*.mp3 clips are reused to save credit; add --fresh after editing LINES.
 // For the video, start the app on a free port first: npm run build && npm start -- -p 3078
 // How the video works: open /intro?t=0 in the Aside browser, step the frozen clock (window.introSeek) one frame at a
 // time, screenshot the stage, then encode with ffmpeg.
 // note: frames are captured at the Aside window's size (2x DPR) and scaled to 1920x1080; keep that window at least 960 px wide.
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -18,9 +20,9 @@ const TOTAL = 45.75;
 
 // Narration: one short line per moment, start times in clock seconds.
 const LINES = [
-  [0.4, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
-  [7.2, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
-  [13.0, "It also watches live radar around Saint Lucie while the round is running."],
+  [0.3, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
+  [7.5, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
+  [13.4, "It also watches live radar around Saint Lucie while the round is running."],
   [19.2, "When the weather turns mid-round, Kairos recalls Spot to the dock."],
   [28.8, "Here is how it works."],
   [31.9, "The water model runs in the browser, the Kairos dashboard plugs into Orbit, and every call is logged in Neon."],
@@ -31,6 +33,19 @@ const RAIN = [[21.0, 31.5]];
 
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 const seconds = (file) => Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]));
+
+// ElevenLabs voice, the user's pick from their own voices: "Misa - Sweet & Calm Conversations".
+const ELEVEN = { name: "Misa", id: "XlDdozLmuTofIxK4BjPD", model: "eleven_multilingual_v2" };
+
+async function elevenLabs(text, file) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN.id}?output_format=mp3_44100_128`, {
+    method: "POST",
+    headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
+    body: JSON.stringify({ text, model_id: ELEVEN.model }),
+  });
+  if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
+  writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+}
 
 // Best installed US English voice: a Premium one (Ava first), then Enhanced, then Samantha.
 function pickVoice() {
@@ -44,25 +59,27 @@ function pickVoice() {
     ?? "Samantha";
 }
 
-function makeAudio() {
+async function makeAudio() {
   mkdirSync(DIR, { recursive: true });
-  const voice = pickVoice();
+  const eleven = Boolean(process.env.ELEVENLABS_API_KEY);
+  const voice = eleven ? `ElevenLabs ${ELEVEN.name} (${ELEVEN.id})` : pickVoice();
   const inputs = [];
   const chains = [];
-  LINES.forEach(([at, text], i) => {
-    const file = join(DIR, `vo-${i + 1}.aiff`);
-    run("say", ["-v", voice, "-r", "165", "-o", file, text]);
+  for (const [i, [at, text]] of LINES.entries()) {
+    const file = join(DIR, `vo-${i + 1}.${eleven ? "mp3" : "aiff"}`);
+    if (!eleven) run("say", ["-v", voice, "-r", "165", "-o", file, text]);
+    else if (process.argv.includes("--fresh") || !existsSync(file)) await elevenLabs(text, file);
     const end = at + seconds(file);
     const next = LINES[i + 1]?.[0] ?? TOTAL;
     if (end > next) console.warn(`line ${i + 1} ends at ${end.toFixed(2)} s, after the next cue at ${next} s`);
     inputs.push("-i", file);
-    chains.push(`[${i}:a]aresample=48000,aformat=channel_layouts=mono,adelay=${Math.round(at * 1000)}[v${i}]`);
-  });
+    chains.push(`[${i}:a]aresample=48000,aformat=channel_layouts=mono,volume=2.5,adelay=${Math.round(at * 1000)}[v${i}]`);
+  }
   RAIN.forEach(([from, to], j) => {
     const d = to - from;
     inputs.push("-f", "lavfi", "-t", String(d), "-i", "anoisesrc=color=brown:sample_rate=48000:amplitude=0.5");
     chains.push(
-      `[${LINES.length + j}:a]highpass=f=180,lowpass=f=2500,volume=0.4,afade=t=in:d=1.5,afade=t=out:st=${d - 1.5}:d=1.5,adelay=${Math.round(from * 1000)}[r${j}]`,
+      `[${LINES.length + j}:a]highpass=f=180,lowpass=f=2500,volume=0.25,afade=t=in:d=1.5,afade=t=out:st=${d - 1.5}:d=1.5,adelay=${Math.round(from * 1000)}[r${j}]`,
     );
   });
   const labels = [...LINES.map((_, i) => `[v${i}]`), ...RAIN.map((_, j) => `[r${j}]`)].join("");
@@ -116,13 +133,15 @@ function makeVideo(port) {
   let total = TOTAL;
   for (let from = 0; from < total * FPS; from += CHUNK) {
     let res;
-    try {
-      res = repl(shoot(url, from, from + CHUNK));
-    } catch (err) {
-      // note: one retry per chunk; the Aside app sometimes drops a long REPL call.
-      console.warn(`chunk at frame ${from} failed, retrying: ${String(err).split("\n")[0]}`);
-      execFileSync("sleep", ["5"]);
-      res = repl(shoot(url, from, from + CHUNK));
+    // note: up to 3 tries per chunk; the Aside app sometimes drops its browser connection mid-call.
+    for (let attempt = 1; !res; attempt++) {
+      try {
+        res = repl(shoot(url, from, from + CHUNK));
+      } catch (err) {
+        if (attempt === 3) throw err;
+        console.warn(`chunk at frame ${from} failed (try ${attempt}), retrying: ${String(err).split("\n")[0]}`);
+        execFileSync("sleep", ["10"]);
+      }
     }
     if (Math.abs(res.total - TOTAL) > 0.001) throw new Error(`page TOTAL is ${res.total} s, script TOTAL is ${TOTAL} s; update TOTAL here`);
     total = res.total;
@@ -147,5 +166,5 @@ function makeVideo(port) {
   console.log(`wrote ${out}`);
 }
 
-makeAudio();
+await makeAudio();
 if (process.argv[2] !== "--audio") makeVideo(Number(process.argv[2] ?? 3078));
