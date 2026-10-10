@@ -23,7 +23,8 @@ An operator console that opens on "what needs me right now".
 | Work orders | Work orders created from triage, prioritized P1-P3 by severity and asset criticality. |
 | Insights | Battery vs success, inspection reliability, V1 vs V2 within the same battery band, weather backtest, decision log. |
 | Shift handoff | A printable plain-English handoff for the next operator. |
-| Storm drill | A real pop-up storm at St. Lucie (2024-05-19) replayed with no hindsight: mid-round recall before the NWS warning. |
+| Storm drill | A real pop-up storm at St. Lucie (2024-05-19) replayed with no hindsight: mid-round recall before the NWS warning. Each drill session runs on its own Neon branch, copied from main in about 2 s, so a judge's clicks never touch production data. |
+| Incident review | The decision log exactly as it was at any minute in the last 6 hours: Neon branches main at that moment, the page reads it, then deletes the branch. |
 | Floor check | Our fine-tuned wet-floor model running in the browser. |
 
 ⌘K jumps to any page, mission, waypoint or anomaly. On a phone, the sidebar becomes a bottom tab bar.

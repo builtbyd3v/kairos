@@ -20,10 +20,10 @@ Each entry: what we chose, what we rejected, and why.
 15. **The replay's headline is honest about its signals.** The thunder rule (station 21 km away) recalls first and is flagged as our assumption; the screen also shows when the NWS warning alone would have recalled. The 12:00 launch is labeled as an extra round, not a kit schedule time.
 
 ## Tech
-11. **Neon as the system of record.** Kit tables plus a `decisions` audit log written by server actions. Replay decisions are tagged `source = 'replay'` and reset with one delete. Rejected for now: a Neon branch per replay, which adds a credential and a failure mode in the judging room.
+11. **Neon as the system of record.** Kit tables plus a `decisions` audit log written by server actions. Each storm drill session writes to its own copy-on-write Neon branch (`lib/neon-branch.ts`), and Incident review reads the log from a branch made at a past minute. Rejected: one shared table reset with a delete, which lets two judges' drills collide and cannot answer "what did the log say at 12:15". If the Neon API fails, writes fall back to main and the page says so.
 12. **Rules are pure functions with tests** (`lib/verdict.ts`, `npm test`). The live board, the replay and the backtest all run the same code.
 13. **Server Components by default.** The only client component is the replay player, which needs a clock and a slider.
-14. **Design: IBM Carbon dark tokens plus Orbit's navy bar.** It reads as an enterprise tool that sits next to Orbit, and its contrast is verified (WCAG AA). Status is always color, icon and word. Motion only on the verdict flip and new log rows.
+14. **Design: IBM Carbon dark tokens plus Orbit's navy bar.** It reads as an enterprise tool that sits next to Orbit, and its contrast is verified (WCAG AA). Status is always color, icon and word. Sat morning: moved to a warm charcoal palette with caps card labels and load motion (rising cards, count-up numbers, growing bars), all off under reduced motion. See DESIGN.md.
 
 ## Model
 16. **Fine-tune a small open vision model for wet floors.** ConvNeXt-Tiny (Apache-2.0) is small enough for the browser, and as a CNN it can be explained with heatmaps. Rejected: zero-shot CLIP only (71.8% accuracy), and a paid hosted endpoint.
