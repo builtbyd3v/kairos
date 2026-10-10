@@ -51,7 +51,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       <PageHeader
         title={greeting}
         subtitle={
-          <span className="inline-flex flex-wrap items-center gap-x-1.5">
+          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <span className="tabular-nums">{counts.open}</span> {counts.open === 1 ? "anomaly needs" : "anomalies need"} you · next round{" "}
             {et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET <VerdictChip verdict={plan.verdict} />
           </span>
@@ -68,7 +68,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-6 px-8 py-6">
-        <Card className="grid grid-cols-5 divide-x divide-border py-0">
+        <Card className="keep-grid grid grid-cols-2 divide-border py-0 lg:grid-cols-5 lg:divide-x">
           <Kpi label="Missions reported COMPLETED" value={`${a.totals.reportedCompleted}/${a.totals.missions}`} note={`${a.totals.clean} actually clean`} tone="text-hold" />
           <Kpi label="Failed inspections hidden in COMPLETED" value={String(a.totals.hiddenFailures)} note="Invisible in mission status" tone="text-recall"
             spark={<SparkBars values={a.missionRows.map((m) => m.failed)} highlight={(v) => v >= 3} label="Failed inspections per mission, oldest to newest" />}
