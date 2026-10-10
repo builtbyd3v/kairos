@@ -4,11 +4,14 @@
 
 Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
 
-Live: https://spot-ops-pi.vercel.app
+**Live:** https://kairos.boston (backup: https://spot-ops-pi.vercel.app)
+
+**What it is:** a plugin-style layer for Boston Dynamics Orbit, not a replacement. Orbit runs the missions; Kairos decides when Spot should go, wait, or come home, and watches the floor for water.
 
 ## Why
 - **Mission status hides failures.** In NextEra's challenge data, 26 of 27 missions report COMPLETED, yet 46 inspections inside them failed, and 14 of 15 serious anomalies sit inside "successful" missions.
-- **Spot doesn't know the weather.** Spot is rated IP54 (splashes, light rain) for -20 to 45 °C. Orbit's schedule can block a *launch* on a rain forecast, but nothing recalls Spot once it is out, and nothing checks heat, lightning or wind.
+- **Spot doesn't know the weather.** Spot is rated IP54 (splashes, light rain). Orbit has a weather scheduler that can block a launch, and it can send Spot back to the dock, but nothing decides *when* to call Spot home mid-round from lightning, wind, heat and battery together. Autowalk missions keep running when the radio link drops, so that call has to be made early.
+- **Water on the floor.** NextEra's Spot engineers told us small puddles and spills on the route are a real problem. No forecast can see the floor.
 
 ## What it does
 An operator console that opens on "what needs me right now".
@@ -29,12 +32,25 @@ An operator console that opens on "what needs me right now".
 
 ⌘K jumps to any page, mission, waypoint or anomaly. On a phone, the sidebar becomes a bottom tab bar.
 
+## Sponsor tech, and why each one is load-bearing
+| Sponsor | What it does in Kairos | Without it |
+|---|---|---|
+| NextEra | Their SPOT challenge kit is the robot-health data behind every verdict; their Spot engineers' feedback set the scope (weather + water on the route). | No health input, no real problem. |
+| Hugging Face | Our fine-tuned water model (`builtbyd3v/spot-wetfloor-convnext-tiny`), served from the Hub and run in the browser with transformers.js. | Kairos can see the sky but not the floor. |
+| Neon | Kit tables, the decision audit log, a copy-on-write branch per storm drill, and point-in-time Incident review. | No audit trail, and judges' drills would overwrite each other. |
+| GoDaddy Registry | The `kairos.boston` domain. | |
+
+## The numbers
+- **46** failed inspections hide inside missions reported COMPLETED (26 of 27 say COMPLETED; 5 are actually clean). Counted from the kit, synthetic data.
+- **Weather backtest:** at the kit's 27 real round times, on archive weather for the plant, Kairos would hold 1 round for weather and 9 for battery. It does not cry wolf.
+- **Model:** see Model below, including the honest number.
+
 ## Rules
 Every rule is in `lib/verdict.ts` and cited in the UI.
 - NWS warning → HOLD before launch, RECALL during a round. NWS watch or advisory → HOLD.
-- Rain above 2.5 mm/h (beyond "light rain", Spot guide p.22) → HOLD / RECALL. Orbit's launch gate checks a forecast amount (configurable up to 5 mm); ours is a rate.
+- Rain above 2.5 mm/h (beyond "light rain", Spot guide p.22) → HOLD / RECALL. Ours is a rate checked through the whole round, not only at launch.
 - Thunder chance ≥ 30%, gusts ≥ 50 km/h → HOLD / RECALL. These are **our assumptions**, because the guide is silent.
-- Air temperature within 5 °C of Spot's -20 / 45 °C limits → HOLD / RECALL.
+- Air temperature within 5 °C of Spot's -20 / 45 °C limits (2019 guide; Boston Dynamics' current spec says up to 55 °C) → HOLD / RECALL.
 - Projected battery at the dock under 20% (from the kit's drain rates) → HOLD.
 - Weather only gates routes with an outdoor leg. Missing or stale weather never shows GO for an outdoor route.
 
