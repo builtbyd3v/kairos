@@ -1,8 +1,13 @@
 {
   "site": {
-    "name": "Juno Beach, FL",
-    "lat": 26.8806,
-    "lon": -80.0575
+    "name": "St. Lucie Nuclear Power Plant, Hutchinson Island, FL",
+    "lat": 27.3486,
+    "lon": -80.2464
+  },
+  "nwsGrid": {
+    "gridId": "MLB",
+    "gridX": 75,
+    "gridY": 21
   },
   "date": "2025-05-05",
   "window": {
@@ -11,331 +16,300 @@
   },
   "alerts": [
     {
-      "event": "Severe Thunderstorm Warning",
-      "start": "2025-05-05T14:07:00-04:00",
-      "end": "2025-05-05T14:30:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 2.4 km",
-      "source": "IEM VTEC MFL SV.W #20 (202505051807-KMFL-WUUS52-SVRMFL)"
-    },
-    {
       "event": "Severe Thunderstorm Watch",
       "start": "2025-05-05T14:15:00-04:00",
       "end": "2025-05-05T21:00:00-04:00",
-      "area": "Palm Beach County FLC099 (county-wide product, includes Juno Beach)",
-      "source": "IEM VTEC MFL SV.A #224 (202505051814-KMFL-WWUS62-WCNMFL)"
+      "area": "St. Lucie County FLC111 (county-wide product, includes the plant)",
+      "coversSite": true,
+      "source": "IEM VTEC MLB SV.A #224 (202505051814-KMLB-WWUS62-WCNMLB)"
     },
     {
       "event": "Severe Thunderstorm Warning",
-      "start": "2025-05-05T14:24:00-04:00",
-      "end": "2025-05-05T15:15:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 21.7 km",
-      "source": "IEM VTEC MFL SV.W #22 (202505051824-KMFL-WUUS52-SVRMFL)"
+      "start": "2025-05-05T16:19:00-04:00",
+      "end": "2025-05-05T17:00:00-04:00",
+      "area": "St. Lucie County FLC111 (county list). Storm polygon does NOT contain the plant; nearest polygon edge 0.2 km",
+      "coversSite": false,
+      "source": "IEM VTEC MLB SV.W #31 (202505052019-KMLB-WUUS52-SVRMLB)"
     },
     {
       "event": "Severe Thunderstorm Warning",
-      "start": "2025-05-05T14:42:00-04:00",
-      "end": "2025-05-05T15:15:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 36.3 km",
-      "source": "IEM VTEC MFL SV.W #24 (202505051842-KMFL-WUUS52-SVRMFL)"
-    },
-    {
-      "event": "Severe Thunderstorm Warning",
-      "start": "2025-05-05T14:47:00-04:00",
-      "end": "2025-05-05T15:15:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 33.4 km",
-      "source": "IEM VTEC MFL SV.W #25 (202505051847-KMFL-WUUS52-SVRMFL)"
-    },
-    {
-      "event": "Flood Advisory",
-      "start": "2025-05-05T14:52:00-04:00",
-      "end": "2025-05-05T16:45:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 23.3 km",
-      "source": "IEM VTEC MFL FA.Y #15 (202505051852-KMFL-WGUS82-FLSMFL)"
-    },
-    {
-      "event": "Severe Thunderstorm Warning",
-      "start": "2025-05-05T15:09:00-04:00",
-      "end": "2025-05-05T16:00:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 34.6 km",
-      "source": "IEM VTEC MFL SV.W #26 (202505051909-KMFL-WUUS52-SVRMFL)"
-    },
-    {
-      "event": "Flood Advisory",
-      "start": "2025-05-05T15:42:00-04:00",
-      "end": "2025-05-05T17:45:00-04:00",
-      "area": "Palm Beach County FLC099 (county list). Storm polygon does NOT contain Juno Beach; nearest polygon edge 34.6 km",
-      "source": "IEM VTEC MFL FA.Y #16 (202505051942-KMFL-WGUS82-FLSMFL)"
+      "start": "2025-05-05T16:57:00-04:00",
+      "end": "2025-05-05T17:27:00-04:00",
+      "area": "St. Lucie County FLC111 (county list). Storm polygon CONTAINS the plant; nearest polygon edge 5.0 km",
+      "coversSite": true,
+      "source": "IEM VTEC MLB SV.W #32 (202505052057-KMLB-WUUS52-SVRMLB)"
     }
   ],
   "steps": [
     {
       "time": "2025-05-05T12:00:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 14.8,
-      "tempC": 29.4,
+      "gustKmh": 20.4,
+      "tempC": 30.0,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T12:15:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 33.3,
-      "tempC": 28.9,
+      "gustKmh": 18.5,
+      "tempC": 30.6,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T12:30:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 33.3,
-      "tempC": 28.9,
+      "gustKmh": 22.2,
+      "tempC": 32.2,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T12:45:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 38.9,
-      "tempC": 28.9,
+      "gustKmh": 25.9,
+      "tempC": 32.2,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T13:00:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 37.0,
-      "tempC": 27.8,
+      "gustKmh": 27.8,
+      "tempC": 33.3,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T13:15:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 35.2,
-      "tempC": 27.2,
+      "gustKmh": 24.1,
+      "tempC": 31.1,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T13:30:00-04:00",
-      "precipMmPerHour": 4.1,
-      "gustKmh": 38.9,
-      "tempC": 26.1,
+      "precipMmPerHour": 0.0,
+      "gustKmh": 42.6,
+      "tempC": 28.9,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T13:45:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 44.4,
-      "tempC": 26.7,
+      "gustKmh": 42.6,
+      "tempC": 27.8,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T14:00:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 37.0,
-      "tempC": 26.1,
-      "thunderPct": 100
+      "gustKmh": 44.4,
+      "tempC": 27.8,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T14:15:00-04:00",
-      "precipMmPerHour": 2.0,
-      "gustKmh": 33.3,
-      "tempC": 25.6,
-      "thunderPct": 100
+      "precipMmPerHour": 0.0,
+      "gustKmh": 46.3,
+      "tempC": 27.8,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T14:30:00-04:00",
-      "precipMmPerHour": 6.1,
-      "gustKmh": 27.8,
-      "tempC": 25.6,
-      "thunderPct": 100
+      "precipMmPerHour": 0.0,
+      "gustKmh": 44.4,
+      "tempC": 28.9,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T14:45:00-04:00",
-      "precipMmPerHour": 12.2,
-      "gustKmh": 25.9,
-      "tempC": 24.4,
-      "thunderPct": 100
+      "precipMmPerHour": 0.0,
+      "gustKmh": 42.6,
+      "tempC": 28.3,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T15:00:00-04:00",
-      "precipMmPerHour": 6.1,
-      "gustKmh": 27.8,
-      "tempC": 24.4,
+      "precipMmPerHour": 0.0,
+      "gustKmh": 42.6,
+      "tempC": 28.9,
       "thunderPct": 100
     },
     {
       "time": "2025-05-05T15:15:00-04:00",
-      "precipMmPerHour": 8.1,
-      "gustKmh": 29.6,
-      "tempC": 24.4,
-      "thunderPct": 100
+      "precipMmPerHour": 0.0,
+      "gustKmh": 42.6,
+      "tempC": 29.4,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T15:30:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 37.0,
-      "tempC": 23.9,
-      "thunderPct": 100
+      "gustKmh": 44.4,
+      "tempC": 28.9,
+      "thunderPct": null
     },
     {
       "time": "2025-05-05T15:45:00-04:00",
-      "precipMmPerHour": 1.0,
-      "gustKmh": 31.5,
-      "tempC": 23.3,
+      "precipMmPerHour": 0.0,
+      "gustKmh": 38.9,
+      "tempC": 30.0,
       "thunderPct": 100
     },
     {
       "time": "2025-05-05T16:00:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 29.6,
-      "tempC": 23.9,
-      "thunderPct": null
+      "gustKmh": 38.9,
+      "tempC": 28.9,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T16:15:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 25.9,
-      "tempC": 23.9,
-      "thunderPct": null
+      "gustKmh": 40.7,
+      "tempC": 27.8,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T16:30:00-04:00",
-      "precipMmPerHour": 3.0,
-      "gustKmh": 20.4,
+      "precipMmPerHour": 7.1,
+      "gustKmh": 42.6,
       "tempC": 25.0,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T16:45:00-04:00",
-      "precipMmPerHour": 0.0,
-      "gustKmh": 16.7,
-      "tempC": 25.0,
-      "thunderPct": null
+      "precipMmPerHour": 83.3,
+      "gustKmh": 37.0,
+      "tempC": 20.6,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T17:00:00-04:00",
-      "precipMmPerHour": 0.0,
-      "gustKmh": 20.4,
-      "tempC": 25.0,
+      "precipMmPerHour": 2.0,
+      "gustKmh": 38.9,
+      "tempC": 22.2,
       "thunderPct": 100
     },
     {
       "time": "2025-05-05T17:15:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 20.4,
-      "tempC": 24.4,
-      "thunderPct": null
+      "gustKmh": 27.8,
+      "tempC": 22.8,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T17:30:00-04:00",
-      "precipMmPerHour": 10.2,
-      "gustKmh": 16.7,
-      "tempC": 24.4,
+      "precipMmPerHour": 1.0,
+      "gustKmh": 27.8,
+      "tempC": 22.2,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T17:45:00-04:00",
-      "precipMmPerHour": 12.2,
-      "gustKmh": 35.2,
-      "tempC": 25.0,
+      "precipMmPerHour": 0.0,
+      "gustKmh": 29.6,
+      "tempC": 22.2,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T18:00:00-04:00",
-      "precipMmPerHour": 2.0,
-      "gustKmh": 29.6,
-      "tempC": 25.0,
+      "precipMmPerHour": 0.0,
+      "gustKmh": 20.4,
+      "tempC": 23.9,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T18:15:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 22.2,
-      "tempC": 25.0,
+      "gustKmh": 27.8,
+      "tempC": 24.4,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T18:30:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 18.5,
-      "tempC": 25.0,
-      "thunderPct": null
+      "gustKmh": 25.9,
+      "tempC": 23.9,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T18:45:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 24.1,
-      "tempC": 25.6,
-      "thunderPct": null
+      "gustKmh": 37.0,
+      "tempC": 23.3,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T19:00:00-04:00",
-      "precipMmPerHour": 0.0,
-      "gustKmh": 25.9,
-      "tempC": 25.6,
-      "thunderPct": null
+      "precipMmPerHour": 50.8,
+      "gustKmh": 94.5,
+      "tempC": 18.9,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T19:15:00-04:00",
-      "precipMmPerHour": 0.0,
-      "gustKmh": 18.5,
-      "tempC": 25.6,
-      "thunderPct": null
+      "precipMmPerHour": 16.3,
+      "gustKmh": 79.6,
+      "tempC": 20.6,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T19:30:00-04:00",
-      "precipMmPerHour": 0.0,
+      "precipMmPerHour": 1.0,
       "gustKmh": 20.4,
-      "tempC": 25.6,
-      "thunderPct": null
+      "tempC": 21.7,
+      "thunderPct": 100
     },
     {
       "time": "2025-05-05T19:45:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 11.1,
-      "tempC": 25.6,
+      "gustKmh": 16.7,
+      "tempC": 21.7,
       "thunderPct": null
     },
     {
       "time": "2025-05-05T20:00:00-04:00",
       "precipMmPerHour": 0.0,
-      "gustKmh": 13.0,
-      "tempC": 25.6,
-      "thunderPct": null
+      "gustKmh": 9.3,
+      "tempC": 22.2,
+      "thunderPct": 100
     }
   ],
   "events": [
     {
-      "time": "2025-05-05T13:45:00-04:00",
-      "label": "Peak gust 44.4 km/h at Palm Beach Intl (DJT)"
-    },
-    {
-      "time": "2025-05-05T13:53:00-04:00",
-      "label": "Thunder reported at Palm Beach Intl (DJT) METAR, 22 km south"
-    },
-    {
-      "time": "2025-05-05T14:07:00-04:00",
-      "label": "First Severe Thunderstorm Warning listing Palm Beach County (MFL SV.W #20); its polygon misses Juno Beach by 2.4 km"
-    },
-    {
       "time": "2025-05-05T14:15:00-04:00",
-      "label": "NWS Severe Thunderstorm Watch 224 issued for Palm Beach County (until 9:00 PM)"
+      "label": "NWS Severe Thunderstorm Watch 224 issued for St. Lucie County (until 9:00 PM)"
     },
     {
-      "time": "2025-05-05T14:45:00-04:00",
-      "label": "Heaviest rain 12.2 mm/h (15-min rate) at Palm Beach Intl (DJT)"
+      "time": "2025-05-05T14:53:00-04:00",
+      "label": "Thunder (VCTS) reported at Fort Pierce ASOS (FPR), 21.0 km from the plant"
     },
     {
-      "time": "2025-05-05T14:55:00-04:00",
-      "label": "1.5 in hail reported near Ocean Ridge (west Boynton Beach), 40.1 km from site (NCEI event 1266922)"
+      "time": "2025-05-05T16:19:00-04:00",
+      "label": "Severe Thunderstorm Warning MLB SV.W #31 issued; polygon misses the plant by 0.2 km"
     },
     {
-      "time": "2025-05-05T16:00:00-04:00",
-      "label": "Last Severe Thunderstorm Warning for Palm Beach County expires"
+      "time": "2025-05-05T16:57:00-04:00",
+      "label": "Severe Thunderstorm Warning MLB SV.W #32 issued; polygon contains the plant"
+    },
+    {
+      "time": "2025-05-05T17:00:00-04:00",
+      "label": "2.0 in hail reported near Ft Pierce Beach, 12.9 km from the plant (NCEI event 1243422)"
+    },
+    {
+      "time": "2025-05-05T17:27:00-04:00",
+      "label": "Severe Thunderstorm Warning MLB SV.W #32 ends"
+    },
+    {
+      "time": "2025-05-05T19:00:00-04:00",
+      "label": "Peak gust 94.5 km/h at Fort Pierce ASOS (FPR)"
     }
   ],
   "assumptions": [
-    "Weather steps come from the ASOS at Palm Beach International (IEM id DJT, formerly PBI), about 22 km south of Juno Beach, not from Juno Beach itself.",
+    "Weather steps come from the Fort Pierce ASOS (FPR), about 21.0 km northwest of the plant on the mainland, not from the plant itself.",
     "Each step summarizes the 15 minutes ending at its time, from ASOS 1-minute data: precipMmPerHour = mean 1-min precip (in) x 25.4 x 60; gustKmh = max 1-min gust (kt) x 1.852; tempC = last 1-min temperature (F) converted.",
-    "thunderPct is not a forecast probability. It is 100 when a DJT METAR or 5-min HFMETAR in the step's 15 minutes reports TS or VCTS, or a Severe Thunderstorm Warning listing Palm Beach County is active; otherwise null (unknown, not zero).",
-    "Alerts are county-based (UGC FLC099, Palm Beach County). No storm-based warning polygon contained the Juno Beach point; the area field gives each polygon's distance from the site.",
-    "NCEI Storm Events times are EST (UTC-5) and were converted to EDT (UTC-4). Hail reports are 15 to 40 km south and southwest of the site.",
-    "Missing 1-minute rows are skipped; a field is null only when its whole 15-minute block is missing."
+    "thunderPct is not a forecast probability. It is 100 when an FPR METAR or 5-min HFMETAR in the step's 15 minutes reports TS or VCTS, or a Severe Thunderstorm Warning with coversSite=true is active; otherwise null (unknown, not zero).",
+    "coversSite is true when the storm-based polygon contains the plant point, or when the product is county-wide (a watch) for St. Lucie County (FLC111). Alerts listing FLC111 whose polygon misses the plant stay in the list with coversSite=false; area gives the distance.",
+    "NCEI Storm Events times are EST (UTC-5) and were converted to EDT (UTC-4).",
+    "Missing 1-minute rows are skipped; a field is null only when its whole 15-minute block is missing.",
+    "nwsGrid comes from api.weather.gov/points for the site coordinates."
   ]
 }

@@ -1,8 +1,8 @@
 import { cacheLife } from "next/cache";
 import type { Weather, WeatherStep } from "./verdict";
 
-// note: assumed site location (NextEra HQ, Juno Beach FL). The kit facility is fictional and has no coordinates.
-export const SITE = { name: "Juno Beach, FL (assumed site)", lat: 26.8806, lon: -80.0575, nwsGrid: "MFL/110,99" };
+// note: assumed site: NextEra's St. Lucie Nuclear Plant (Wikipedia coordinates). The kit facility is fictional and has no coordinates.
+export const SITE = { name: "St. Lucie Plant, FL (assumed site)", lat: 27.3486, lon: -80.2464, nwsGrid: "MLB/75,21" };
 
 const NWS_HEADERS = { "User-Agent": "spot-ops-hackathon (knight-hacks-ix demo)", Accept: "application/geo+json" };
 const HOURS_AHEAD = 12; // rounds run every 8 hours, so this always covers the next one

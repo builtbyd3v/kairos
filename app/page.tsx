@@ -7,6 +7,7 @@ import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
 import { logDecision, recentDecisions } from "@/lib/decisions";
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
+import { backtest } from "@/lib/backtest";
 import { AppHeader, ReasonList, SEVERITY_UI, TRUTH_UI, VerdictBlock, VerdictChip } from "@/components/status";
 import { FacilityMap } from "@/components/facility-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,9 @@ const et = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleString("en-U
 export default async function Board() {
   const kit = await loadKit();
   const a = analyze(kit);
+  const bt = backtest(kit);
+  const heldWeather = bt.filter((r) => r.verdict !== "GO" && r.reason && !r.reason.startsWith("Spot would dock"));
+  const heldBattery = bt.filter((r) => r.reason?.startsWith("Spot would dock"));
 
   return (
     <div className="min-h-screen">
@@ -75,7 +79,7 @@ export default async function Board() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Battery vs. inspection success</CardTitle>
             <CardDescription>V2 never ran below 40% battery, so part of its lead over V1 is battery, not configuration</CardDescription>
@@ -93,7 +97,7 @@ export default async function Board() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Least reliable inspections</CardTitle>
             <CardDescription>Share of actions that succeeded, all 27 missions</CardDescription>
@@ -112,6 +116,33 @@ export default async function Board() {
                 </div>
               ))}
             </dl>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Backtest: would it cry wolf?</CardTitle>
+            <CardDescription>Today&apos;s rules run on the real archived weather at {SITE.name.split(" (")[0]} for each kit round time</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              <span className="font-mono text-3xl font-medium">{heldWeather.length}</span>
+              <span className="text-muted-foreground"> of {bt.length} rounds held for weather</span>
+            </p>
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              {heldWeather.map((r) => (
+                <li key={r.missionId}>
+                  <span className="font-mono text-foreground">{r.missionId}</span> {r.reason}
+                </li>
+              ))}
+            </ul>
+            <p>
+              <span className="font-mono text-3xl font-medium">{heldBattery.length}</span>
+              <span className="text-muted-foreground"> of {bt.length} rounds held for battery (would dock under 20%)</span>
+            </p>
+            <p className="text-xs text-helper">
+              {bt.filter((r) => r.outdoor).length} of {bt.length} routes include the outdoor leg. Weather: Open-Meteo ERA5 archive. Sep 1-10, 2026.
+            </p>
           </CardContent>
         </Card>
 

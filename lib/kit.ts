@@ -53,6 +53,8 @@ export type Location = {
 
 export type Asset = { id: string; name: string; criticality: string };
 
+export type Reading = { actionId: string; type: string; value: number; unit: string; quality: string };
+
 export async function loadKit() {
   "use cache";
   cacheLife("hours");
@@ -61,12 +63,13 @@ export async function loadKit() {
   if (!url) throw new Error("DATABASE_URL is not set. Run `vercel env pull .env.local`.");
   const sql = neon(url);
   // Timestamps come back as text so the UI shows the kit's local times exactly as recorded.
-  const [m, a, an, lo, as] = await Promise.all([
+  const [m, a, an, lo, as, rd] = await Promise.all([
     sql`SELECT *, start_time::text AS start_time FROM missions ORDER BY mission_id`,
     sql`SELECT *, timestamp::text AS timestamp FROM actions ORDER BY action_id`,
     sql`SELECT *, timestamp::text AS timestamp FROM anomalies ORDER BY anomaly_id`,
     sql`SELECT * FROM locations ORDER BY location_id`,
     sql`SELECT * FROM assets ORDER BY asset_id`,
+    sql`SELECT action_id, measurement_type, value, unit, quality FROM readings ORDER BY reading_id`,
   ]);
 
   const missions: Mission[] = m.map((r) => ({
@@ -112,8 +115,9 @@ export async function loadKit() {
     environment: r.environment,
   }));
   const assets: Asset[] = as.map((r) => ({ id: r.asset_id, name: r.asset_name, criticality: r.criticality }));
+  const readings: Reading[] = rd.map((r) => ({ actionId: r.action_id, type: r.measurement_type, value: Number(r.value), unit: r.unit, quality: r.quality }));
 
-  return { missions, actions, anomalies, locations, assets };
+  return { missions, actions, anomalies, locations, assets, readings };
 }
 
 export type Kit = Awaited<ReturnType<typeof loadKit>>;

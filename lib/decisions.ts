@@ -55,3 +55,9 @@ export async function recentDecisions(): Promise<Decision[]> {
                           FROM decisions ORDER BY id DESC LIMIT 8`;
   return rows as Decision[];
 }
+
+// Clears replay decisions so every judge sees the replay from a clean log. Live decisions are untouched.
+export async function resetReplay() {
+  await db()`DELETE FROM decisions WHERE source = 'replay'`;
+  refresh();
+}
