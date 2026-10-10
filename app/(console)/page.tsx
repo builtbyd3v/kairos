@@ -13,7 +13,6 @@ import { DockDoor } from "@/components/dock-door";
 import { LiveRadar } from "@/components/weather-watch";
 import { doorWeather } from "@/lib/door-rain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StoryBar } from "@/components/story-bar";
 import { cn } from "@/lib/utils";
 
 export default function Launch() {
@@ -51,7 +50,6 @@ async function Dashboard() {
           </span>
         }
       />
-      <StoryBar step={1} />
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">

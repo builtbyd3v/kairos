@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { detectWater, WATER_MODEL_ID, type WaterDetection } from "@/lib/water-model";
+import { waterLikelihood } from "@/lib/water-confidence";
 import { inPath, laneAt, PATH, type Vision } from "@/lib/verdict";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
   const standby = cam.vision === null;
   const state = standby ? "STANDBY" : result === undefined ? "CHECKING" : result === "error" ? "MODEL OFFLINE" : blocked ? "WATER IN PATH" : "PATH CLEAR";
   const tone = state === "PATH CLEAR" ? "go" : state === "CHECKING" || standby ? "muted" : "recall";
-  const square = frame.src.includes("approach");
+  const square = frame.source !== "scand"; // Kaggle frames are 608x608; SCAND frames are 16:9
   const [W, H] = square ? [100, 100] : [160, 90];
   const lane = blocked ? "#ff6b6b" : "#2dd4bf";
   const cx = ((PATH.topL + PATH.topR) / 2) * W;
@@ -154,7 +155,9 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
               })}
               {boxes.map((d, i) => {
                 const [x, y, w, h] = [d.box.x * W, d.box.y * H, d.box.w * W, d.box.h * H];
-                const label = `water ${d.score.toFixed(2)}`;
+                // Calibrated: "boxes scoring like this were real water N in 10" (lib/water-confidence.ts).
+                const pct = waterLikelihood(d.score)?.pct;
+                const label = pct === undefined ? "water" : pct <= 50 ? `maybe water ${pct}%` : `water ${pct}%`;
                 const pillW = label.length * 1.86 + 2.6;
                 const pillY = y >= 5 ? y - 4.8 : y + 0.6;
                 return (
@@ -176,7 +179,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-[11px] text-helper">
           <span>
-            <span className="text-[#8ab8ff]">▢</span> model + confidence · <span className="text-foreground">⌜⌟</span> labeled truth · <span className="text-[#2dd4bf]">▲</span> heading
+            <span className="text-[#8ab8ff]">▢</span> water % = how often boxes like this were real water · <span className="text-foreground">⌜⌟</span> labeled truth · <span className="text-[#2dd4bf]">▲</span> heading
           </span>
           <a className="ml-auto underline-offset-4 hover:underline" href={frame.url}>
             {frame.source === "scand" ? "Spot camera, UT Austin SCAND" : "Example photo, held out"} · {frame.license}

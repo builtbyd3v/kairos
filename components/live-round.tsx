@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 import { waterModel, WATER_REVISION } from "@/lib/water-model";
 import { SpotCam, useSpotCam, type CamFrame } from "@/components/spot-cam";
-import approach from "@/public/captures/approach.json";
-import spotDry from "@/public/captures/spot-dry.json";
+import demoWet from "@/public/captures/demo-wet.json";
+import demoDry from "@/public/captures/demo-dry.json";
 import { ORBIT_CALL, inPath, visionReason, type Vision } from "@/lib/verdict";
 import { labelDetection, recordDetection } from "@/lib/evidence";
 import { endOf, kitClock, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
@@ -34,7 +34,6 @@ import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { StoryBar } from "@/components/story-bar";
 import { Why } from "@/components/why";
 
 type Mission = { id: string; name: string; config: string; plan: { id: string; locationId: string; type: string }[] };
@@ -64,9 +63,9 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
   ACTION_FAILED: { Icon: CircleX, label: "Failed", tone: "text-recall" },
   MISSION_COMPLETED: { Icon: FlagTriangleRight, label: "Mission reported", tone: "text-primary" },
 };
-// note: the kit has no camera frames. Wet walk = held-out test photos approaching a puddle (never trained on);
-// dry walk = real frames from a camera on a Spot robot (UT Austin SCAND). Both labeled on screen.
-const WALKS: Record<"wet" | "dry", CamFrame[]> = { wet: approach.frames, dry: spotDry.frames };
+// note: the kit has no camera frames. Both walks are held-out test photos the model never trained on, checked by eye:
+// wet = unmistakable puddles, smallest first; dry = clearly dry floors (two from a camera on a Spot robot, UT Austin SCAND).
+const WALKS: Record<"wet" | "dry", CamFrame[]> = { wet: demoWet.frames, dry: demoDry.frames };
 
 /** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
 async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reject") {
@@ -98,13 +97,14 @@ async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reje
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
 export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch, radar }: Props) {
-  const startOf = (id: string) => stream.find((e) => e.missionId === id)!.at;
   // First paint opens three actions in, so the page shows a round in progress instead of "none yet". Restart still goes to the start.
   // note: capped just before the outdoor leg, so the floor model never downloads on first paint.
   const openingOf = (id: string) => {
     const evs = stream.filter((e) => e.missionId === id);
-    const third = evs.filter((e) => e.type === "ACTION_COMPLETED" || e.type === "ACTION_FAILED")[2]?.at ?? evs[0].at;
-    return Math.min(third, (outdoorArrival(evs, outdoor)?.at ?? Infinity) - 1);
+    // The camera stop is the story: open 20 s (kit time) before Spot reaches it, so the camera starts within a second.
+    const arrive = outdoorArrival(evs, outdoor)?.at;
+    if (arrive !== undefined) return Math.max(evs[0].at, arrive - 20000);
+    return evs.filter((e) => e.type === "ACTION_COMPLETED" || e.type === "ACTION_FAILED")[2]?.at ?? evs[0].at;
   };
   const [missionId, setMissionId] = useState(defaultId);
   const [t, setT] = useState(() => openingOf(defaultId));
@@ -165,7 +165,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const pick = (id: string) => {
     warm();
     setMissionId(id);
-    setT(startOf(id));
+    setT(openingOf(id));
     setPlaying(true);
     setAnswer(null);
     cam.restart();
@@ -186,7 +186,6 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </span>
         }
       />
-      <StoryBar step={2} />
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
         {watch}
         <Card className="animate-rise">

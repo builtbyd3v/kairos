@@ -1,3 +1,5 @@
+import { waterLikelihood } from "./water-confidence.ts";
+
 // The dispatcher's rules: weather + robot health in, GO / HOLD / RECALL out, with a reason and source per rule.
 // Pure functions, no I/O, so the same rules run on live NWS data and on the storm replay.
 
@@ -169,7 +171,10 @@ export function visionReason(v: Vision): Reason {
   // A whole-frame box means an image classifier (v1): it says the frame looks wet, not where the water is.
   if (hit && hit.w * hit.h > 0.99)
     return { verdict: "HOLD", text: `Possible water at ${v.waypoint} (p=${hit.score.toFixed(2)}); location and size unknown with an image classifier: hold at this waypoint`, source };
-  if (hit) return { verdict: "HOLD", text: `Water in Spot's path at ${v.waypoint} (score ${hit.score.toFixed(2)}, ${(hit.w * hit.h * 100).toFixed(1)}% of frame): hold at this waypoint`, source };
+  if (hit) {
+    const pct = waterLikelihood(hit.score)?.pct;
+    return { verdict: "HOLD", text: `Water in Spot's path at ${v.waypoint}${pct ? ` (${pct}% likely)` : ""}: hold here`, source };
+  }
   if (v.boxes.length) return { verdict: "GO", text: `Water seen at ${v.waypoint}, outside Spot's path; check it after the round`, source };
   return { verdict: "GO", text: `No water seen at ${v.waypoint} (advisory only)`, source };
 }

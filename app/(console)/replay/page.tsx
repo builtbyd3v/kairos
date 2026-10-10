@@ -4,7 +4,6 @@ import { findRecall, stateAt, type Round, type StormFixture } from "@/lib/replay
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, returnMinutes, routeOf } from "@/lib/route";
 import { ReplayPlayer } from "@/components/replay-player";
 import { DrillBranchStatus } from "@/components/drill-branch-status";
-import { StoryBar } from "@/components/story-bar";
 import { PageHeader } from "@/components/page-header";
 
 const fixture = storm as StormFixture;
@@ -43,7 +42,6 @@ export default async function ReplayPage() {
         title="Storm drill"
         subtitle={`What if a storm hits mid-round? A real storm at ${fixture.site.name.split(",")[0]}, ${fixture.date}, replayed minute by minute.`}
       />
-      <StoryBar step={3} />
       <div className="space-y-4 px-8 py-6">
         <DrillBranchStatus />
         <ReplayPlayer fixture={fixture} round={{ ...base, launch }} sites={a.sites} dock={DOCK} outdoor={[...OUTDOOR_WAYPOINTS]} />

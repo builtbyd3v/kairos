@@ -11,15 +11,20 @@ const GROUPS = [
     items: [
       { href: "/", label: "Launch", Icon: House },
       { href: "/live", label: "Live round", Icon: Radio },
-      { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
-      { href: "/floor-check", label: "Water model", Icon: Droplets },
     ],
   },
   // note: Orbit already covers anomalies, missions, waypoints, work orders, insights and shift handoff. Those pages stay reachable by URL, off the nav.
   {
-    label: "Drills",
+    label: "Prove it",
     items: [
       { href: "/replay", label: "Storm drill", Icon: CloudLightning },
+      { href: "/floor-check", label: "Water model", Icon: Droplets },
+    ],
+  },
+  {
+    label: "Records",
+    items: [
+      { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
       { href: "/review", label: "Incident review", Icon: History },
     ],
   },

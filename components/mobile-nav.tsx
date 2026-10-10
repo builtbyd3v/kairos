@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/", label: "Launch", Icon: House },
   { href: "/live", label: "Live", Icon: Radio },
-  { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
-  { href: "/floor-check", label: "Water", Icon: Droplets },
   { href: "/replay", label: "Drill", Icon: CloudLightning },
+  { href: "/floor-check", label: "Water", Icon: Droplets },
+  { href: "/evidence", label: "Evidence", Icon: ShieldCheck },
 ];
 
 // Phone layout: the sidebar becomes a bottom tab bar.
