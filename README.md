@@ -50,7 +50,7 @@ Every rule is in `lib/verdict.ts` and cited in the UI.
 - NWS warning → HOLD before launch, RECALL during a round. NWS watch or advisory → HOLD.
 - Rain above 2.5 mm/h (beyond "light rain", Spot guide p.22) → HOLD / RECALL. Ours is a rate checked through the whole round, not only at launch.
 - Thunder chance ≥ 30%, gusts ≥ 50 km/h → HOLD / RECALL. These are **our assumptions**, because the guide is silent.
-- Air temperature within 5 °C of Spot's -20 / 45 °C limits (2019 guide; Boston Dynamics' current spec says up to 55 °C) → HOLD / RECALL.
+- Air temperature within 5 °C of Spot's -20 / 55 °C limits (Boston Dynamics' current spec; NextEra told us their Spots run to about 57 °C; the 2019 guide said 45 °C) → HOLD / RECALL.
 - Projected battery at the dock under 20% (from the kit's drain rates) → HOLD.
 - Weather only gates routes with an outdoor leg. Missing or stale weather never shows GO for an outdoor route.
 

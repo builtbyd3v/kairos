@@ -29,7 +29,7 @@ export type Reason = { verdict: Verdict; text: string; source: string };
 
 // note: thresholds marked ASSUMPTION are ours, not NextEra's or Boston Dynamics'. Ask NextEra for their procedure values.
 export const LIMITS = {
-  maxTempC: 45, // Spot guide p.22, p.61
+  maxTempC: 55, // Boston Dynamics current spec (-20 to 55 C); NextEra says their Spots run to about 57 C. The 2019 guide (p.22) said 45 C.
   minTempC: -20, // Spot guide p.22, p.61
   tempMarginC: 5, // ASSUMPTION: stay 5 C inside the rated range
   moderateRainMmPerHour: 2.5, // AMS "light rain" ends at 2.5 mm/h; Spot guide p.22 allows light rain only
@@ -109,7 +109,7 @@ export function decide(
     if (gust !== null && gust >= LIMITS.gustKmh)
       reasons.push({ verdict: hazard, text: `Gusts up to ${Math.round(gust)} km/h`, source: `${feed}; threshold is our assumption` });
     if (hot !== null && hot >= LIMITS.maxTempC - LIMITS.tempMarginC)
-      reasons.push({ verdict: hazard, text: `Air temperature reaches ${Math.round(hot)} C; Spot's limit is ${LIMITS.maxTempC} C`, source: "Spot guide p.22" });
+      reasons.push({ verdict: hazard, text: `Air temperature reaches ${Math.round(hot)} C; Spot's limit is ${LIMITS.maxTempC} C`, source: "Boston Dynamics spec; NextEra workshop" });
     if (cold <= LIMITS.minTempC + LIMITS.tempMarginC)
       reasons.push({ verdict: hazard, text: `Air temperature drops to ${Math.round(cold)} C; Spot's limit is ${LIMITS.minTempC} C`, source: "Spot guide p.22" });
   }
