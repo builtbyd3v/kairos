@@ -53,7 +53,8 @@
 .k-splash > :nth-child(2n) { animation-delay: -300ms; }
 .k-splash > :nth-child(3n) { animation-delay: -520ms; }
 .k-pulse { transform-box: fill-box; transform-origin: center; animation: k-pulse 1.6s ease-out var(--d, 0s) infinite backwards; }
-.k-spin { transform-box: view-box; transform-origin: 960px 560px; animation: k-spin 4s linear infinite; }
+/* Spin groups hold an invisible full circle, so the box center is the pivot. */
+.k-spin { transform-box: fill-box; transform-origin: center; animation: k-spin 4s linear infinite; }
 .k-shimmer { animation: k-shimmer 700ms ease-in-out infinite alternate; }
 .k-flash { opacity: 0; animation: k-flash 900ms linear var(--d, 0s) both; }
 /* No backwards fill: the ring must stay hidden while it waits. */
@@ -72,25 +73,27 @@
 @keyframes spot-thigh-b { 0%, 100% { transform: rotate(13deg); } 50% { transform: rotate(-13deg); } }
 @keyframes spot-shin-b { 0%, 50%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-40deg); } }
 
-/* Route beat: walk 0 to 3.15 s, stand, walk home from 9.4 s. */
-.walk-route .leg-a .thigh { animation: spot-thigh-a 600ms linear 5.25, spot-thigh-a 600ms linear 9.4s 3.25; }
-.walk-route .leg-a .shin { animation: spot-shin-a 600ms linear 5.25, spot-shin-a 600ms linear 9.4s 3.25; }
-.walk-route .leg-b .thigh { animation: spot-thigh-b 600ms linear 5.75, spot-thigh-b 600ms linear 9.4s 3.75; }
-.walk-route .leg-b .shin { animation: spot-shin-b 600ms linear 5.75, spot-shin-b 600ms linear 9.4s 3.75; }
-@keyframes route-track { 0% { transform: translateX(0); } 27.4% { transform: translateX(630px); } 81.7% { transform: translateX(630px); } 98.7%, 100% { transform: translateX(240px); } }
-@keyframes route-face { 0%, 78.3% { transform: scaleX(1); } 80.9%, 100% { transform: scaleX(-1); } }
-.route-track { animation: route-track 11.5s linear both; }
-/* Flip about the middle of the body (local x 160), not the beam. */
-.route-face { transform-box: view-box; transform-origin: 160px 0; animation: route-face 11.5s linear both; }
+/* Route beat: walk 0 to 3.15 s, then hold at the puddle. */
+.walk-route .leg-a .thigh { animation: spot-thigh-a 600ms linear 5.25; }
+.walk-route .leg-a .shin { animation: spot-shin-a 600ms linear 5.25; }
+.walk-route .leg-b .thigh { animation: spot-thigh-b 600ms linear 5.75; }
+.walk-route .leg-b .shin { animation: spot-shin-b 600ms linear 5.75; }
+@keyframes route-track { from { transform: translateX(0); } }
+.route-track { transform: translateX(630px); animation: route-track 3.15s linear backwards; }
 
-/* Dock beat: walk onto the dock pad in 1.95 s. */
-.walk-dock .leg-a .thigh { animation: spot-thigh-a 600ms linear 3.25; }
-.walk-dock .leg-a .shin { animation: spot-shin-a 600ms linear 3.25; }
-.walk-dock .leg-b .thigh { animation: spot-thigh-b 600ms linear 3.75; }
-.walk-dock .leg-b .shin { animation: spot-shin-b 600ms linear 3.75; }
-@keyframes dock-track { from { transform: translateX(-390px); } }
-.dock-track { animation: dock-track 1.95s linear backwards; }
+/* Storm beat: walk 0 to 1.95 s, stop for the recall, turn, walk home from 3.4 s to 5.95 s. */
+.walk-storm .leg-a .thigh { animation: spot-thigh-a 600ms linear 3.25, spot-thigh-a 600ms linear 3.4s 4.25; }
+.walk-storm .leg-a .shin { animation: spot-shin-a 600ms linear 3.25, spot-shin-a 600ms linear 3.4s 4.25; }
+.walk-storm .leg-b .thigh { animation: spot-thigh-b 600ms linear 3.75, spot-thigh-b 600ms linear 3.4s 4.75; }
+.walk-storm .leg-b .shin { animation: spot-shin-b 600ms linear 3.75, spot-shin-b 600ms linear 3.4s 4.75; }
+@keyframes storm-track { 0% { transform: translateX(0); } 22.94% { transform: translateX(390px); } 40% { transform: translateX(390px); } 70%, 100% { transform: translateX(-120px); } }
+@keyframes storm-face { 0%, 34.1% { transform: scaleX(1); } 37.6%, 100% { transform: scaleX(-1); } }
+.storm-track { animation: storm-track 8.5s linear both; }
+/* Flip about the middle of the body (local x 160). */
+.storm-face { transform-box: view-box; transform-origin: 160px 0; animation: storm-face 8.5s linear both; }
 
+@keyframes card-storm { from { transform: translate(-150px, 24px); } }
+.card-storm { animation: card-storm 2.9s cubic-bezier(0.4, 0, 0.6, 1) backwards; }
 @keyframes radar-storm { from { transform: translate(-340px, 30px); } }
 .radar-storm { animation: radar-storm 3.8s cubic-bezier(0.3, 0, 0.6, 1) backwards; }
 
