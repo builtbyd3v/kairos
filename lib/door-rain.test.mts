@@ -19,6 +19,14 @@ test("camera p(rain) at or above the threshold holds; just below does not", () =
   assert.equal(v({ pRain: DOOR_RAIN_THRESHOLD - 0.001 }).verdict, "GO");
 });
 
+test("fp32 fallback scores hold exactly at the fp32 threshold", async () => {
+  const { fp32ToQ8Scale, DOOR_RAIN_THRESHOLDS: t } = await import("./door-rain.ts");
+  assert.equal(v({ pRain: fp32ToQ8Scale(t.fp32) }).verdict, "HOLD");
+  assert.equal(v({ pRain: fp32ToQ8Scale(t.fp32 - 0.001) }).verdict, "GO");
+  assert.equal(fp32ToQ8Scale(0), 0);
+  assert.equal(fp32ToQ8Scale(1), 1);
+});
+
 test("observed rain or forecast rain holds on its own", () => {
   assert.equal(v({}, { observedRain: true }).verdict, "HOLD");
   assert.equal(v({}, { forecastRain: true }).verdict, "HOLD");
