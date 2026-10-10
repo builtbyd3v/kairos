@@ -96,3 +96,61 @@ export type LiveState = ReturnType<typeof liveState>;
 /** The first time Spot starts an action at an outdoor waypoint, among the events seen so far. */
 export const outdoorArrival = (seen: LiveEvent[], outdoor: string[]) =>
   seen.find((e) => e.type === "ACTION_STARTED" && outdoor.includes(e.locationId!));
+
+// Simulated round: Spot's position as a smooth function of round seconds, on the two-floor map.
+export type Pt = { x: number; y: number; floor: number };
+export type Node = Pt & { stop?: number };
+export type Walk = { nodes: Node[]; arrive: number[]; depart: number[] };
+
+// note: simulation pacing, not Spot's real speed: map units per round second, dwell per capture, seconds per floor change.
+export const WALK = { speed: 4, dwell: 2.5, stairs: 1.5 } as const;
+
+/** Route through the stops. A floor change becomes: walk to the leg's midpoint, take the stairs, walk on (the maps have no stair positions). */
+export function walk(stops: Pt[], t0 = 0, dwell: number = WALK.dwell): Walk {
+  const nodes: Node[] = [];
+  stops.forEach((p, i) => {
+    const prev = stops[i - 1];
+    if (prev && prev.floor !== p.floor) {
+      const m = { x: (prev.x + p.x) / 2, y: (prev.y + p.y) / 2 };
+      nodes.push({ ...m, floor: prev.floor }, { ...m, floor: p.floor });
+    }
+    nodes.push({ ...p, stop: i });
+  });
+  const arrive: number[] = [];
+  const depart: number[] = [];
+  let t = t0;
+  nodes.forEach((n, i) => {
+    const prev = nodes[i - 1];
+    if (prev) t += prev.floor !== n.floor ? WALK.stairs : Math.hypot(n.x - prev.x, n.y - prev.y) / WALK.speed;
+    arrive.push(t);
+    if (i > 0 && n.stop !== undefined) t += dwell;
+    depart.push(t);
+  });
+  return { nodes, arrive, depart };
+}
+
+/** Where Spot is at round second s: position, the stop it is dwelling at (if any), the last stop reached, and the path behind and ahead. */
+export function walkAt(w: Walk, s: number) {
+  const k = Math.max(0, w.arrive.findLastIndex((a) => a <= s));
+  const n = w.nodes[k];
+  const next = w.nodes[k + 1];
+  const moving = next !== undefined && s > w.depart[k];
+  const f = moving ? Math.min(1, (s - w.depart[k]) / (w.arrive[k + 1] - w.depart[k])) : 0;
+  const pt: Pt = moving && next.floor === n.floor ? { x: n.x + (next.x - n.x) * f, y: n.y + (next.y - n.y) * f, floor: n.floor } : { x: n.x, y: n.y, floor: n.floor };
+  return {
+    k, // index of the last node reached
+    pt,
+    dwelling: moving ? undefined : n.stop,
+    reached: w.nodes.slice(0, k + 1).findLast((x) => x.stop !== undefined)?.stop ?? 0,
+    next: w.nodes.slice(k + 1).find((x) => x.stop !== undefined)?.stop,
+    trail: [...w.nodes.slice(0, k + 1), pt],
+    ahead: [pt, ...w.nodes.slice(k + 1)],
+  };
+}
+
+/** Round second when Spot is `frac` of the way along the leg into stop `i`. */
+export function legTime(w: Walk, i: number, frac: number) {
+  const k = w.nodes.findIndex((n) => n.stop === i);
+  const from = w.nodes.findLastIndex((n, j) => j < k && n.floor === w.nodes[k].floor);
+  return w.depart[from] + (w.arrive[k] - w.depart[from]) * frac;
+}
