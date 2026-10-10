@@ -36,7 +36,7 @@ export type ReplayState = {
 export function weatherAt(f: StormFixture, t: number): Weather {
   return {
     fetchedAt: new Date(t).toISOString(),
-    source: "Weather station observations (ASOS)",
+    source: "Fort Pierce weather station (ASOS), 21 km from the plant",
     alerts: f.alerts
       .filter((a) => a.coversSite !== false && Date.parse(a.start) <= t && t < Date.parse(a.end))
       .map((a) => a.event),

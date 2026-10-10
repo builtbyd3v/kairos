@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 import { bands, stateAt, type Round, type StormFixture } from "@/lib/replay";
 import { logDecision, resetReplay } from "@/lib/decisions";
-import { ORBIT_CALL } from "@/lib/verdict";
+import { ORBIT_CALL, RECALL_ALERTS } from "@/lib/verdict";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { ReasonList, VerdictBlock } from "@/components/status";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,11 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
     return () => clearInterval(id);
   }, [playing, speed, end, fixture, round]);
 
+  // The conservative baseline: when would an NWS warning alone have recalled Spot?
+  const firstWarning = fixture.alerts
+    .filter((x) => x.coversSite !== false && RECALL_ALERTS.includes(x.event) && Date.parse(x.start) >= round.launch)
+    .map((x) => Date.parse(x.start))
+    .sort((x, y) => x - y)[0];
   const conditions = fixture.steps.filter((x) => Date.parse(x.time) <= t).at(-1);
   // Hindsight, shown only after Spot is back: when did the worst weather actually arrive?
   const worst = s.recallAt
@@ -137,7 +142,8 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
         <CardHeader>
           <CardTitle>Dispatcher at {clock(t)}</CardTitle>
           <CardDescription>
-            Outdoor round launches {clock(round.launch)} · {round.durationMin} min · {round.route.length} stops
+            Extra outdoor round launches {clock(round.launch)} (the first quarter hour the dispatcher said GO; kit rounds run at 02:00, 10:00, 18:00) ·{" "}
+            {round.durationMin} min · {round.route.length} stops
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-[15rem_1fr] gap-6">
@@ -173,6 +179,12 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                   Recall at {clock(s.recallAt)} from {sites.find((x) => x.id === s.recallFrom)?.name} · Spot needs about{" "}
                   {Math.max(1, Math.round((s.dockAt - s.recallAt) / MINUTE))} min to reach the dock · docked by {clock(s.dockAt + MINUTE - 1)}
                 </p>
+                {firstWarning && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Earlier signal: thunder reported at the Fort Pierce station (our assumed rule). Using the NWS warning alone, the recall would have come at{" "}
+                    {clock(firstWarning)}.
+                  </p>
+                )}
                 {s.phase === "docked" && worst && (
                   <p className="mt-1 text-sm text-muted-foreground">
                     In the real record, the heaviest rain ({worst.precipMmPerHour?.toFixed(1)} mm/h) arrived at {clock(Date.parse(worst.time))}

@@ -39,7 +39,7 @@ export const LIMITS = {
   staleMinutes: 30, // ASSUMPTION: older weather counts as unknown
 } as const;
 
-const RECALL_ALERTS = ["Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Heat Warning", "Hurricane Warning", "Tropical Storm Warning"];
+export const RECALL_ALERTS = ["Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Heat Warning", "Hurricane Warning", "Tropical Storm Warning"];
 const HOLD_ALERTS = ["Tornado Watch", "Severe Thunderstorm Watch", "Flash Flood Watch", "Flood Warning", "Heat Advisory", "Hurricane Watch", "Tropical Storm Watch"];
 
 const RANK: Record<Verdict, number> = { GO: 0, HOLD: 1, RECALL: 2 };
@@ -74,8 +74,9 @@ export function decide(
       // Steps are up to an hour long, so include the one already running at the window start.
       return t > start.getTime() - 3600000 && t <= end.getTime();
     });
-    if (window.length === 0)
-      reasons.push({ verdict: "HOLD", text: "No forecast covers this mission window yet", source: "Dispatcher rule" });
+    const observed = window.some((s) => s.precipMmPerHour !== null || s.thunderPct !== null || s.gustKmh !== null || s.tempC !== null);
+    if (!observed)
+      reasons.push({ verdict: "HOLD", text: "No weather data covers this mission window yet", source: "Dispatcher rule: unknown is never GO" });
     const peak = (pick: (s: WeatherStep) => number | null) => {
       const values = window.map(pick).filter((v): v is number => v !== null);
       return values.length ? Math.max(...values) : null;
@@ -87,14 +88,16 @@ export function decide(
     const cold = window.map((s) => s.tempC).filter((v): v is number => v !== null).reduce((a, b) => Math.min(a, b), Infinity);
 
     if (rain !== null && rain > LIMITS.moderateRainMmPerHour)
-      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61; Orbit's own launch gate allows up to 5 mm" });
+      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61. Orbit's launch gate checks a forecast amount (up to 5 mm); this is a rate" });
     else if (rain !== null && rain > 0)
       reasons.push({ verdict: "GO", text: `Light rain (${rain.toFixed(1)} mm/h) is within Spot's rating, but expect wet, slippery floors after`, source: "Spot guide p.21-22" });
     const feed = weather.source ?? "NWS forecast grid";
-    if (thunder !== null && thunder >= LIMITS.thunderPct)
+    const warned = weather.alerts.some((a) => RECALL_ALERTS.includes(a));
+    // A warning already covers thunder; do not count the same storm twice.
+    if (thunder !== null && thunder >= LIMITS.thunderPct && !(thunder >= 100 && warned))
       reasons.push({
         verdict: hazard,
-        text: thunder >= 100 ? "Thunder reported nearby" : `${Math.round(thunder)}% chance of thunder before Spot can dock`,
+        text: thunder >= 100 ? "Thunder reported" : `${Math.round(thunder)}% chance of thunder before Spot can dock`,
         source: `${feed}; threshold is our assumption`,
       });
     if (gust !== null && gust >= LIMITS.gustKmh)

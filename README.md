@@ -20,7 +20,7 @@ Live: https://spot-ops-pi.vercel.app
 ## Rules
 Every rule is in `lib/verdict.ts` and cited in the UI.
 - NWS warning → HOLD before launch, RECALL during a round. NWS watch or advisory → HOLD.
-- Rain above 2.5 mm/h (beyond "light rain", Spot guide p.22) → HOLD / RECALL. Orbit's own launch gate allows up to 5 mm.
+- Rain above 2.5 mm/h (beyond "light rain", Spot guide p.22) → HOLD / RECALL. Orbit's launch gate checks a forecast amount (configurable up to 5 mm); ours is a rate.
 - Thunder chance ≥ 30%, gusts ≥ 50 km/h → HOLD / RECALL. These are **our assumptions**, because the guide is silent.
 - Air temperature within 5 °C of Spot's -20 / 45 °C limits → HOLD / RECALL.
 - Projected battery at the dock under 20% (from the kit's drain rates) → HOLD.

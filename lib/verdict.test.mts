@@ -51,3 +51,14 @@ test("an indoor route stays GO through a storm", () => {
   assert.equal(decide(storm, { ...healthy, outdoor: false }, { now, start: now, end }, true).verdict, "GO");
   assert.equal(decide(null, { ...healthy, outdoor: false }, { now, start: now, end }, false).verdict, "GO");
 });
+
+test("an outdoor window with no observations holds", () => {
+  const empty = { ...calm, steps: [{ time: now.toISOString(), precipMmPerHour: null, thunderPct: null, gustKmh: null, tempC: null }] };
+  assert.equal(decide(empty, healthy, { now, start: now, end }, false).verdict, "HOLD");
+});
+
+test("a warning and the thunder it implies count once", () => {
+  const storm = { ...calm, alerts: ["Severe Thunderstorm Warning"], steps: [{ ...calm.steps[0], thunderPct: 100 }] };
+  const r = decide(storm, healthy, { now, start: now, end }, true);
+  assert.equal(r.reasons.filter((x) => x.verdict === "RECALL").length, 1);
+});

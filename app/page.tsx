@@ -141,7 +141,8 @@ export default async function Board() {
               <span className="text-muted-foreground"> of {bt.length} rounds held for battery (would dock under 20%)</span>
             </p>
             <p className="text-xs text-helper">
-              {bt.filter((r) => r.outdoor).length} of {bt.length} routes include the outdoor leg. Weather: Open-Meteo ERA5 archive. Sep 1-10, 2026.
+              {bt.filter((r) => r.outdoor).length} of {bt.length} routes include the outdoor leg. Weather: Open-Meteo ERA5 archive, Sep 1-10, 2026. The archive has
+              no thunder data, so this count does not test the thunder rule.
             </p>
           </CardContent>
         </Card>

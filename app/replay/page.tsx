@@ -53,7 +53,10 @@ export default async function ReplayPage() {
             {fixture.assumptions.map((x) => (
               <li key={x}>{x}</li>
             ))}
-            <li>Return time = straight-line distance to the WP15 dock at 1 m/s, plus 1 min per floor change. Kit x/y units are assumed to be meters.</li>
+            <li>
+              Return time = straight-line distance to the WP15 dock at 1 m/s, plus 1 min per floor change. Kit x/y units are assumed to be meters. Stairs are
+              assumed walkable; Spot&apos;s guide says Autowalk is not meant for stairs, so a real route may need an elevator or a same-floor dock.
+            </li>
           </ul>
         </details>
       </main>
