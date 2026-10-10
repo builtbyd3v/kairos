@@ -2,8 +2,17 @@
 // doorVerdict is pure (no I/O) so it runs in tests, on the server and in the browser. classifyDoor is client-only.
 
 export const DOOR_RAIN_MODEL_ID = "builtbyd3v/kairos-door-rain";
-// p(rain) at or above this holds: highest q8 threshold with >= 95% rain recall on the calibration split. See docs/model/door-rain/RESULTS.md.
-export const DOOR_RAIN_THRESHOLD = 0.786;
+// Per dtype: highest threshold with >= 95% rain recall on the calibration split, scored one image at a time.
+// From docs/model/door-rain/eval_results.json "thresholds". See docs/model/door-rain/RESULTS.md.
+export const DOOR_RAIN_THRESHOLDS = { q8: 0.4447, fp32: 0.4728 } as const;
+// p(rain) at or above this holds. pRain is on the q8 scale: classifyDoor maps fp32 fallback scores onto it.
+export const DOOR_RAIN_THRESHOLD = DOOR_RAIN_THRESHOLDS.q8;
+
+/** Monotone map of an fp32 score onto the q8 scale: 0, 1 and the fp32 threshold land on 0, 1 and the q8 threshold. */
+export function fp32ToQ8Scale(p: number): number {
+  const { fp32: from, q8: to } = DOOR_RAIN_THRESHOLDS;
+  return p < from ? (p * to) / from : to + ((p - from) * (1 - to)) / (1 - from);
+}
 
 export type DoorInput = {
   camera: { pRain: number | null; status: "ok" | "stale" | "error" };
@@ -33,15 +42,16 @@ export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
 }
 
 type Classifier = (image: string) => Promise<{ label: string; score: number }[]>;
-let classifier: Promise<Classifier> | null = null;
+type Loaded = { run: Classifier; dtype: keyof typeof DOOR_RAIN_THRESHOLDS };
+let classifier: Promise<Loaded> | null = null;
 
 // note: same loader shape as lib/floor-model.ts (q8 first, fp32 fallback). Extract a shared helper if a third model arrives.
-async function load(): Promise<Classifier> {
+async function load(): Promise<Loaded> {
   const { pipeline } = await import("@huggingface/transformers");
   try {
-    return (await pipeline("image-classification", DOOR_RAIN_MODEL_ID, { dtype: "q8" })) as unknown as Classifier;
+    return { run: (await pipeline("image-classification", DOOR_RAIN_MODEL_ID, { dtype: "q8" })) as unknown as Classifier, dtype: "q8" };
   } catch {
-    return (await pipeline("image-classification", DOOR_RAIN_MODEL_ID, { dtype: "fp32" })) as unknown as Classifier;
+    return { run: (await pipeline("image-classification", DOOR_RAIN_MODEL_ID, { dtype: "fp32" })) as unknown as Classifier, dtype: "fp32" };
   }
 }
 
@@ -49,11 +59,12 @@ async function load(): Promise<Classifier> {
 export async function classifyDoor(image: string): Promise<{ pRain: number; ms: number }> {
   try {
     classifier ??= load();
-    const run = await classifier;
+    const { run, dtype } = await classifier;
     const started = performance.now();
     const out = await run(image);
-    const pRain = out.find((x) => x.label === "rain")?.score ?? 1 - (out.find((x) => x.label === "no_rain")?.score ?? 0);
-    return { pRain, ms: Math.round(performance.now() - started) };
+    const p = out.find((x) => x.label === "rain")?.score ?? 1 - (out.find((x) => x.label === "no_rain")?.score ?? 0);
+    // fp32 has its own calibrated threshold; map it so doorVerdict's one threshold stays right for either dtype
+    return { pRain: dtype === "fp32" ? fp32ToQ8Scale(p) : p, ms: Math.round(performance.now() - started) };
   } catch (e) {
     classifier = null; // let the next call retry the download
     throw e;

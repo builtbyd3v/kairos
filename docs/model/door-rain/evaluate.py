@@ -1,6 +1,7 @@
-"""Pick the threshold on the calibration split, then score on the held-out source (Weather-Time road images).
+"""Pick a threshold per dtype on the calibration split, then score on the other source (Weather-Time road images).
 
-Scores what ships (ONNX fp32 and q8, onnxruntime CPU) against the dima806 ViT baseline and an always-"no_rain" guess.
+Scores what ships (ONNX fp32 and q8, onnxruntime CPU, ONE image per call like the browser) against the dima806 ViT baseline
+and an always-"no_rain" guess. Weather-Time is exploratory: it shaped v2's data choices. It is also scored per period.
 Usage: python -I evaluate.py <manifest.csv> <model_dir> <out_json>
 """
 import csv, json, math, sys
@@ -52,13 +53,19 @@ def pick(subset, p):
 proc = AutoImageProcessor.from_pretrained(model_dir)
 
 
-def onnx_probs(path, subset, bs=32):
+def onnx_probs(path, subset):
+    # batch 1, as deployed: dynamic int8 quantizes activations per call, so a batch of 32 can shift q8 scores.
     s = ort.InferenceSession(path, providers=["CPUExecutionProvider"])
     o = []
-    for i in range(0, len(subset), bs):
-        x = proc([Image.open(r["path"]).convert("RGB") for r in subset[i:i + bs]], return_tensors="np")["pixel_values"]
+    for r in subset:
+        x = proc(Image.open(r["path"]).convert("RGB"), return_tensors="np")["pixel_values"]
         o += torch.tensor(s.run(None, {"pixel_values": x})[0]).softmax(-1)[:, 1].tolist()
     return o
+
+
+def by_period(subset, p, t):  # source is wt_<period>_<weather>
+    periods = sorted({r["source"].split("_")[1] for r in subset})
+    return {k: score([r for r in subset if r["source"].split("_")[1] == k], [x for r, x in zip(subset, p) if r["source"].split("_")[1] == k], t) for k in periods}
 
 
 dev = "mps" if torch.backends.mps.is_available() else "cpu"
@@ -80,8 +87,10 @@ def base_probs(subset, bs=32):
 res = {"target_calib_rain_recall": TARGET_RECALL}
 for name, path in (("fp32", f"{model_dir}/onnx/model.onnx"), ("q8", f"{model_dir}/onnx/model_quantized.onnx")):
     pc, pt = onnx_probs(path, calib), onnx_probs(path, test)
-    t = pick(calib, pc)
-    res[name] = {"calib": score(calib, pc, t), "test": score(test, pt, t), "test_at_0.5": score(test, pt, 0.5), "test_auroc": auroc(test, pt)}
+    t = math.floor(pick(calib, pc) * 1e4) / 1e4  # round DOWN to the 4 decimals that ship, so shipped recall >= scored recall
+    res.setdefault("thresholds", {})[name] = t  # lib/door-rain.ts DOOR_RAIN_THRESHOLDS
+    res[name] = {"calib": score(calib, pc, t), "test": score(test, pt, t), "test_by_period": by_period(test, pt, t),
+                 "test_at_0.5": score(test, pt, 0.5), "test_auroc": auroc(test, pt)}
     if name == "q8":
         res["q8_test_errors"] = [{"path": "/".join(r["path"].split("/")[-2:]), "label": r["label"], "p_rain": round(p, 3)} for r, p in zip(test, pt) if (p >= t) != (r["label"] == "rain")]
 
