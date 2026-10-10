@@ -52,6 +52,7 @@ def plant_like(r):
 
 
 UPW = float(os.environ.get("UPWEIGHT", "3"))
+PASTE = float(os.environ.get("PASTE", "0.5"))  # share of dry frames that get tiny pasted water; run B uses 0 (run A pastes caused tiny false alarms on calib)
 weights = [UPW if plant_like(r) else 1.0 for r in train]
 # Paste sources: train water boxes covering 0.5-30% of their frame (enough pixels to shrink cleanly). Half the pastes are indoor spills.
 crops = [(r["file"], b) for r in train for b in r["boxes"] if 0.005 <= b[2] * b[3] <= 0.3]
@@ -92,7 +93,7 @@ def mosaic():
     canvas, boxes, half = Image.new("RGB", (SIZE, SIZE), (114, 114, 114)), [], SIZE // 2
     for k in range(4):
         im, bx = load(random.choices(train, weights)[0])
-        if not bx and random.random() < 0.5:
+        if not bx and random.random() < PASTE:
             im, bx = paste_tiny(im, bx)
         ox, oy = (k % 2) * half, (k // 2) * half
         canvas.paste(im.resize((half, half), Image.BILINEAR), (ox, oy))
@@ -149,7 +150,7 @@ class DS(torch.utils.data.Dataset):
             im, boxes = mosaic()
         else:
             im, boxes = load(self.rows[i])
-            if self.aug and not boxes and random.random() < 0.5:
+            if self.aug and not boxes and random.random() < PASTE:
                 im, boxes = paste_tiny(im, boxes)
         if self.aug:
             im, boxes = augment(im, boxes)
@@ -255,5 +256,5 @@ except Exception as e:  # note: export failure must not lose the trained weights
 if OUT_REPO != "-":  # a private staging repo: v3 reaches the public repo only if it passes the ship rule on test
     api = HfApi()
     api.create_repo(OUT_REPO, private=True, exist_ok=True)
-    api.upload_folder(repo_id=OUT_REPO, folder_path=out_dir, path_in_repo=f"s{SIZE}", commit_message=f"v3 s{SIZE}: best val mAP@0.5 {best:.4f}")
-    print("UPLOADED", OUT_REPO, f"s{SIZE}", flush=True)
+    api.upload_folder(repo_id=OUT_REPO, folder_path=out_dir, path_in_repo=os.environ.get("TAG", f"s{SIZE}"), commit_message=f"v3 {os.environ.get('TAG', SIZE)}: best val mAP@0.5 {best:.4f}")
+    print("UPLOADED", OUT_REPO, os.environ.get("TAG", f"s{SIZE}"), flush=True)
