@@ -133,7 +133,10 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
           </a>
         </div>
       </div>
-      <BirdsEye boxes={boxes} />
+      <div className="space-y-3">
+        <BirdsEye boxes={boxes} />
+        <Compass boxes={boxes} />
+      </div>
       <span className="sr-only" aria-live="polite">
         {state} at {waypoint}, capture {idx + 1} of {total}
       </span>
@@ -183,6 +186,41 @@ function BirdsEye({ boxes }: { boxes: WaterDetection[] }) {
         <polygon points={`100,${y0 - 12} 92,${y0 + 4} 108,${y0 + 4}`} className="fill-[#ffd60a]" />
       </svg>
       <figcaption className="mt-1 text-[11px] text-helper" title="Distances assume flat ground and a fixed, uncalibrated camera">Path ahead · approx.</figcaption>
+    </figure>
+  );
+}
+
+// note: ASSUMPTION: the demo frame is a 70 degree forward view. Spot CAM+ sees 360 degrees; Kairos would run the model on each slice.
+const FOV = 70;
+
+/** 360 ring around Spot: the slice this demo checks, and the bearing of each detection. */
+function Compass({ boxes }: { boxes: WaterDetection[] }) {
+  const R = 70;
+  const at = (deg: number, r = R) => ({ x: 100 + r * Math.sin((deg * Math.PI) / 180), y: 100 - r * Math.cos((deg * Math.PI) / 180) });
+  const a = at(-FOV / 2);
+  const b = at(FOV / 2);
+  return (
+    <figure className="rounded-xl bg-black p-2 ring-1 ring-border">
+      <svg viewBox="0 0 200 200" className="w-full" role="img" aria-label="Spot CAM+ 360 view: front slice checked">
+        <circle cx="100" cy="100" r={R} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="10" />
+        <path d={`M100,100 L${a.x},${a.y} A${R},${R} 0 0 1 ${b.x},${b.y} Z`} className="fill-[#2dd4bf]/25" />
+        {["F", "R", "B", "L"].map((t, i) => {
+          const p = at(i * 90, R + 18);
+          return (
+            <text key={t} x={p.x} y={p.y + 4} textAnchor="middle" fontSize="12" fill="#8d8d8d" className="font-mono">
+              {t}
+            </text>
+          );
+        })}
+        {boxes.map((d, i) => {
+          const p = at((d.box.x + d.box.w / 2 - 0.5) * FOV, R - 22);
+          return <circle key={i} cx={p.x} cy={p.y} r="6" className={inPath(d.box) ? "fill-recall" : "fill-[#6ea8fe]"} />;
+        })}
+        <polygon points="100,88 92,108 108,108" className="fill-[#ffd60a]" />
+      </svg>
+      <figcaption className="mt-1 text-[11px] text-helper" title="Spot CAM+ sees all around; this demo checks the front slice">
+        CAM+ 360 · front checked
+      </figcaption>
     </figure>
   );
 }
