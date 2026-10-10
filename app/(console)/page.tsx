@@ -37,6 +37,11 @@ async function Dashboard() {
   const kit = await loadKit();
   const plan = await planNextRound(kit, now);
   const { nextGo } = forecast(plan.weather, kit, now);
+  // The storm moment for the door: the heaviest rain step in the next 3 h of the forecast (or now if none).
+  const stormStep = (plan.weather?.steps ?? [])
+    .filter((st) => Date.parse(st.time) >= now.getTime() - 15 * 60000 && Date.parse(st.time) <= now.getTime() + 3 * 3600000)
+    .reduce<{ time: string; precipMmPerHour: number | null } | null>((a, b) => ((b.precipMmPerHour ?? 0) > (a?.precipMmPerHour ?? 0) ? b : a), null);
+  const stormAt = stormStep && (stormStep.precipMmPerHour ?? 0) > 0 ? new Date(stormStep.time) : now;
 
   return (
     <>
@@ -57,7 +62,7 @@ async function Dashboard() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] [&>*]:h-full">
           <DockDoor
             checks={[
-              { label: "Now", weather: doorWeather(plan.weather, now) },
+              { label: et(stormAt, { hour: "numeric", minute: "2-digit" }), weather: doorWeather(plan.weather, stormAt) },
               ...(nextGo ? [{ label: et(nextGo, { hour: "numeric", minute: "2-digit" }), weather: doorWeather(plan.weather, nextGo) }] : []),
             ]}
             source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid"

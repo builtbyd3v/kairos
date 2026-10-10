@@ -60,13 +60,13 @@ test("every weather HOLD cause is listed, and puddles still ask the operator", (
 test("doorWeather: no feed or no step in a window is unknown", async () => {
   const { doorWeather } = await import("./door-rain.ts");
   const now = new Date("2026-10-10T20:00:00Z");
-  assert.deepEqual(doorWeather(null, now), { observedRain: null, forecastRain: null });
+  assert.deepEqual(doorWeather(null, now), { observedRain: null, forecastRain: null, thunder: null });
   const steps = [
     { time: "2026-10-10T19:50:00Z", precipMmPerHour: 0 },
     { time: "2026-10-10T20:30:00Z", precipMmPerHour: 1.2 },
   ];
-  assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true });
-  assert.deepEqual(doorWeather({ steps: [] }, now), { observedRain: null, forecastRain: null });
+  assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true, thunder: null });
+  assert.deepEqual(doorWeather({ steps: [] }, now), { observedRain: null, forecastRain: null, thunder: null });
 });
 
 test("doorWeather: a trace below 0.25 mm/h is not rain at the door", async () => {
@@ -76,5 +76,13 @@ test("doorWeather: a trace below 0.25 mm/h is not rain at the door", async () =>
     { time: "2026-10-10T20:00:00Z", precipMmPerHour: 0.08 },
     { time: "2026-10-10T20:30:00Z", precipMmPerHour: 0.3 },
   ];
-  assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true });
+  assert.deepEqual(doorWeather({ steps }, now), { observedRain: false, forecastRain: true, thunder: null });
+});
+
+test("thunder in the hour after holds the door", async () => {
+  const { doorWeather } = await import("./door-rain.ts");
+  const now = new Date("2026-10-10T20:00:00Z");
+  const w = doorWeather({ steps: [{ time: "2026-10-10T20:00:00Z", precipMmPerHour: 0, thunderPct: 45 }, { time: "2026-10-10T20:30:00Z", precipMmPerHour: 0, thunderPct: null }] }, now);
+  assert.equal(w.thunder, true);
+  assert.equal(v({}, w).verdict, "HOLD");
 });

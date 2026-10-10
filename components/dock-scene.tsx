@@ -2,13 +2,13 @@ import { Cloud, Dome, Palm, Rain, Spot } from "@/components/intro/beats";
 import "@/components/intro/intro.css";
 
 /** What the scene shows, straight from the door rule's inputs. null = unknown. */
-export type DockState = { go: boolean; rainNow: boolean | null; rainSoon: boolean | null; wetGround: boolean | null };
+export type DockState = { go: boolean; rainNow: boolean | null; rainSoon: boolean | null; thunder?: boolean; wetGround: boolean | null };
 
 /**
  * The dock door drawn from data: shutter down on HOLD, rain only when it is raining now, clouds when rain is due,
  * puddles only when the water model found wet ground, and Spot waiting inside or stepping out on GO.
  */
-export function DockScene({ go, rainNow, rainSoon, wetGround }: DockState) {
+export function DockScene({ go, rainNow, rainSoon, thunder = false, wetGround }: DockState) {
   const stormy = rainNow || rainSoon;
   return (
     <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="size-full" role="img" aria-label={`Dock door ${go ? "open, Spot heading out" : "closed, Spot waiting inside"}${rainNow ? ", raining" : ""}${wetGround ? ", wet ground outside" : ""}`}>
@@ -46,6 +46,7 @@ export function DockScene({ go, rainNow, rainSoon, wetGround }: DockState) {
           </g>
         )}
         {rainNow && <Rain x={830} w={770} y={200} h={520} n={60} />}
+        {thunder && <polygon points="1270,150 1225,290 1262,290 1232,410 1318,250 1278,250 1305,150" fill="#ffd60a" opacity="0.9" />}
         {wetGround && (
           <g>
             {[

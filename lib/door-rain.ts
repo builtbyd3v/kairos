@@ -1,3 +1,5 @@
+import { LIMITS } from "./verdict.ts";
+
 // Dock-door rain check: a camera classifier plus NWS / Open-Meteo, fused into GO or HOLD.
 // doorVerdict is pure (no I/O) so it runs in tests, on the server and in the browser. classifyDoor is client-only.
 
@@ -17,7 +19,8 @@ export function fp32ToQ8Scale(p: number): number {
 export type DoorInput = {
   // Wet ground in the door camera frame, from the water detector (lib/water-model.ts). The rain classifier is advisory only.
   camera: { wetGround: boolean | null; status: "ok" | "stale" | "error" };
-  weather: { observedRain: boolean | null; forecastRain: boolean | null };
+  // thunder: any step in the hour after with a thunder chance at or above the round rules' threshold (lightning is bad weather too).
+  weather: { observedRain: boolean | null; forecastRain: boolean | null; thunder?: boolean | null };
 };
 // HOLD is for weather only. Puddles (or an unchecked door camera) need an operator OK, not a hold: Spot can route around water.
 export type DoorVerdict = { verdict: "GO" | "HOLD"; reasons: string[]; operatorCheck: string | null };
@@ -34,6 +37,8 @@ export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   if (weather.forecastRain === null) hold.push("Rain forecast unknown");
   else if (weather.forecastRain) hold.push("Rain forecast for the round");
   else ok.push("No rain forecast");
+
+  if (weather.thunder) hold.push("Thunderstorm risk in the hour after");
 
   const operatorCheck =
     camera.status !== "ok" || camera.wetGround === null ? "Door camera not checked: operator looks at the door" : camera.wetGround ? "Puddles at the door: operator OKs the route around them" : null;
@@ -80,14 +85,19 @@ export async function classifyDoor(image: string): Promise<{ pRain: number; ms: 
 export const RAIN_MM_H = 0.25;
 
 export function doorWeather(
-  weather: { steps: { time: string; precipMmPerHour: number | null }[] } | null,
+  weather: { steps: { time: string; precipMmPerHour: number | null; thunderPct?: number | null }[] } | null,
   now: Date,
 ): DoorInput["weather"] {
-  if (!weather) return { observedRain: null, forecastRain: null };
+  if (!weather) return { observedRain: null, forecastRain: null, thunder: null };
   const t = now.getTime();
   const known = weather.steps.filter((s) => s.precipMmPerHour !== null).map((s) => ({ at: Date.parse(s.time), mm: s.precipMmPerHour! }));
   // The newest step covering t: a 15-minute nowcast step when there is one, else the hourly NWS step.
   const current = known.filter((s) => s.at <= t && s.at > t - 60 * 60000).sort((a, b) => b.at - a.at)[0];
   const ahead = known.filter((s) => s.at > t && s.at <= t + 3600000);
-  return { observedRain: current ? current.mm >= RAIN_MM_H : null, forecastRain: ahead.length ? ahead.some((s) => s.mm >= RAIN_MM_H) : null };
+  const thunderAhead = weather.steps.filter((s) => s.thunderPct != null && Date.parse(s.time) > t - 60 * 60000 && Date.parse(s.time) <= t + 3600000);
+  return {
+    observedRain: current ? current.mm >= RAIN_MM_H : null,
+    forecastRain: ahead.length ? ahead.some((s) => s.mm >= RAIN_MM_H) : null,
+    thunder: thunderAhead.length ? thunderAhead.some((s) => s.thunderPct! >= LIMITS.thunderPct) : null,
+  };
 }
