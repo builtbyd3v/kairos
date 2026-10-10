@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CircleCheckBig, OctagonX } from "lucide-react";
 import { analyze, loadKit } from "@/lib/kit";
 import { DOCK, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
-import { AppHeader, SEVERITY_UI, TRUTH_UI } from "@/components/status";
+import { SEVERITY_UI, TRUTH_UI } from "@/components/status";
+import { PageHeader } from "@/components/page-header";
 import { FacilityMap } from "@/components/facility-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -42,21 +43,19 @@ export default async function MissionPage({ params }: PageProps<"/missions/[id]"
   ].filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen">
-      <AppHeader active="missions" />
-      <main className="mx-auto grid max-w-[1440px] grid-cols-12 gap-5 px-6 py-5">
-        <div className="col-span-12 flex items-center gap-4">
-          <Link href="/" className="inline-flex items-center gap-1 text-sm text-link hover:underline focus-visible:outline-2 focus-visible:outline-link">
-            <ArrowLeft aria-hidden className="size-4" /> Board
-          </Link>
-          <h1 className="text-xl font-semibold">
+    <main>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <Link href="/missions" aria-label="Back to missions" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+              <ArrowLeft aria-hidden className="size-5" />
+            </Link>
             {m.id} · {m.name}
-          </h1>
-          <span className="text-sm text-muted-foreground">
-            {m.start.replace("T", " ").slice(0, 16)} kit time · {m.durationMin} min · config {m.config} · battery {m.startBattery}% → {m.endBattery}%
           </span>
-        </div>
-
+        }
+        subtitle={`${m.start.replace("T", " ").slice(0, 16)} kit time · ${m.durationMin} min · config ${m.config} · battery ${m.startBattery}% → ${m.endBattery}%`}
+      />
+      <div className="grid grid-cols-12 gap-5 px-8 py-6">
         <Card className="col-span-7">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
@@ -153,7 +152,7 @@ export default async function MissionPage({ params }: PageProps<"/missions/[id]"
             </Table>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

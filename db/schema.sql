@@ -1,5 +1,5 @@
 -- NextEra SPOT kit tables. Column names match the kit CSV headers so the seed can load rows as-is.
-DROP TABLE IF EXISTS decisions, replay_events, anomalies, readings, actions, missions, assets, locations;
+DROP TABLE IF EXISTS anomaly_reviews, decisions, replay_events, anomalies, readings, actions, missions, assets, locations;
 
 CREATE TABLE locations (
   location_id text PRIMARY KEY,
@@ -99,4 +99,13 @@ CREATE TABLE decisions (
   source text NOT NULL CHECK (source IN ('live', 'replay')),
   operator_action text NOT NULL CHECK (operator_action IN ('confirmed', 'overridden')),
   orbit_call text
+);
+
+-- Operator triage of anomalies. The latest row per anomaly is its current state. Written by the app, never by the seed.
+CREATE TABLE IF NOT EXISTS anomaly_reviews (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  anomaly_id text NOT NULL REFERENCES anomalies,
+  status text NOT NULL CHECK (status IN ('acknowledged', 'work_order', 'dismissed', 'reopened')),
+  note text
 );

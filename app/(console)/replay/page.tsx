@@ -2,8 +2,8 @@ import storm from "@/data/replay/storm-2024-05-19.json";
 import { analyze, loadKit } from "@/lib/kit";
 import { findRecall, stateAt, type Round, type StormFixture } from "@/lib/replay";
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, returnMinutes, routeOf } from "@/lib/route";
-import { AppHeader } from "@/components/status";
 import { ReplayPlayer } from "@/components/replay-player";
+import { PageHeader } from "@/components/page-header";
 
 const fixture = storm as StormFixture;
 
@@ -36,16 +36,12 @@ export default async function ReplayPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader active="replay" />
-      <main className="mx-auto max-w-[1440px] space-y-4 px-6 py-5">
-        <div>
-          <h1 className="text-xl font-semibold">Storm replay · {fixture.site.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            Real NWS alerts and weather station observations from {fixture.date}, replayed minute by minute. At each moment the dispatcher sees only what had
-            happened so far. Spot&apos;s round uses kit route {mission.id}.
-          </p>
-        </div>
+    <main>
+      <PageHeader
+        title="Storm drill"
+        subtitle={`${fixture.site.name}, ${fixture.date}. Real NWS alerts and weather station observations, replayed minute by minute with no hindsight. Spot's round uses kit route ${mission.id}.`}
+      />
+      <div className="space-y-4 px-8 py-6">
         <ReplayPlayer fixture={fixture} round={{ ...base, launch }} sites={a.sites} dock={DOCK} outdoor={[...OUTDOOR_WAYPOINTS]} />
         <details className="text-xs text-helper">
           <summary className="cursor-pointer text-muted-foreground">Data sources and assumptions</summary>
@@ -59,7 +55,7 @@ export default async function ReplayPage() {
             </li>
           </ul>
         </details>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

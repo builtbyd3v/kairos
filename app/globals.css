@@ -55,47 +55,47 @@
 }
 
 :root {
-    /* SPOT Dispatch, dark only. IBM Carbon g100 tokens plus an Orbit-style navy bar. See DESIGN.md. */
-    --background: #161616;
-    --foreground: #f4f4f4;
-    --card: #262626;
-    --card-foreground: #f4f4f4;
-    --popover: #262626;
-    --popover-foreground: #f4f4f4;
-    --primary: #4589ff;
-    --primary-foreground: #161616;
-    --secondary: #393939;
-    --secondary-foreground: #f4f4f4;
-    --muted: #2e2e2e;
-    --muted-foreground: #c6c6c6;
-    --accent: #393939;
-    --accent-foreground: #f4f4f4;
-    --destructive: #fa4d56;
-    --border: #393939;
-    --input: #6f6f6f;
-    --ring: #78a9ff;
-    --chart-1: #4589ff;
-    --chart-2: #42be65;
-    --chart-3: #f1c21b;
-    --chart-4: #fa4d56;
-    --chart-5: #8d8d8d;
-    --radius: 0.25rem;
-    --sidebar: #0b1c33;
-    --sidebar-foreground: #f4f4f4;
-    --sidebar-primary: #4589ff;
-    --sidebar-primary-foreground: #161616;
-    --sidebar-accent: #12284a;
-    --sidebar-accent-foreground: #f4f4f4;
-    --sidebar-border: #1d3a66;
-    --sidebar-ring: #78a9ff;
+    /* SPOT Dispatch, dark by default. Palette from samehere.dev (accent #4f9fe8), all text pairs WCAG AA. See DESIGN.md. */
+    --background: #0a0a0a;
+    --foreground: #f4f4f5;
+    --card: #161616;
+    --card-foreground: #f4f4f5;
+    --popover: #1f2228;
+    --popover-foreground: #f4f4f5;
+    --primary: #4f9fe8;
+    --primary-foreground: #0a0a0a;
+    --secondary: #1f2228;
+    --secondary-foreground: #f4f4f5;
+    --muted: #1a1c20;
+    --muted-foreground: #a1a5ab;
+    --accent: #23262d;
+    --accent-foreground: #f4f4f5;
+    --destructive: #f26d6d;
+    --border: #26292f;
+    --input: #33363d;
+    --ring: #4f9fe8;
+    --chart-1: #4f9fe8;
+    --chart-2: #5fce8f;
+    --chart-3: #e0a83a;
+    --chart-4: #f26d6d;
+    --chart-5: #8b9097;
+    --radius: 0.75rem;
+    --sidebar: #0f1012;
+    --sidebar-foreground: #f4f4f5;
+    --sidebar-primary: #4f9fe8;
+    --sidebar-primary-foreground: #0a0a0a;
+    --sidebar-accent: #1a1c20;
+    --sidebar-accent-foreground: #f4f4f5;
+    --sidebar-border: #1f2228;
+    --sidebar-ring: #4f9fe8;
     /* Status: always paired with an icon and a word. */
-    --go: #42be65;
-    --hold: #f1c21b;
-    --recall: #fa4d56;
-    --info: #4589ff;
-    --helper: #8d8d8d;
-    --link: #78a9ff;
-    --navy: #0b1c33;
+    --go: #5fce8f;
+    --hold: #e0a83a;
+    --recall: #f26d6d;
+    --info: #4f9fe8;
+    --helper: #8b9097;
+    --link: #7ec4ff;
+    --navy: #0f1012;
 }
 
 @layer base {

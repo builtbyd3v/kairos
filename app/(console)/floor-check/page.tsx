@@ -1,5 +1,5 @@
-import { AppHeader } from "@/components/status";
 import { FloorCheck } from "@/components/floor-check";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Numbers from docs/model/RESULTS.md (held-out test set, never used for training or model selection).
@@ -11,16 +11,12 @@ const METRICS = [
 
 export default function FloorCheckPage() {
   return (
-    <div className="min-h-screen">
-      <AppHeader active="floor" />
-      <main className="mx-auto grid max-w-[1440px] grid-cols-12 gap-5 px-6 py-5">
-        <div className="col-span-12">
-          <h1 className="text-xl font-semibold">Floor check</h1>
-          <p className="text-sm text-muted-foreground">
-            A forecast can&apos;t see the floor Spot walks on. This open model, fine-tuned by us, flags standing water in a camera frame so the dispatcher can
-            hold that waypoint. It runs in your browser with transformers.js.
-          </p>
-        </div>
+    <main>
+      <PageHeader
+        title="Floor check"
+        subtitle="A forecast can't see the floor Spot walks on. Our fine-tuned open model flags standing water in a camera frame so the dispatcher can hold that waypoint. It runs in this browser with transformers.js."
+      />
+      <div className="grid grid-cols-12 gap-5 px-8 py-6">
         <Card className="col-span-8">
           <CardHeader>
             <CardTitle>Try it</CardTitle>
@@ -72,7 +68,7 @@ export default function FloorCheckPage() {
             </p>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

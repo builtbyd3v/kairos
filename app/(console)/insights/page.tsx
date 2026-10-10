@@ -8,7 +8,7 @@ import { getLiveWeather, SITE } from "@/lib/weather";
 import { logDecision, recentDecisions } from "@/lib/decisions";
 import { DOCK, drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
 import { backtest } from "@/lib/backtest";
-import { AppHeader, ReasonList, SEVERITY_UI, TRUTH_UI, VerdictBlock, VerdictChip } from "@/components/status";
+import { ReasonList, SEVERITY_UI, TRUTH_UI, VerdictBlock, VerdictChip } from "@/components/status";
 import { FacilityMap } from "@/components/facility-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,7 +27,6 @@ export default async function Board() {
 
   return (
     <div className="min-h-screen">
-      <AppHeader active="board" />
       <main className="mx-auto grid max-w-[1440px] grid-cols-12 gap-5 px-6 py-5">
         <Suspense fallback={<Card className="col-span-8">Checking weather…</Card>}>
           <NextRound kit={kit} />

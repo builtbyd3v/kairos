@@ -30,14 +30,14 @@ export function FacilityMap({
         const path = (route ?? []).map((id) => byId.get(id)).filter((s): s is MapSite => !!s && s.floor === floor);
         return (
           <figure key={floor}>
-            <svg viewBox="-6 -6 112 112" className="w-full rounded bg-[#0d1b33] ring-1 ring-sidebar-border" role="img" aria-label={`Floor ${floor} map`}>
+            <svg viewBox="-6 -6 112 112" className="w-full rounded-lg bg-[#0e1319] ring-1 ring-border" role="img" aria-label={`Floor ${floor} map`}>
               {[20, 40, 60, 80].map((g) => (
-                <g key={g} stroke="#1d3a66" strokeWidth="0.3">
+                <g key={g} stroke="#1f2a36" strokeWidth="0.3">
                   <line x1={g} y1="0" x2={g} y2="100" />
                   <line x1="0" y1={g} x2="100" y2={g} />
                 </g>
               ))}
-              {path.length > 1 && <polyline points={path.map((s) => `${s.x},${s.y}`).join(" ")} fill="none" stroke="#4589ff" strokeWidth="0.8" strokeOpacity="0.7" />}
+              {path.length > 1 && <polyline points={path.map((s) => `${s.x},${s.y}`).join(" ")} fill="none" stroke="#4f9fe8" strokeWidth="0.8" strokeOpacity="0.8" />}
               {sites
                 .filter((s) => s.floor === floor)
                 .map((s) => {
@@ -45,7 +45,7 @@ export function FacilityMap({
                   return (
                     <g key={s.id}>
                       <title>{`${s.id} ${s.name}: ${pct}% inspections OK (${s.ok}/${s.total}), ${s.anomalies} anomalies`}</title>
-                      {outdoor.includes(s.id) && <circle cx={s.x} cy={s.y} r={6.5 + s.anomalies * 0.8} fill="none" stroke="#78a9ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
+                      {outdoor.includes(s.id) && <circle cx={s.x} cy={s.y} r={6.5 + s.anomalies * 0.8} fill="none" stroke="#7ec4ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
                       <circle cx={s.x} cy={s.y} r={3.5 + s.anomalies * 0.8} fill={tone(pct)} fillOpacity={0.22} stroke={tone(pct)} strokeWidth="0.8" />
                       <text x={s.x} y={s.y + 1.4} textAnchor="middle" fontSize="3.8" fontWeight="600" fill="#f4f4f4">
                         {s.id.slice(2)}

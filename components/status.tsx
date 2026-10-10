@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { CircleCheckBig, Dog, Pause, TriangleAlert } from "lucide-react";
+import { CircleCheckBig, Pause, TriangleAlert } from "lucide-react";
 import type { Reason, Verdict } from "@/lib/verdict";
 import { cn } from "@/lib/utils";
 
@@ -64,37 +63,3 @@ export const TRUTH_UI: Record<string, { text: string; label: string }> = {
   "NEEDS REVIEW": { text: "text-recall", label: "Needs review" },
   FAILED: { text: "text-recall", label: "Failed" },
 };
-
-export function AppHeader({ active }: { active: "board" | "replay" | "missions" | "floor" }) {
-  const tabs = [
-    { id: "board", href: "/", label: "Dispatch board" },
-    { id: "replay", href: "/replay", label: "Storm replay" },
-    { id: "floor", href: "/floor-check", label: "Floor check" },
-  ] as const;
-  return (
-    <header className="border-b border-sidebar-border bg-navy">
-      <div className="mx-auto flex max-w-[1440px] items-center gap-8 px-6 py-2.5">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-white">
-          <Dog aria-hidden className="size-5 text-info" />
-          SPOT Dispatch
-        </Link>
-        <nav aria-label="Main" className="flex gap-1">
-          {tabs.map((t) => (
-            <Link
-              key={t.id}
-              href={t.href}
-              aria-current={active === t.id ? "page" : undefined}
-              className={cn(
-                "rounded-full px-3 py-1 text-sm text-[#c6c6c6] hover:bg-sidebar-accent hover:text-white focus-visible:outline-2 focus-visible:outline-link",
-                active === t.id && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-              )}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-        <p className="ml-auto text-xs text-[#c6c6c6]">NextEra synthetic SPOT kit · simulated Orbit link</p>
-      </div>
-    </header>
-  );
-}
