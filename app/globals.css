@@ -117,3 +117,13 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-row { animation: verdict-in 180ms linear; }
 }
+
+/* Phone and tablet: stack every page grid into one column and tighten page padding.
+   note: one global rule instead of per-page responsive classes; refine per page if a layout needs more. */
+@media (max-width: 1023px) {
+  main .grid:not(.keep-grid) { grid-template-columns: minmax(0, 1fr) !important; }
+  main .grid:not(.keep-grid) > * { grid-column: 1 / -1 !important; }
+  main .px-8 { padding-inline: 1rem; }
+  main header.px-8 { padding-top: 1.25rem; }
+  main table { display: block; overflow-x: auto; }
+}
