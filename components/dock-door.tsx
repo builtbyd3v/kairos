@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Camera, CloudRain, DoorClosed, DoorOpen, Timer } from "lucide-react";
 import { classifyDoor, DOOR_RAIN_MODEL_ID, DOOR_RAIN_THRESHOLD, doorVerdict, type DoorInput } from "@/lib/door-rain";
 import { detectWater, WATER_MODEL_ID, type WaterDetection } from "@/lib/water-model";
+import { waterLikelihood } from "@/lib/water-confidence";
+import { DockScene } from "@/components/dock-scene";
 import { VerdictBlock } from "@/components/status";
 import { Why } from "@/components/why";
 import { Button } from "@/components/ui/button";
@@ -12,8 +14,8 @@ import { cn } from "@/lib/utils";
 
 // note: no camera at a NextEra dock door in the kit, so the frames are public example photos (CC0).
 const FRAMES = {
-  dry: { src: "/door/door-dry.jpg", w: 640, h: 359, credit: "Weather-Time road photo (Kaggle, CC0)" },
-  rain: { src: "/door/door-rain.jpg", w: 552, h: 640, credit: "Weather Image Recognition rain photo (Kaggle, CC0)" },
+  dry: { src: "/door/door-dry2.jpg", w: 960, h: 540, credit: "UT Austin SCAND, Spot camera just outside a building (CC0), held out" },
+  rain: { src: "/door/door-wet.jpg", w: 608, h: 608, credit: "Kaggle Dist-YOLO road shoulder by shops (CC0), held out" },
 };
 // Water boxes gate the door; the rain classifier's score is shown as advice only.
 type Camera = { key: keyof typeof FRAMES; boxes?: WaterDetection[]; pRain?: number; ms?: number; failed?: boolean };
@@ -64,42 +66,20 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
           <Door aria-hidden className="size-5 text-primary" /> Dock door
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid flex-1 gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-2">
-          <div className="relative min-h-56 flex-1 overflow-hidden rounded-lg ring-1 ring-border">
-            {/* eslint-disable-next-line @next/next/no-img-element -- local example frame */}
-            <img src={f.src} alt={frame === "rain" ? "Door camera: rainy street" : "Door camera: dry road"} className="absolute inset-0 size-full object-cover" />
-            {/* slice = the same crop as object-cover, so boxes land where the image shows them */}
-            <svg viewBox={`0 0 ${f.w} ${f.h}`} preserveAspectRatio="xMidYMid slice" aria-hidden className="absolute inset-0 size-full">
-              {shown?.boxes?.map((d, i) => (
-                <g key={i}>
-                  <rect x={d.box.x * f.w} y={d.box.y * f.h} width={d.box.w * f.w} height={d.box.h * f.h} rx="8" fill="#6ea8fe" fillOpacity="0.08" stroke="#6ea8fe" strokeOpacity="0.25" strokeWidth="14" />
-                  <rect x={d.box.x * f.w} y={d.box.y * f.h} width={d.box.w * f.w} height={d.box.h * f.h} rx="8" fill="none" stroke="#8ab8ff" strokeWidth="4" />
-                  <rect x={d.box.x * f.w} y={Math.max(0, d.box.y * f.h - 30)} width="128" height="28" rx="7" fill="#6ea8fe" />
-                  <text x={d.box.x * f.w + 9} y={Math.max(0, d.box.y * f.h - 30) + 20} fontSize="19" fontWeight="700" fill="#0b0d10" className="font-mono">
-                    water {d.score.toFixed(2)}
-                  </text>
-                </g>
-              ))}
-            </svg>
-            <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide">DOOR CAM</span>
-            {shown?.boxes && (
-              <span className="absolute right-2 bottom-2 rounded bg-background/85 px-2 py-1 font-mono text-[11px] tabular-nums">
-                {shown.boxes.length ? `${shown.boxes.length} wet area${shown.boxes.length > 1 ? "s" : ""}` : "no water"} · {shown.ms} ms
-                {shown.pRain !== undefined && <span className="text-helper"> · rain look {shown.pRain.toFixed(2)}</span>}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
+      <CardContent className="flex flex-1 flex-col gap-4">
+        {/* Scene on top, full width; the call and its evidence underneath. */}
+        <div className="relative aspect-[16/7] overflow-hidden rounded-lg bg-[#1f1f1f] ring-1 ring-border">
+          <DockScene go={result.verdict === "GO"} rainNow={weather.observedRain} rainSoon={weather.forecastRain} wetGround={wet} />
+          <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/70 p-0.5 backdrop-blur">
             <Button size="sm" variant={frame === "dry" ? "secondary" : "ghost"} disabled={busy} onClick={() => check("dry")}>
-              Dry frame
+              Door cam: dry
             </Button>
             <Button size="sm" variant={frame === "rain" ? "secondary" : "ghost"} disabled={busy} onClick={() => check("rain")}>
-              Rain frame
+              Door cam: wet
             </Button>
           </div>
         </div>
-        <div className="space-y-3">
+        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
           <VerdictBlock
             verdict={result.verdict}
             caption={
@@ -114,10 +94,36 @@ export function DockDoor({ weather, source }: { weather: DoorInput["weather"]; s
                       : "Check the door camera"
             }
           />
+          <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <Tile Icon={Camera} label="Ground" value={status === "ok" ? (wet ? "Wet" : "Dry") : busy ? "Checking" : "Not checked"} ok={status === "ok" && !wet} />
             <Tile Icon={CloudRain} label="Rain now" value={word(weather.observedRain, "Raining")} ok={weather.observedRain === false} />
             <Tile Icon={Timer} label="Next hour" value={word(weather.forecastRain, "Rain")} ok={weather.forecastRain === false} />
+          </div>
+          {/* The real door-camera frame, with the water model's boxes. */}
+          <div className="flex items-center gap-3 rounded-lg bg-black/40 p-2 ring-1 ring-white/[0.06]">
+            <div className={cn("relative h-20 shrink-0 overflow-hidden rounded", f.w === f.h ? "aspect-square" : "aspect-video")}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- local example frame */}
+              <img src={f.src} alt={frame === "rain" ? "Door camera: puddles outside" : "Door camera: dry walkway"} className="absolute inset-0 size-full object-cover" />
+              <svg viewBox={`0 0 ${f.w} ${f.h}`} aria-hidden className="absolute inset-0 size-full">
+                {shown?.boxes?.map((d, i) => (
+                  <rect key={i} x={d.box.x * f.w} y={d.box.y * f.h} width={d.box.w * f.w} height={d.box.h * f.h} rx="10" fill="#6ea8fe" fillOpacity="0.12" stroke="#8ab8ff" strokeWidth={f.w / 90} />
+                ))}
+              </svg>
+            </div>
+            <div className="min-w-0 text-sm">
+              <p className="font-mono text-[11px] tracking-wider text-muted-foreground uppercase">Door cam</p>
+              <p>
+                {busy
+                  ? "Checking…"
+                  : shown?.boxes
+                    ? shown.boxes.length
+                      ? `Water ${waterLikelihood(Math.max(...shown.boxes.map((b) => b.score)))?.pct ?? ""}% likely · ${shown.ms} ms`
+                      : `No water · ${shown.ms} ms`
+                    : "Not checked"}
+              </p>
+            </div>
+          </div>
           </div>
           <Why>
             <p>Rule: rain now, rain in the next hour, wet ground at the door, or anything unknown holds Spot inside.</p>

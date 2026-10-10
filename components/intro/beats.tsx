@@ -78,7 +78,7 @@ function Leg({ x, pair, far }: { x: number; pair: "a" | "b"; far?: boolean }) {
   );
 }
 
-function Spot({ walk }: { walk?: "route" | "dock" }) {
+export function Spot({ walk }: { walk?: "route" | "dock" }) {
   return (
     <g className={walk ? `walk-${walk}` : undefined}>
       <ellipse cx="160" cy="3" rx="165" ry="10" fill="#000" opacity="0.35" />
@@ -128,7 +128,7 @@ const BEAM_GRADIENT = (
   </linearGradient>
 );
 
-function Cloud({ x, y, s, fill }: { x: number; y: number; s: number; fill: string }) {
+export function Cloud({ x, y, s, fill }: { x: number; y: number; s: number; fill: string }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} fill={fill}>
       <circle cx="60" cy="50" r="42" />
@@ -139,7 +139,7 @@ function Cloud({ x, y, s, fill }: { x: number; y: number; s: number; fill: strin
   );
 }
 
-function Palm({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+export function Palm({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} fill="#1a2129">
       <path d="M0 0 C 4 -60 -4 -120 10 -180" fill="none" stroke="#1a2129" strokeWidth="10" />
@@ -151,13 +151,13 @@ function Palm({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
 }
 
 // Containment dome: cylinder plus a half circle on top, standing on y = base.
-function Dome({ cx, w, top, base = 820, fill }: { cx: number; w: number; top: number; base?: number; fill: string }) {
+export function Dome({ cx, w, top, base = 820, fill }: { cx: number; w: number; top: number; base?: number; fill: string }) {
   const r = w / 2;
   return <path d={`M${cx - r} ${base} V${top} A${r} ${r} 0 0 1 ${cx + r} ${top} V${base} Z`} fill={fill} />;
 }
 
 // Rain streaks over a box. note: fixed pseudo-random spots so server and client render the same rain.
-function Rain({ x, w, y, h, n }: { x: number; w: number; y: number; h: number; n: number }) {
+export function Rain({ x, w, y, h, n }: { x: number; w: number; y: number; h: number; n: number }) {
   return (
     <g className="k-rain" stroke="#9ccfff" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round">
       {Array.from({ length: n }, (_, i) => {
