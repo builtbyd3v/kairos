@@ -267,7 +267,7 @@ function RouteBeat() {
       </svg>
 
       <div className="k-out [--d:6.6s] absolute inset-0">
-        <div className="k-pop [--d:3.4s] absolute top-[782px] left-[1192px] rounded-full bg-primary px-4 py-1 font-mono text-[26px] font-semibold text-black">water 0.91</div>
+        <div className="k-pop [--d:3.4s] absolute top-[782px] left-[1192px] rounded-full bg-primary px-4 py-1 font-mono text-[26px] font-semibold text-black">water 0.87</div>
         <div className="k-fade [--d:3.6s] absolute top-[896px] left-[1150px] flex items-center gap-2 rounded-full bg-black/55 px-4 py-1.5 font-mono text-[22px] text-white/90 ring-1 ring-white/15">
           <Droplets aria-hidden className="size-5 text-link" /> kairos water model
         </div>
@@ -505,7 +505,7 @@ function PipelineBeat() {
       <Thumb className="k-hop [--d:3.45s] top-[352px] left-[1375px] h-[96px] w-[150px]" />
       <Thumb className="k-hop-down [--d:3.45s] top-[624px] left-[1160px] h-[76px] w-[120px]" />
 
-      <Pill tone="info" pop="[--d:2.3s]" className="top-[262px] left-[760px]">water 0.91</Pill>
+      <Pill tone="info" pop="[--d:2.3s]" className="top-[262px] left-[760px]">water 0.64</Pill>
       <Pill tone="hold" pop="[--d:3.35s]" className="top-[262px] left-[1220px]">HOLD · pause</Pill>
       <Pill tone="hold" pop="[--d:4.45s]" className="top-[262px] left-[1680px]">round paused</Pill>
       <Pill tone="go" pop="[--d:4.5s]" className="top-[776px] left-[1440px]">evidence logged</Pill>
@@ -529,7 +529,7 @@ export type Beat = { ms: number; Scene: ComponentType; bg: string; brand: boolea
 
 const NAVY = "bg-[radial-gradient(ellipse_at_center,#14253b,#0b121c_70%)]";
 
-// Total 31.5 s.
+// 31.5 s as authored; the player runs it 1.5x slower (intro.tsx), so 47.25 s on screen.
 export const BEATS: Beat[] = [
   { ms: 11500, Scene: RouteBeat, bg: "bg-background", brand: true },
   { ms: 4000, Scene: RadarBeat, bg: "bg-[#0b1420]", brand: true },
