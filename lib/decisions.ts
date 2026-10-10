@@ -3,7 +3,7 @@
 import { neon } from "@neondatabase/serverless";
 import { refresh } from "next/cache";
 import { cookies } from "next/headers";
-import { BRANCH_ID, connectionUri, createBranch, deleteBranch, getBranch, prune, type Branch } from "./neon-branch";
+import { BRANCH_ID, createBranch, deleteBranch, drillRoute, getBranch, prune, type Branch } from "./neon-branch";
 import { ORBIT_CALL, type Verdict } from "./verdict";
 
 const VERDICTS: Verdict[] = ["GO", "HOLD", "RECALL"];
@@ -36,9 +36,20 @@ export async function logDecision(form: FormData) {
 
   // An override means the operator launches anyway, so no Orbit call is made.
   const orbitCall = action === "confirmed" ? ORBIT_CALL[verdict as Verdict] : null;
-  const sql = source === "replay" ? await drillDb() : db();
-  await sql`INSERT INTO decisions (mission_id, verdict, reasons, source, operator_action, orbit_call)
-             VALUES (${missionId}, ${verdict}, ${JSON.stringify(reasons)}, ${source}, ${action}, ${orbitCall})`;
+  const row = [missionId, verdict, JSON.stringify(reasons), source, action, orbitCall];
+  if (source === "replay") {
+    // note: no drill branch (or Neon is down) means the drill click is not saved; the status line above the drill says so. Never main.
+    const drill = await drillDb();
+    if (!drill) return console.error("drill write skipped: no reachable drill branch");
+    await drill.query("INSERT INTO decisions (mission_id, verdict, reasons, source, operator_action, orbit_call) VALUES ($1, $2, $3, $4, $5, $6)", row);
+  } else {
+    // The receipt copy outlives Neon's 6 h history window and a reseed, so the incident review can still show this decision later.
+    await db().query(
+      `WITH d AS (INSERT INTO decisions (mission_id, verdict, reasons, source, operator_action, orbit_call) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *)
+       INSERT INTO receipts (kind, ref, at, body) SELECT 'decision', id::text, created_at, to_jsonb(d) FROM d`,
+      row,
+    );
+  }
   refresh();
 }
 
@@ -76,19 +87,14 @@ async function drillBranch(): Promise<(Branch & { ms: number }) | null> {
     const b = await getBranch(id);
     return b.name.startsWith("drill-") ? { ...b, ms: Number(ms) || 0 } : null;
   } catch {
-    return null; // pruned by a newer drill, or the API is down: fall back to main
+    return null; // pruned by a newer drill, or the API is down: drill writes are off
   }
 }
 
 // note: two Neon API calls per drill write (branch check + connection URI). Cache the URI per branch if writes get frequent.
 async function drillDb() {
-  const b = await drillBranch();
-  if (!b) return db();
-  try {
-    return neon(await connectionUri(b.id));
-  } catch {
-    return db();
-  }
+  const { write } = await drillRoute(((await cookies()).get(DRILL_COOKIE)?.value ?? "").split("~")[0]);
+  return write ? neon(write) : null;
 }
 
 export async function drillStatus(): Promise<DrillStatus> {

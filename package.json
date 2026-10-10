@@ -10,7 +10,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "db:seed": "node --env-file=.env.local scripts/seed.mts",
     "test": "node --test lib/*.test.mts",
-    "db:migrate": "node --env-file=.env.local scripts/migrate.mts"
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mts",
+    "db:score": "node --env-file=.env.local scripts/eval-branch.mts",
+    "db:branch-check": "node --env-file=.env.local scripts/neon-branch-check.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.1",

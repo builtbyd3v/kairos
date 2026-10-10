@@ -54,6 +54,25 @@ export async function connectionUri(branchId: string): Promise<string> {
   return (await api<{ uri: string }>(`/connection_uri?${q}`)).uri;
 }
 
+/**
+ * Where a storm drill session reads and writes. A missing, pruned or unreachable drill branch (or a Neon API outage)
+ * falls back to main for reads and turns drill writes off: write is null. Drill data never lands on main.
+ */
+export async function drillRoute(branchId: string | undefined): Promise<{ read: string; write: string | null; branch: string | null }> {
+  const main = process.env.DATABASE_URL;
+  if (!main) throw new Error("DATABASE_URL is not set");
+  const off = { read: main, write: null, branch: null };
+  if (!process.env.NEON_API_KEY || !branchId || !BRANCH_ID.test(branchId)) return off;
+  try {
+    const b = await getBranch(branchId);
+    if (b.default || !b.name.startsWith("drill-")) return off;
+    const uri = await connectionUri(b.id);
+    return { read: uri, write: uri, branch: b.name };
+  } catch {
+    return off;
+  }
+}
+
 /** Deletes a branch. Refuses the default branch and anything named main. */
 export async function deleteBranch(id: string) {
   const b = await getBranch(id);
@@ -61,11 +80,14 @@ export async function deleteBranch(id: string) {
   await api(`/branches/${id}`, { method: "DELETE" });
 }
 
+export async function listBranches(): Promise<Branch[]> {
+  return (await api<{ branches: Branch[] }>("/branches")).branches;
+}
+
 /** Keeps the newest `keep` branches whose name starts with prefix and deletes the rest. */
 export async function prune(prefix: string, keep: number) {
   if (!prefix) throw new Error("prune needs a prefix");
-  const { branches } = await api<{ branches: Branch[] }>("/branches");
-  const old = branches
+  const old = (await listBranches())
     .filter((b) => b.name.startsWith(prefix) && !b.default)
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(keep);
