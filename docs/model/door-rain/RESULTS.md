@@ -1,5 +1,7 @@
 # Door rain model: results
 
+> **Status (Sat Oct 10, evening): experiment, not used to gate Spot.** Kairos decides rain from NWS / Open-Meteo data. This model learned "gray sky" more than rain at a door (near chance on unseen cameras), so it does not hold or release anything in the app. The fused-rule section below describes an earlier version of `lib/door-rain.ts` and is kept for the record.
+
 - Published (public): https://huggingface.co/builtbyd3v/kairos-door-rain. ConvNeXt-tiny, rain vs no_rain, ONNX fp32 + q8 for transformers.js. This is v3: retrained after a review found duplicate leakage and a batch-size mismatch.
 - Calibration split (deduplicated, in-source, 1,033 images, 116 rain): q8 at threshold 0.4447 catches 95.7% of rain (111/116, CI 90.3-98.2) with 1.3% false alarms (12/917, CI 0.8-2.3). v2 reported 0.4% false alarms on a split with duplicates in it; that number was optimistic.
 - Weather-Time road photos (2,600, 595 rain) are EXPLORATORY: they were seen during development and shaped v2's data choices. q8: AUROC 0.562, rain recall 46.6% (277/595), false alarms 37.7% (755/2,005). Afternoon rain recall is 3.9% (4/102). Close to a coin flip overall.
