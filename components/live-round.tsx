@@ -25,9 +25,10 @@ import { waterModel, WATER_REVISION } from "@/lib/water-model";
 import { SpotCam, useSpotCam, type CamFrame } from "@/components/spot-cam";
 import demoWet from "@/public/captures/demo-wet.json";
 import demoDry from "@/public/captures/demo-dry.json";
+import spotDry from "@/public/captures/spot-dry.json";
 import { ORBIT_CALL, inPath, visionReason, type Vision } from "@/lib/verdict";
 import { labelDetection, recordDetection } from "@/lib/evidence";
-import { endOf, kitClock, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
+import { endOf, kitClock, liveState, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
 import { SEVERITY_UI, TRUTH_UI, VerdictChip } from "@/components/status";
@@ -63,9 +64,14 @@ const FEED: Record<EventType, { Icon: typeof Flag; label: string; tone: string }
   ACTION_FAILED: { Icon: CircleX, label: "Failed", tone: "text-recall" },
   MISSION_COMPLETED: { Icon: FlagTriangleRight, label: "Mission reported", tone: "text-primary" },
 };
-// note: the kit has no camera frames. Both walks are held-out test photos the model never trained on, checked by eye:
-// wet = unmistakable puddles, smallest first; dry = clearly dry floors (two from a camera on a Spot robot, UT Austin SCAND).
-const WALKS: Record<"wet" | "dry", CamFrame[]> = { wet: demoWet.frames, dry: demoDry.frames };
+// note: the kit has no camera frames. One capture per waypoint, all held-out test photos the model never trained on,
+// checked by eye: the outdoor stop gets an unmistakable puddle (when "Puddle on route" is on), every other stop a clearly dry floor.
+const DRY: CamFrame[] = [...demoDry.frames, ...spotDry.frames];
+const PUDDLE: CamFrame = demoWet.frames[1];
+const capturesFor = (plan: Mission["plan"], outdoor: string[], puddle: boolean) => {
+  let d = 0;
+  return plan.map((a) => (puddle && outdoor.includes(a.locationId) ? PUDDLE : DRY[d++ % DRY.length]));
+};
 
 /** Saves the detection and the operator's label to Neon. Returns the evidence row id. */
 async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reject") {
@@ -97,21 +103,17 @@ async function saveEvidence(frame: CamFrame, v: Vision, label: "confirm" | "reje
 const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
 export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor, watch, radar }: Props) {
-  // First paint opens three actions in, so the page shows a round in progress instead of "none yet". Restart still goes to the start.
-  // note: capped just before the outdoor leg, so the floor model never downloads on first paint.
+  // Open at the first waypoint, so the camera shows a capture from the first second.
   const openingOf = (id: string) => {
     const evs = stream.filter((e) => e.missionId === id);
-    // The camera stop is the story: open 20 s (kit time) before Spot reaches it, so the camera starts within a second.
-    const arrive = outdoorArrival(evs, outdoor)?.at;
-    if (arrive !== undefined) return Math.max(evs[0].at, arrive - 20000);
-    return evs.filter((e) => e.type === "ACTION_COMPLETED" || e.type === "ACTION_FAILED")[2]?.at ?? evs[0].at;
+    return evs.find((e) => e.type === "ACTION_STARTED")?.at ?? evs[0].at;
   };
   const [missionId, setMissionId] = useState(defaultId);
   const [t, setT] = useState(() => openingOf(defaultId));
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(30);
   const [wetFrame, setWetFrame] = useState(true);
-  // Operator's answer to a floor HOLD, keyed to the waypoint visit it answers (one answer covers the rest of that walk).
+  // Operator's answer to a floor HOLD, keyed to the waypoint visit (action) it answers.
   const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; frame: string; saved?: number | "failed" } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
@@ -126,23 +128,20 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const truth = TRUTH_UI[s.truth];
   const TruthIcon = TRUTH_ICON[s.truth];
 
-  // Floor check: once Spot reaches the outdoor leg, its camera captures the walk and the water model checks every capture.
-  // While a capture is being checked, Spot waits (unknown floor is never GO).
-  const arrival = outdoorArrival(s.events, outdoor);
-  const floorKey = arrival ? `${arrival.id}|${wetFrame ? "wet" : "dry"}` : null;
-  const walk = WALKS[wetFrame ? "wet" : "dry"];
-  // Held is derived below from the camera's own verdict; the camera stops capturing while Spot is held.
-  const [camHeld, setCamHeld] = useState(false);
-  const cam = useSpotCam(walk, { active: !!arrival, paused: camHeld, waypoint: arrival?.locationId ?? "" });
-  // Confirm or override covers the whole stop (the hazard is marked); a reject covers only the capture it answered,
-  // so new water on a later capture asks again.
-  const answered = answer?.key === floorKey && (answer.label !== "reject" || answer.frame === cam.frame.src) ? answer : null;
+  // Floor check at every waypoint: Spot's camera captures the floor ahead and the water model checks it before Spot moves on.
+  // While a capture is being checked, Spot waits (unknown floor is never GO). The map, camera and decision share this one index.
+  const captures = useMemo(() => capturesFor(mission.plan, outdoor, wetFrame), [mission.plan, outdoor, wetFrame]);
+  const stop = s.phase === "done" || !s.current ? null : mission.plan.findIndex((a) => a.id === s.current!.actionId);
+  const at = stop !== null && stop >= 0 ? mission.plan[stop] : null;
+  const cam = useSpotCam(captures, at ? stop : null, at?.locationId ?? "");
+  const floorKey = at ? `${missionId}|${at.id}|${wetFrame ? "wet" : "dry"}` : null;
+  const answered = answer?.key === floorKey ? answer : null;
+  const arrival = at ? { id: at.id, locationId: at.locationId } : null;
   const vision = cam.vision;
   const floorCall = vision ? visionReason(vision) : null;
   const wet = vision?.boxes.some(inPath) ?? false;
   // Spot waits at the waypoint while the floor is wet or unknown, until the operator answers. Playback is the stand-in for Spot.
   const held = floorCall?.verdict === "HOLD" && !answered;
-  if (held !== camHeld) setCamHeld(held); // render-time sync: the camera reads last render's hold
   const running = playing && t < end && !held;
 
   // Playback clock: the interval is the outside system. It stops itself at the mission's end or a floor hold.
@@ -174,7 +173,6 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     setT(openingOf(id));
     setPlaying(true);
     setAnswer(null);
-    cam.restart();
   };
 
   return (
@@ -299,7 +297,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               <CardDescription>{arrival ? "Water in the lane holds Spot" : `Starts at ${outdoor.join(", ")}`}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SpotCam cam={cam} frames={walk} waypoint={arrival?.locationId ?? outdoor[0]} total={walk.length} />
+              <SpotCam cam={cam} frames={captures} waypoint={at?.locationId ?? mission.plan[0].locationId} total={mission.plan.length} />
             </CardContent>
           </Card>
         )}

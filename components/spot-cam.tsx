@@ -9,17 +9,14 @@ import { cn } from "@/lib/utils";
 export type CamFrame = { src: string; truth: number[][]; source: string; license: string; url: string };
 type Result = { boxes: WaterDetection[]; ms: number } | "error";
 
-const STEP_MS = 1400; // one capture every 1.4 s of playback
 const MODEL = WATER_MODEL_ID.split("/")[1];
 
-/** Plays a capture sequence and runs the water model on each frame. Spot stops advancing while `paused` (a floor hold). */
-export function useSpotCam(frames: CamFrame[], { active, paused, waypoint }: { active: boolean; paused: boolean; waypoint: string }) {
-  // The position belongs to one frame set; switching sets starts again at capture 1.
-  const [pos, setPos] = useState({ set: frames, i: 0 });
-  const idx = pos.set === frames ? pos.i : 0;
+/** Runs the water model on the capture at Spot's current waypoint. The mission drives which frame is current. */
+export function useSpotCam(frames: CamFrame[], idx: number | null, waypoint: string) {
   const [results, setResults] = useState<Record<string, Result>>({});
   const [progress, setProgress] = useState(0);
-  const frame = frames[Math.min(idx, frames.length - 1)];
+  const frame = idx === null ? frames[0] : frames[Math.min(idx, frames.length - 1)];
+  const active = idx !== null;
   const result = results[frame.src];
 
   // Model runs are the outside system: one per frame, cached by image URL.
@@ -39,14 +36,6 @@ export function useSpotCam(frames: CamFrame[], { active, paused, waypoint }: { a
     };
   }, [active, frame.src, result]);
 
-  // Capture clock: advances only once the current frame is checked and the floor is not held.
-  const checked = result !== undefined;
-  useEffect(() => {
-    if (!active || paused || !checked || idx >= frames.length - 1) return;
-    const id = setTimeout(() => setPos({ set: frames, i: idx + 1 }), STEP_MS);
-    return () => clearTimeout(id);
-  }, [active, paused, checked, idx, frames]);
-
   const vision: Vision | null = active
     ? {
         status: result === undefined ? "pending" : result === "error" ? "error" : "ok",
@@ -55,7 +44,7 @@ export function useSpotCam(frames: CamFrame[], { active, paused, waypoint }: { a
         boxes: result && result !== "error" ? result.boxes.map((d) => ({ ...d.box, score: d.score })) : [],
       }
     : null;
-  return { idx, frame, result, vision, progress, restart: () => setPos({ set: frames, i: 0 }) };
+  return { idx: idx ?? 0, frame, result, vision, progress };
 }
 
 // note: ASSUMPTION: flat ground and a fixed camera; row y maps to distance d = K / (y - HORIZON). Rough, for the picture only.
@@ -173,7 +162,7 @@ export function SpotCam({ cam, frames, waypoint, total }: { cam: ReturnType<type
               })}
             </svg>
             {standby && (
-              <p className="absolute inset-0 grid place-items-center font-mono text-sm tracking-wide text-foreground">CAMERA STARTS AT {waypoint}</p>
+              <p className="absolute inset-0 grid place-items-center font-mono text-sm tracking-wide text-foreground">CAMERA STARTS WITH THE ROUND</p>
             )}
           </div>
         </div>
