@@ -1,0 +1,114 @@
+// The dispatcher's rules: weather + robot health in, GO / HOLD / RECALL out, with a reason and source per rule.
+// Pure functions, no I/O, so the same rules run on live NWS data and on the storm replay.
+
+export type Verdict = "GO" | "HOLD" | "RECALL";
+
+export type WeatherStep = {
+  time: string; // ISO start of the step
+  precipMmPerHour: number | null;
+  thunderPct: number | null;
+  gustKmh: number | null;
+  tempC: number | null;
+};
+
+export type Weather = {
+  fetchedAt: string;
+  alerts: string[]; // NWS alert event names, e.g. "Severe Thunderstorm Warning"
+  steps: WeatherStep[]; // covering at least the mission window
+};
+
+export type Health = {
+  batteryPct: number;
+  routeRisk: { locationId: string; name: string; successPct: number }[]; // weakest waypoints on the route
+};
+
+export type Reason = { verdict: Verdict; text: string; source: string };
+
+// note: thresholds marked ASSUMPTION are ours, not NextEra's or Boston Dynamics'. Ask NextEra for their procedure values.
+export const LIMITS = {
+  maxTempC: 45, // Spot guide p.22, p.61
+  minTempC: -20, // Spot guide p.22, p.61
+  tempMarginC: 5, // ASSUMPTION: stay 5 C inside the rated range
+  moderateRainMmPerHour: 2.5, // AMS "light rain" ends at 2.5 mm/h; Spot guide p.22 allows light rain only
+  thunderPct: 30, // ASSUMPTION: guide is silent on lightning
+  gustKmh: 50, // ASSUMPTION: guide is silent on wind
+  minBatteryPct: 40, // Spot guide p.57: swap if under 40% at startup
+  staleMinutes: 30, // ASSUMPTION: older weather counts as unknown
+} as const;
+
+const RECALL_ALERTS = ["Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Heat Warning", "Hurricane Warning", "Tropical Storm Warning"];
+const HOLD_ALERTS = ["Tornado Watch", "Severe Thunderstorm Watch", "Flash Flood Watch", "Flood Warning", "Heat Advisory", "Hurricane Watch", "Tropical Storm Watch"];
+
+const RANK: Record<Verdict, number> = { GO: 0, HOLD: 1, RECALL: 2 };
+
+/**
+ * Decide one mission. `inProgress` turns a hazard into RECALL; before launch the worst case is HOLD.
+ * The window runs from launch (or now, if in progress) to when Spot would be back on the dock.
+ */
+export function decide(
+  weather: Weather | null,
+  health: Health,
+  { now, start, end }: { now: Date; start: Date; end: Date },
+  inProgress: boolean,
+): { verdict: Verdict; reasons: Reason[] } {
+  const reasons: Reason[] = [];
+  const hazard = inProgress ? "RECALL" : "HOLD";
+
+  const ageMin = weather ? (now.getTime() - new Date(weather.fetchedAt).getTime()) / 60000 : Infinity;
+  if (!weather || ageMin > LIMITS.staleMinutes) {
+    // Missing data must never look green.
+    reasons.push({ verdict: "HOLD", text: "Weather data is missing or stale, so conditions are unknown", source: "Dispatcher rule" });
+  } else {
+    for (const alert of weather.alerts) {
+      if (RECALL_ALERTS.includes(alert)) reasons.push({ verdict: hazard, text: `${alert} in effect`, source: "NWS active alerts" });
+      else if (HOLD_ALERTS.includes(alert)) reasons.push({ verdict: "HOLD", text: `${alert} in effect`, source: "NWS active alerts" });
+    }
+
+    const window = weather.steps.filter((s) => {
+      const t = new Date(s.time).getTime();
+      // Steps are up to an hour long, so include the one already running at the window start.
+      return t > start.getTime() - 3600000 && t <= end.getTime();
+    });
+    if (window.length === 0)
+      reasons.push({ verdict: "HOLD", text: "No forecast covers this mission window yet", source: "Dispatcher rule" });
+    const peak = (pick: (s: WeatherStep) => number | null) => {
+      const values = window.map(pick).filter((v): v is number => v !== null);
+      return values.length ? Math.max(...values) : null;
+    };
+    const rain = peak((s) => s.precipMmPerHour);
+    const thunder = peak((s) => s.thunderPct);
+    const gust = peak((s) => s.gustKmh);
+    const hot = peak((s) => s.tempC);
+    const cold = window.map((s) => s.tempC).filter((v): v is number => v !== null).reduce((a, b) => Math.min(a, b), Infinity);
+
+    if (rain !== null && rain > LIMITS.moderateRainMmPerHour)
+      reasons.push({ verdict: hazard, text: `Rain up to ${rain.toFixed(1)} mm/h before Spot can dock; Spot is rated for light rain and splashes only (IP54)`, source: "Spot guide p.22, p.61" });
+    else if (rain !== null && rain > 0)
+      reasons.push({ verdict: "GO", text: `Light rain (${rain.toFixed(1)} mm/h) is within Spot's rating, but expect wet, slippery floors after`, source: "Spot guide p.21-22" });
+    if (thunder !== null && thunder >= LIMITS.thunderPct)
+      reasons.push({ verdict: hazard, text: `${Math.round(thunder)}% chance of thunder before Spot can dock`, source: "NWS forecast grid; threshold is our assumption" });
+    if (gust !== null && gust >= LIMITS.gustKmh)
+      reasons.push({ verdict: hazard, text: `Gusts up to ${Math.round(gust)} km/h`, source: "NWS forecast grid; threshold is our assumption" });
+    if (hot !== null && hot >= LIMITS.maxTempC - LIMITS.tempMarginC)
+      reasons.push({ verdict: hazard, text: `Air temperature reaches ${Math.round(hot)} C; Spot's limit is ${LIMITS.maxTempC} C`, source: "Spot guide p.22" });
+    if (cold <= LIMITS.minTempC + LIMITS.tempMarginC)
+      reasons.push({ verdict: hazard, text: `Air temperature drops to ${Math.round(cold)} C; Spot's limit is ${LIMITS.minTempC} C`, source: "Spot guide p.22" });
+  }
+
+  if (health.batteryPct < LIMITS.minBatteryPct)
+    reasons.push({ verdict: "HOLD", text: `Battery at ${health.batteryPct}%; swap before launch. In this data, actions below 20% battery succeed only 27% of the time`, source: "Spot guide p.57; NextEra kit" });
+  for (const r of health.routeRisk.filter((r) => r.successPct < 75))
+    reasons.push({ verdict: "GO", text: `${r.name} succeeds only ${r.successPct}% of the time; check results there first`, source: "NextEra kit" });
+
+  const verdict = reasons.reduce<Verdict>((v, r) => (RANK[r.verdict] > RANK[v] ? r.verdict : v), "GO");
+  // Blocking reasons first, then advisories.
+  reasons.sort((a, b) => RANK[b.verdict] - RANK[a.verdict]);
+  return { verdict, reasons };
+}
+
+// The Orbit call each verdict maps to. note: simulated; real endpoints per Boston Dynamics Orbit API docs.
+export const ORBIT_CALL: Record<Verdict, string | null> = {
+  GO: null,
+  HOLD: "POST /api/v0/calendar/disable-enable (pause schedule)",
+  RECALL: "POST /api/v0/graph/send-robot then POST /api/v0/calendar/mission/dispatch (return to dock)",
+};
