@@ -24,7 +24,9 @@ type Props = { fixture: StormFixture; round: Round; sites: MapSite[]; dock: stri
 export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
   const start = Date.parse(fixture.window.start);
   const end = Date.parse(fixture.window.end);
-  const [t, setT] = useState(start);
+  // Open 15 min before launch: real conditions and a GO on screen before Play. The slider still reaches the window start.
+  const opening = Math.max(start, round.launch - 15 * MINUTE);
+  const [t, setT] = useState(opening);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(5);
 
@@ -82,7 +84,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                 size="sm"
                 onClick={() => {
                   setPlaying(false);
-                  setT(start);
+                  setT(opening);
                 }}
               >
                 <RotateCcw aria-hidden /> Reset replay

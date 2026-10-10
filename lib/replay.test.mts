@@ -31,3 +31,8 @@ test("after docking, the next round is held while the storm is active", () => {
   assert.equal(stateAt(f, round, Date.parse("2024-05-19T13:00:00-04:00")).verdict, "HOLD");
   assert.equal(stateAt(f, round, Date.parse("2024-05-19T13:00:00-04:00")).phase, "docked");
 });
+
+test("the indoor-only option leaves the storm drill unchanged: recall at 12:15, held after docking", () => {
+  assert.equal(findRecall(f, round), Date.parse("2024-05-19T12:15:00-04:00"));
+  assert.equal(stateAt(f, round, Date.parse("2024-05-19T12:16:00-04:00")).verdict, "RECALL");
+});

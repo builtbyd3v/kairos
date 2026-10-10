@@ -33,6 +33,7 @@ test("a warning-level hour holds the rounds that would be out in it", () => {
   assert.equal(at("2026-10-10T15:00:00.000Z").verdict, "GO");
   assert.equal(at("2026-10-10T16:00:00.000Z").verdict, "HOLD");
   assert.match(at("2026-10-10T16:00:00.000Z").reasons[0].text, /Gusts up to 80/);
+  assert.ok(at("2026-10-10T16:00:00.000Z").indoorOnly, "gusts only block the outdoor leg");
 });
 
 test("hours past the forecast horizon hold, never GO", () => {

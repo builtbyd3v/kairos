@@ -12,7 +12,7 @@ const W = 900;
 const noData = (s: Slot) => s.reasons.some((r) => r.text === NO_DATA);
 // HOLD for "no forecast yet" is drawn fainter than a weather HOLD so the operator can tell them apart. RECALL cannot occur before launch.
 const fill = (s: Slot) => (s.verdict === "GO" ? "fill-go/70" : s.verdict === "RECALL" ? "fill-recall/80" : noData(s) ? "fill-hold/20" : "fill-hold/70");
-const label = (s: Slot) => (s.verdict === "GO" ? "GO" : noData(s) ? "HOLD, no forecast yet" : s.verdict);
+const label = (s: Slot) => (s.verdict === "GO" ? "GO" : noData(s) ? "HOLD, no forecast yet" : s.indoorOnly ? "HOLD, indoor only is GO" : s.verdict);
 const time = (d: Date) => et(d, { hour: "numeric", minute: "2-digit" });
 const hourEt = (d: Date) => Number(et(d, { hour: "numeric", hourCycle: "h23" }));
 
@@ -66,6 +66,9 @@ async function ForecastCard() {
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="size-2.5 rounded-sm bg-hold/20" /> HOLD, no forecast yet
           </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2.5 rounded-sm border-t-4 border-go bg-hold/70" /> HOLD, indoor only is GO (skip WP01)
+          </li>
         </ul>
 
         <svg viewBox={`0 0 ${W} 76`} width="100%" aria-hidden className="overflow-visible text-[11px]">
@@ -74,6 +77,12 @@ async function ForecastCard() {
               <title>{`${time(b.start)} ET: ${label(b)}${b.verdict === "GO" ? "" : `. ${b.reasons[0]?.text ?? ""}`}`}</title>
             </rect>
           ))}
+          {/* Green cap: the outdoor leg is the only blocker, so an indoor-only round could launch. */}
+          {f.bands
+            .filter((b) => b.indoorOnly)
+            .map((b) => (
+              <rect key={`i${b.start.toISOString()}`} x={x(b.start)} y={18} width={Math.max(0, x(b.end) - x(b.start) - 1)} height={5} className="fill-go" />
+            ))}
           {ticks.map((b) => (
             <g key={b.start.toISOString()} className="fill-helper stroke-border">
               <line x1={x(b.start)} x2={x(b.start)} y1={52} y2={58} />
@@ -116,6 +125,7 @@ async function ForecastCard() {
               </div>
               <p className={cn("mt-1.5 text-sm", r.verdict === "GO" && "text-muted-foreground")}>
                 {r.verdict === "GO" ? "No blocking limits" : r.reasons[0]?.text}
+                {r.indoorOnly && <span className="block text-xs text-go">Indoor only (skip WP01) is GO</span>}
               </p>
             </li>
           ))}

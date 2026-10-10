@@ -24,7 +24,7 @@ export async function ActivityFeed({ now }: { now: Date }) {
       key: `d${d.id}`,
       at: pgDate(d.created_at),
       chip: <VerdictChip verdict={d.verdict} />,
-      text: `${d.operator_action === "confirmed" ? "Confirmed" : "Overrode"} ${d.verdict} for the ${d.source === "replay" ? "storm drill" : "next round"}${d.orbit_call ? `, sent ${d.orbit_call}` : ""}`,
+      text: `${d.operator_action === "confirmed" ? "Confirmed" : "Overrode"} ${d.verdict}${d.reasons[0]?.text.startsWith("Indoor only") ? ", indoor only," : ""} for the ${d.source === "replay" ? "storm drill" : "next round"}${d.orbit_call ? `, sent ${d.orbit_call}` : ""}`,
     })),
     ...reviews.map((r, i) => {
       const a = anomaly.get(r.anomaly_id);

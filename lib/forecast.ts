@@ -9,7 +9,7 @@ const DAY = 24 * HOUR;
 export const ROUND_HOURS_ET = [2, 10, 18]; // the kit's mission schedule, plant time
 export const NO_DATA = "No weather data covers this mission window yet"; // decide()'s text for an uncovered window
 
-export type Slot = { start: Date; end: Date; verdict: Verdict; reasons: Reason[] };
+export type Slot = { start: Date; end: Date; verdict: Verdict; reasons: Reason[]; indoorOnly: Reason | null };
 
 /** Next-round health, same as planNextRound: the latest kit mission's route and start battery. */
 export function roundHealth(kit: Kit): { health: Health; minutes: number } {

@@ -51,7 +51,7 @@ export type Location = {
   environment: string;
 };
 
-export type Asset = { id: string; name: string; criticality: string };
+export type Asset = { id: string; name: string; criticality: string; location: string };
 
 export type Reading = { actionId: string; type: string; value: number; unit: string; quality: string };
 
@@ -114,7 +114,7 @@ export async function loadKit() {
     y: Number(r.y_coord),
     environment: r.environment,
   }));
-  const assets: Asset[] = as.map((r) => ({ id: r.asset_id, name: r.asset_name, criticality: r.criticality }));
+  const assets: Asset[] = as.map((r) => ({ id: r.asset_id, name: r.asset_name, criticality: r.criticality, location: r.location_id }));
   const readings: Reading[] = rd.map((r) => ({ actionId: r.action_id, type: r.measurement_type, value: Number(r.value), unit: r.unit, quality: r.quality }));
 
   return { missions, actions, anomalies, locations, assets, readings };

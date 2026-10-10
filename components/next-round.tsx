@@ -3,7 +3,7 @@ import { analyze, pct, type Kit } from "@/lib/kit";
 import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
 import { logDecision } from "@/lib/decisions";
-import { drainPerMin, isOutdoor, routeOf } from "@/lib/route";
+import { drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
 import { ReasonList, VerdictBlock } from "@/components/status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,14 +41,15 @@ export async function planNextRound(kit: Kit, now: Date) {
     .sort((x, y) => x.successPct - y.successPct)
     .slice(0, 2);
   const health = { outdoor: isOutdoor(route), batteryPct: last.startBattery, projectedEndPct: last.startBattery - drain * minutes, routeRisk };
-  const { verdict, reasons } = decide(weather, health, { now, start, end }, false);
-  return { weather, last, route, minutes, start, health, verdict, reasons };
+  const { verdict, reasons, indoorOnly } = decide(weather, health, { now, start, end }, false);
+  return { weather, last, route, minutes, start, health, verdict, reasons, indoorOnly };
 }
 
 export type RoundPlan = Awaited<ReturnType<typeof planNextRound>>;
 
 export function NextRound({ plan }: { plan: RoundPlan }) {
-  const { verdict, reasons, last, route, minutes, start, health, weather } = plan;
+  const { verdict, reasons, indoorOnly, last, route, minutes, start, health, weather } = plan;
+  const kept = route.filter((id) => !OUTDOOR_WAYPOINTS.has(id)).length;
   return (
     <Card>
       <CardHeader>
@@ -76,6 +77,21 @@ export function NextRound({ plan }: { plan: RoundPlan }) {
             </Button>
           )}
         </form>
+        {indoorOnly && (
+          <form action={logDecision} className="space-y-2 rounded-md bg-go/10 p-3 ring-1 ring-go/40">
+            <p className="text-sm">
+              Indoor stops are not gated by weather. Skip the outdoor leg at {[...OUTDOOR_WAYPOINTS].join(", ")} ({reasons[0]?.text}) and run {kept} of {route.length} stops.
+            </p>
+            <input type="hidden" name="verdict" value="GO" />
+            <input type="hidden" name="source" value="live" />
+            <input type="hidden" name="missionId" value={last.id} />
+            {/* The indoor-only reason goes first, so the log reads "Confirmed GO, indoor only". */}
+            <input type="hidden" name="reasons" value={JSON.stringify([indoorOnly, ...reasons])} />
+            <Button name="action" value="confirmed" variant="outline">
+              Launch indoor only ({kept} of {route.length} stops)
+            </Button>
+          </form>
+        )}
         {ORBIT_CALL[verdict] && <p className="text-xs text-helper">On confirm: {ORBIT_CALL[verdict]} (simulated)</p>}
         <WeatherStrip weather={weather} />
       </CardContent>

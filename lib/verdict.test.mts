@@ -62,3 +62,21 @@ test("a warning and the thunder it implies count once", () => {
   const r = decide(storm, healthy, { now, start: now, end }, true);
   assert.equal(r.reasons.filter((x) => x.verdict === "RECALL").length, 1);
 });
+
+test("only outdoor weather holding the round offers an indoor-only GO", () => {
+  const storm = { ...calm, alerts: ["Severe Thunderstorm Warning"], steps: [{ ...calm.steps[0], thunderPct: 100, gustKmh: 70 }] };
+  const r = decide(storm, healthy, { now, start: now, end }, false);
+  assert.equal(r.verdict, "HOLD");
+  assert.equal(r.indoorOnly?.verdict, "GO");
+});
+
+test("no indoor-only GO when battery, unknown weather, a site-wide alert, or a live mission blocks it", () => {
+  const gusty = { ...calm, steps: [{ ...calm.steps[0], gustKmh: 70 }] };
+  const window = { now, start: now, end };
+  assert.equal(decide(gusty, { ...healthy, projectedEndPct: 12 }, window, false).indoorOnly, null);
+  assert.equal(decide(null, healthy, window, false).indoorOnly, null);
+  assert.equal(decide({ ...gusty, fetchedAt: new Date(now.getTime() - 3600000).toISOString() }, healthy, window, false).indoorOnly, null);
+  assert.equal(decide({ ...gusty, alerts: ["Tornado Warning"] }, healthy, window, false).indoorOnly, null);
+  assert.equal(decide(gusty, healthy, window, true).indoorOnly, null);
+  assert.equal(decide(calm, healthy, window, false).indoorOnly, null); // already GO
+});

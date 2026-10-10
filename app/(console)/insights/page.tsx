@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { analyze, loadKit, pct } from "@/lib/kit";
@@ -5,23 +7,57 @@ import { SITE } from "@/lib/weather";
 import { recentDecisions } from "@/lib/decisions";
 import { DOCK, OUTDOOR_WAYPOINTS } from "@/lib/route";
 import { backtest } from "@/lib/backtest";
+import { parseEvents } from "@/lib/live";
+import { dataTraps } from "@/lib/traps";
 import { VerdictChip } from "@/components/status";
 import { FacilityMap } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+// note: same replay file the live page reads, once per server start.
+const EVENTS = parseEvents(readFileSync(join(process.cwd(), "data/kit/replay.ndjson"), "utf8"));
+
 export default async function InsightsPage() {
   const kit = await loadKit();
   const a = analyze(kit);
   const bt = backtest(kit);
   const heldWeather = bt.filter((r) => r.verdict !== "GO" && r.reason && !r.reason.startsWith("Spot would dock"));
+  const traps = dataTraps(kit, EVENTS);
   const heldBattery = bt.filter((r) => r.reason?.startsWith("Spot would dock"));
 
   return (
     <main>
       <PageHeader title="Insights" subtitle="Patterns across all 27 kit missions: where inspections fail, how battery and configuration matter, and how the dispatcher rules would have behaved on real weather." />
       <div className="grid grid-cols-12 gap-5 px-8 py-6">
+        <Card className="col-span-12">
+          <CardHeader>
+            <CardTitle>Before you trust these charts</CardTitle>
+            <CardDescription>Data traps in the kit. Each number is recomputed from the kit files on every load.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border">
+              {traps.map((t) => (
+                <li key={t.id} className="grid gap-x-4 gap-y-0.5 py-2.5 md:grid-cols-[10rem_1fr]">
+                  <span className="font-mono text-sm font-medium text-hold">{t.figure}</span>
+                  <div>
+                    <p className="font-medium">
+                      {t.title}
+                      {t.id === "battery" && (
+                        <a href="#battery-chart" className="ml-2 text-xs font-normal text-info underline-offset-2 hover:underline">
+                          See the chart
+                        </a>
+                      )}
+                    </p>
+                    <p className="text-muted-foreground">{t.meaning}</p>
+                    <p className="text-xs text-helper">Measured: {t.how}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
         <Card className="col-span-6">
           <CardHeader>
             <CardTitle>Facility map</CardTitle>
@@ -32,10 +68,10 @@ export default async function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card id="battery-chart" className="col-span-6 scroll-mt-20">
           <CardHeader>
             <CardTitle>Battery vs. inspection success</CardTitle>
-            <CardDescription>V2 never ran below 40% battery, so part of its lead over V1 is battery, not configuration</CardDescription>
+            <CardDescription>V2 never ran below 52% battery, so part of its lead over V1 is battery, not configuration</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
             {a.bands.map((b) => (

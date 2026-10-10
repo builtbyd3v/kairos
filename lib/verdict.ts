@@ -41,6 +41,9 @@ export const LIMITS = {
 
 export const RECALL_ALERTS = ["Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Heat Warning", "Hurricane Warning", "Tropical Storm Warning"];
 export const HOLD_ALERTS = ["Tornado Watch", "Severe Thunderstorm Watch", "Flash Flood Watch", "Flood Warning", "Heat Advisory", "Hurricane Watch", "Tropical Storm Watch"];
+// note: ASSUMPTION: a thunderstorm only threatens Spot outdoors (lightning, rain, gusts), so it can still allow an indoor-only round.
+// Every other acted-on alert (tornado, tropical, flood, heat) can reach the buildings, power or staff, so it never does.
+const OUTDOOR_ONLY_ALERTS = ["Severe Thunderstorm Warning", "Severe Thunderstorm Watch"];
 
 const RANK: Record<Verdict, number> = { GO: 0, HOLD: 1, RECALL: 2 };
 
@@ -53,8 +56,9 @@ export function decide(
   health: Health,
   { now, start, end }: { now: Date; start: Date; end: Date },
   inProgress: boolean,
-): { verdict: Verdict; reasons: Reason[] } {
+): { verdict: Verdict; reasons: Reason[]; indoorOnly: Reason | null } {
   const reasons: Reason[] = [];
+  let indoorSafe = false; // weather is fresh, covers the window, and no site-wide alert is active
   const hazard = inProgress ? "RECALL" : "HOLD";
 
   const ageMin = weather ? (now.getTime() - new Date(weather.fetchedAt).getTime()) / 60000 : Infinity;
@@ -77,6 +81,7 @@ export function decide(
     const observed = window.some((s) => s.precipMmPerHour !== null || s.thunderPct !== null || s.gustKmh !== null || s.tempC !== null);
     if (!observed)
       reasons.push({ verdict: "HOLD", text: "No weather data covers this mission window yet", source: "Dispatcher rule: unknown is never GO" });
+    indoorSafe = observed && weather.alerts.every((a) => OUTDOOR_ONLY_ALERTS.includes(a) || !(RECALL_ALERTS.includes(a) || HOLD_ALERTS.includes(a)));
     const peak = (pick: (s: WeatherStep) => number | null) => {
       const values = window.map(pick).filter((v): v is number => v !== null);
       return values.length ? Math.max(...values) : null;
@@ -120,7 +125,16 @@ export function decide(
   const verdict = reasons.reduce<Verdict>((v, r) => (RANK[r.verdict] > RANK[v] ? r.verdict : v), "GO");
   // Blocking reasons first, then advisories.
   reasons.sort((a, b) => RANK[b.verdict] - RANK[a.verdict]);
-  return { verdict, reasons };
+
+  // Partial route: before launch, if only outdoor weather holds the round, offer it without the outdoor leg.
+  // Re-deciding as an indoor route reuses the indoor rule, so battery and any other non-weather HOLD still block it.
+  // In a mission this stays null: Spot may be on or heading to the outdoor leg, so RECALL stands.
+  // note: keeps the full route's battery projection; skipping the outdoor leg only saves battery.
+  const indoorOnly =
+    !inProgress && verdict === "HOLD" && health.outdoor && indoorSafe && decide(weather, { ...health, outdoor: false }, { now, start, end }, false).verdict === "GO"
+      ? { verdict: "GO" as const, text: "Indoor only: skip the outdoor leg, run the indoor stops", source: "Dispatcher rule: weather limits apply outdoors only; tornado, tropical, flood and heat alerts block it (our assumption)" }
+      : null;
+  return { verdict, reasons, indoorOnly };
 }
 
 // The Orbit call each verdict maps to. note: simulated; real endpoints per Boston Dynamics Orbit API docs.
