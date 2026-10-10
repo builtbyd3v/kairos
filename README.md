@@ -80,5 +80,12 @@ npm run dev                  # http://localhost:3000
 npm test                     # dispatcher rule tests
 ```
 
-## Built with AI
-Code was written with AI coding agents (Claude Code) under the team's direction. The team owned the product, design decisions, review and testing. Decisions and trade-offs are in `DECISIONS.md`.
+## Disclosure (Knight Hacks rules)
+Everything below was used in this project. All project code, the fine-tuned model, and the data pipeline were made during the event (hacking began Fri 2026-10-09, 11 PM EDT).
+- **AI tools:** Claude Code (Anthropic Claude models) wrote most of the code under our direction. OpenAI Codex was used as a second research and planning agent. We chose the problem and the rules, made every product and design decision, and reviewed and tested the output. Decisions and trade-offs are in `DECISIONS.md`.
+- **Base model:** `facebook/convnext-tiny-224` (Apache 2.0), fine-tuned by us into `builtbyd3v/spot-wetfloor-convnext-tiny`. Zero-shot CLIP was used only as a baseline for comparison.
+- **Datasets:** Bhutad, S. and Patil, K. (2021), *Dataset of Stagnant Water and Wet Surface with Annotations*, Mendeley Data V4, doi:10.17632/y6zyrnxbfm.4 (CC BY 4.0). Kaggle `muftirestumahesa` public-spaces sets (CC0). Details: `docs/model/RESULTS.md`.
+- **Challenge data:** NextEra Energy's SPOT KnightHacks Challenge Kit (synthetic missions, actions, readings, anomalies, replay events, sample images).
+- **APIs and weather data:** National Weather Service api.weather.gov (alerts, forecast grid, ASOS observations); Open-Meteo forecast and archive (https://open-meteo.com, CC BY 4.0).
+- **Libraries and services:** Next.js, React, Tailwind CSS, shadcn/ui and Radix UI, lucide-react icons, Geist fonts, Hugging Face transformers.js, Neon Postgres (`@neondatabase/serverless`), Vercel hosting. Domain `kairos.boston` via the MLH GoDaddy Registry offer.
+- **Repo history:** the first commit (Fri 2026-10-09, 7:54 PM EDT) is GitHub's empty repo setup only (a title line and `.gitattributes`). No project code existed before hacking began.
