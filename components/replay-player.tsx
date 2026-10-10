@@ -62,7 +62,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
 
   return (
     <div className="grid grid-cols-12 gap-5">
-      <Card className="col-span-12">
+      <Card className="col-span-12 animate-rise">
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3">
             <Button onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause replay" : "Play replay"}>
@@ -76,7 +76,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                 </Button>
               ))}
             </div>
-            <span className="font-mono text-2xl tabular-nums">{clock(t)}</span>
+            <span className="font-mono text-2xl font-medium tabular-nums">{clock(t)}</span>
             <span className="text-sm text-muted-foreground">EDT, {fixture.date}</span>
             <form action={resetReplay} className="ml-auto">
               <Button
@@ -105,13 +105,26 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
           />
 
           {/* Verdict bands: what the dispatcher said across the afternoon, sized by duration. */}
-          <svg viewBox={`0 0 ${end - start} 24`} preserveAspectRatio="none" className="h-6 w-full overflow-hidden rounded" aria-hidden>
-            {timeline.map((b) => (
-              <rect key={b.from} x={b.from - start} width={b.to - b.from} height="24" className={BAND_FILL[b.label]} />
-            ))}
-            <rect x={t - start} width={(end - start) / 400} height="24" fill="#f4f4f4" />
-          </svg>
-          <p className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <div className="panel-inset p-3">
+            <div className="relative">
+              <svg viewBox={`0 0 ${end - start} 24`} preserveAspectRatio="none" className="h-7 w-full overflow-hidden rounded-md" aria-hidden>
+                {timeline.map((b) => (
+                  <rect key={b.from} x={b.from - start} width={b.to - b.from} height="24" className={BAND_FILL[b.label]} />
+                ))}
+              </svg>
+              {/* note: playhead position is live data, so it rides inline style; the left transition smooths the 250 ms ticks. */}
+              <span
+                aria-hidden
+                className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground shadow-[0_0_8px_rgb(255_255_255/0.6)] transition-[left] duration-250 ease-linear motion-reduce:transition-none"
+                style={{ left: `${((t - start) / (end - start)) * 100}%` }}
+              />
+            </div>
+            <p aria-hidden className="mt-2 flex justify-between border-t border-dotted border-border pt-1.5 font-mono text-[10px] text-helper">
+              <span>{clock(start)}</span>
+              <span>{clock(end)}</span>
+            </p>
+          </div>
+          <p className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] tracking-wide text-muted-foreground uppercase">
             {Object.entries(BAND_LABEL).map(([k, label]) => (
               <span key={k} className="inline-flex items-center gap-1">
                 <svg viewBox="0 0 10 10" className="size-2.5" aria-hidden>
@@ -129,7 +142,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                     setPlaying(false);
                     setT(Date.parse(e.time));
                   }}
-                  className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-1 text-left text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-link"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] px-2 py-1 text-left text-xs ring-1 ring-white/[0.06] transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-link"
                 >
                   <SkipForward aria-hidden className="size-3 text-link" />
                   <span className="font-mono text-link">{clock(Date.parse(e.time))}</span> {e.label}
@@ -140,7 +153,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="col-span-7">
+      <Card className="col-span-7 animate-rise [--rise-delay:80ms]">
         <CardHeader>
           <CardTitle>Dispatcher at {clock(t)}</CardTitle>
           <CardDescription>
@@ -170,7 +183,12 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
                 <Button name="action" value="confirmed">
                   Confirm {s.verdict}
                 </Button>
-                {ORBIT_CALL[s.verdict] && <p className="mt-2 text-xs text-helper">On confirm: {ORBIT_CALL[s.verdict]} (simulated)</p>}
+                {ORBIT_CALL[s.verdict] && (
+                  <details className="mt-2 text-xs text-helper">
+                    <summary className="cursor-pointer">Orbit call (simulated)</summary>
+                    <code className="mt-1 block font-mono break-all">{ORBIT_CALL[s.verdict]}</code>
+                  </details>
+                )}
               </form>
             )}
           </div>
@@ -196,7 +214,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
               </div>
             )}
             <ReasonList reasons={s.reasons} />
-            <p className="text-xs text-muted-foreground">
+            <p className="panel-inset px-3 py-2 font-mono text-xs text-muted-foreground tabular-nums">
               Conditions at {conditions ? clock(Date.parse(conditions.time)) : "-"}: rain {conditions?.precipMmPerHour?.toFixed(1) ?? "-"} mm/h · gust{" "}
               {conditions?.gustKmh?.toFixed(0) ?? "-"} km/h · {conditions?.tempC?.toFixed(0) ?? "-"} °C
             </p>
@@ -204,7 +222,7 @@ export function ReplayPlayer({ fixture, round, sites, dock, outdoor }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="col-span-5">
+      <Card className="col-span-5 animate-rise [--rise-delay:160ms]">
         <CardHeader>
           <CardTitle>Where Spot is</CardTitle>
           <CardDescription>White dot = Spot. Blue line = the round&apos;s route.</CardDescription>

@@ -40,7 +40,7 @@ export function SidebarNav({ badges = {} }: { badges?: Record<string, number> })
     <nav aria-label="Main" className="space-y-6">
       {GROUPS.map((g) => (
         <div key={g.label}>
-          <p className="px-3 pb-1.5 text-[11px] font-medium tracking-wider text-helper uppercase">{g.label}</p>
+          <p className="label-caps px-3 pb-1.5 text-helper">{g.label}</p>
           <ul className="space-y-0.5">
             {g.items.map(({ href, label, Icon }) => (
               <li key={href}>
@@ -48,14 +48,14 @@ export function SidebarNav({ badges = {} }: { badges?: Record<string, number> })
                   href={href}
                   aria-current={active(href) ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
-                    active(href) && "bg-sidebar-accent font-medium text-foreground",
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-[background-color,color,translate] duration-150 ease-out hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring motion-safe:hover:translate-x-0.5",
+                    active(href) && "bg-sidebar-accent font-medium text-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] ring-1 ring-white/[0.06]",
                   )}
                 >
                   <Icon aria-hidden className={cn("size-4", active(href) && "text-primary")} />
                   {label}
                   {badges[href] ? (
-                    <span className="ml-auto rounded-full bg-recall/15 px-1.5 text-xs font-medium text-recall tabular-nums">{badges[href]}</span>
+                    <span className="ml-auto rounded-full bg-recall px-1.5 font-mono text-[11px] font-medium text-background tabular-nums">{badges[href]}</span>
                   ) : null}
                 </Link>
               </li>

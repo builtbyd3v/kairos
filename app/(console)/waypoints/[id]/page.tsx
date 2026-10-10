@@ -2,14 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cacheLife } from "next/cache";
 import { neon } from "@neondatabase/serverless";
-import { ArrowLeft, CircleCheckBig, OctagonX } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { analyze, loadKit, pct } from "@/lib/kit";
 import { DOCK, OUTDOOR_WAYPOINTS } from "@/lib/route";
 import { SEVERITY_UI } from "@/components/status";
 import { PageHeader } from "@/components/page-header";
 import { FacilityMap } from "@/components/facility-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TablePill, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 const label = (s: string) => s.replaceAll("_", " ").toLowerCase();
@@ -78,7 +78,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
         }
       />
       <div className="grid grid-cols-12 gap-5 px-8 py-6">
-        <Card className="col-span-3">
+        <Card className="col-span-3 animate-rise">
           <CardHeader>
             <CardDescription className="text-[11px] tracking-wider text-helper uppercase">Inspections OK</CardDescription>
             <CardTitle className={cn("font-mono text-3xl tabular-nums", toneText(p))}>{p}%</CardTitle>
@@ -88,7 +88,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
+        <Card className="col-span-3 animate-rise [--rise-delay:60ms]">
           <CardHeader>
             <CardDescription className="text-[11px] tracking-wider text-helper uppercase">Failures by type</CardDescription>
           </CardHeader>
@@ -103,7 +103,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
+        <Card className="col-span-3 animate-rise [--rise-delay:120ms]">
           <CardHeader>
             <CardDescription className="text-[11px] tracking-wider text-helper uppercase">Anomalies by severity</CardDescription>
           </CardHeader>
@@ -123,7 +123,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
+        <Card className="col-span-3 animate-rise [--rise-delay:180ms]">
           <CardHeader>
             <CardDescription className="text-[11px] tracking-wider text-helper uppercase">Success by config here</CardDescription>
           </CardHeader>
@@ -143,7 +143,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-5">
+        <Card className="col-span-5 animate-rise [--rise-delay:240ms]">
           <CardHeader>
             <CardTitle>Where it is</CardTitle>
             <CardDescription>{site.id} marked on the two-floor map</CardDescription>
@@ -153,7 +153,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-7">
+        <Card className="col-span-7 animate-rise [--rise-delay:300ms]">
           <CardHeader>
             <CardTitle>Assets</CardTitle>
             <CardDescription>
@@ -188,7 +188,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
           </CardContent>
         </Card>
 
-        <Card className="col-span-12">
+        <Card className="col-span-12 animate-rise [--rise-delay:360ms]">
           <CardHeader>
             <CardTitle>Every action at {site.id}</CardTitle>
             <CardDescription>{actions.length} actions across all missions, in kit time order</CardDescription>
@@ -224,13 +224,13 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
                       <TableCell className="capitalize">{label(x.type.replace("_INSPECTION", ""))}</TableCell>
                       <TableCell>
                         {x.ok ? (
-                          <span className="inline-flex items-center gap-1 text-go">
-                            <CircleCheckBig aria-hidden className="size-3.5" /> OK
-                          </span>
+                          <TablePill className="text-go">
+                            OK
+                          </TablePill>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-recall">
-                            <OctagonX aria-hidden className="size-3.5" /> {label(x.failureType)}
-                          </span>
+                          <TablePill className="text-recall">
+                            {label(x.failureType)}
+                          </TablePill>
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
@@ -245,7 +245,7 @@ export default async function WaypointPage({ params }: PageProps<"/waypoints/[id
                       </TableCell>
                       <TableCell>
                         {an && (
-                          <span className={cn("rounded px-1.5 py-0.5 text-xs ring-1", SEVERITY_UI[an.severity])}>
+                          <span className={cn("rounded-full px-2 py-0.5 text-[11px] uppercase", SEVERITY_UI[an.severity])}>
                             {an.severity} {label(an.type)}
                           </span>
                         )}

@@ -78,7 +78,7 @@ export function NextRound({ plan }: { plan: RoundPlan }) {
           )}
         </form>
         {indoorOnly && (
-          <form action={logDecision} className="space-y-2 rounded-md bg-go/10 p-3 ring-1 ring-go/40">
+          <form action={logDecision} className="space-y-2 rounded-xl bg-go/10 p-3 ring-1 ring-go/40">
             <p className="text-sm">
               Indoor stops are not gated by weather. Skip the outdoor leg at {[...OUTDOOR_WAYPOINTS].join(", ")} ({reasons[0]?.text}) and run {kept} of {route.length} stops.
             </p>
@@ -92,7 +92,12 @@ export function NextRound({ plan }: { plan: RoundPlan }) {
             </Button>
           </form>
         )}
-        {ORBIT_CALL[verdict] && <p className="text-xs text-helper">On confirm: {ORBIT_CALL[verdict]} (simulated)</p>}
+        {ORBIT_CALL[verdict] && (
+          <details className="text-xs text-helper">
+            <summary className="cursor-pointer">Orbit call (simulated)</summary>
+            <code className="mt-1 block font-mono break-all">{ORBIT_CALL[verdict]}</code>
+          </details>
+        )}
         <WeatherStrip weather={weather} />
       </CardContent>
     </Card>
@@ -104,14 +109,14 @@ export function WeatherStrip({ weather }: { weather: RoundPlan["weather"] }) {
   const hourly = weather.steps.filter((s) => s.tempC !== null).slice(0, 12);
   return (
     <div>
-      <p className="mb-2 text-xs text-muted-foreground">
+      <p className="mb-2 font-mono text-[11px] text-muted-foreground">
         Live · {SITE.name.split(" (")[0]} · NWS + Open-Meteo · updated {et(new Date(weather.fetchedAt), { hour: "numeric", minute: "2-digit" })} ET
         {weather.alerts.length > 0 && <> · active: {weather.alerts.join(", ")}</>}
       </p>
-      <div className="grid grid-cols-6 gap-1 text-center text-xs tabular-nums">
+      <div className="panel-inset grid grid-cols-6 gap-1 p-1.5 text-center font-mono text-xs tabular-nums">
         {hourly.map((s) => (
-          <div key={s.time} className="rounded bg-secondary/60 px-1 py-1.5">
-            <div className="text-muted-foreground">{et(new Date(s.time), { hour: "numeric" })}</div>
+          <div key={s.time} className="rounded-md px-1 py-1.5 transition-colors hover:bg-white/[0.04]">
+            <div className="text-[10px] text-helper uppercase">{et(new Date(s.time), { hour: "numeric" })}</div>
             <div className="flex items-center justify-center gap-0.5 font-medium">
               <Thermometer aria-hidden className="size-3 text-helper" />
               {s.tempC === null ? "-" : `${Math.round(s.tempC)}°`}

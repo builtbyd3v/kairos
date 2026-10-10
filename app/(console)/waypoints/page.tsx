@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { analyze, loadKit, pct } from "@/lib/kit";
 import { PageHeader } from "@/components/page-header";
@@ -7,8 +8,8 @@ import { cn } from "@/lib/utils";
 const label = (s: string) => s.replaceAll("_", " ").toLowerCase();
 
 // Same thresholds as the facility map: green >= 85%, yellow >= 70%, red below.
-const toneBar = (p: number) =>
-  p >= 85 ? "[&::-webkit-progress-value]:bg-go [&::-moz-progress-bar]:bg-go" : p >= 70 ? "[&::-webkit-progress-value]:bg-hold [&::-moz-progress-bar]:bg-hold" : "[&::-webkit-progress-value]:bg-recall [&::-moz-progress-bar]:bg-recall";
+const toneFill = (p: number) => (p >= 85 ? "fill-go" : p >= 70 ? "fill-hold" : "fill-recall");
+const CELLS = 20; // one cell = 5 percentage points
 const toneText = (p: number) => (p >= 85 ? "text-go" : p >= 70 ? "text-hold" : "text-recall");
 
 /** Most frequent failure type among these actions, or undefined if none failed. */
@@ -26,11 +27,17 @@ export default async function WaypointsPage() {
     <main>
       <PageHeader title="Waypoints" subtitle="Where inspections happen, worst success rate first. Answers: are failures concentrated at certain locations?" />
       <div className="grid grid-cols-3 gap-5 px-8 py-6 xl:grid-cols-5">
-        {sites.map((s) => {
+        {sites.map((s, i) => {
           const p = pct(s.ok, s.total);
           const worst = topFailure(kit.actions.filter((a) => a.locationId === s.id && !a.ok).map((a) => a.failureType));
           return (
-            <Link key={s.id} href={`/waypoints/${s.id}`} className="rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
+            // note: per-card stagger is index-driven, so it rides a CSS var in style rather than a static class.
+            <Link
+              key={s.id}
+              href={`/waypoints/${s.id}`}
+              className="animate-rise rounded-2xl focus-visible:outline-2 focus-visible:outline-ring"
+              style={{ "--rise-delay": `${i * 30}ms` } as CSSProperties}
+            >
               <Card className="h-full transition-colors hover:bg-secondary">
                 <CardHeader>
                   <CardTitle>
@@ -43,15 +50,14 @@ export default async function WaypointsPage() {
                 <CardContent className="space-y-3 text-sm">
                   <div>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11px] tracking-wider text-helper uppercase">Inspections OK</span>
+                      <span className="label-caps text-helper">Inspections OK</span>
                       <span className={cn("font-mono font-medium tabular-nums", toneText(p))}>{p}%</span>
                     </div>
-                    <progress
-                      value={s.ok}
-                      max={s.total}
-                      aria-label={`${s.id} inspection success`}
-                      className={cn("mt-1 h-1.5 w-full appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-secondary", toneBar(p))}
-                    />
+                    <svg viewBox={`0 0 ${CELLS * 5} 6`} preserveAspectRatio="none" className="mt-1.5 h-2 w-full" role="img" aria-label={`${s.id} inspection success ${p}%`}>
+                      {Array.from({ length: CELLS }, (_, c) => (
+                        <rect key={c} x={c * 5} width={4} height={6} rx={1} className={c < Math.round((p / 100) * CELLS) ? toneFill(p) : "fill-white/[0.06]"} />
+                      ))}
+                    </svg>
                     <span className="font-mono text-xs text-muted-foreground tabular-nums">
                       {s.ok}/{s.total} actions
                     </span>

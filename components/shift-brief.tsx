@@ -23,7 +23,7 @@ export function ShiftBrief(props: Props) {
         </CardAction>
       </CardHeader>
       <CardContent>
-        <ul className="list-disc space-y-1.5 pl-4 text-sm leading-snug marker:text-helper">
+        <ul className="panel-inset list-disc space-y-1.5 py-3 pr-3 pl-7 text-sm leading-snug marker:text-helper">
           {briefOf(props).map((s) => (
             <li key={s}>{s}</li>
           ))}

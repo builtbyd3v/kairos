@@ -3,6 +3,11 @@ import { cn } from "@/lib/utils";
 export type MapSite = { id: string; name: string; floor: number; x: number; y: number; ok: number; total: number; anomalies: number };
 
 const tone = (pct: number) => (pct >= 85 ? "var(--go)" : pct >= 70 ? "var(--hold)" : "var(--recall)");
+const radius = (s: MapSite) => 2.5 + Math.sqrt(s.anomalies) * 1.2; // area grows with anomaly count, so WP05's 8 does not swallow its neighbors
+// note: WP04 and WP05 sit 4.5 map units apart in the kit, so their circles merged into one blob. Draw them nudged apart (display only; data coords unchanged).
+const NUDGE: Record<string, [number, number]> = { WP04: [-0.5, 1.2], WP05: [-4.6, 4.7] };
+const pos = (s: MapSite) => ({ x: s.x + (NUDGE[s.id]?.[0] ?? 0), y: s.y + (NUDGE[s.id]?.[1] ?? 0) });
+const DOTS = Array.from({ length: 11 }, (_, i) => i * 10);
 
 /**
  * Two-floor waypoint map. Circle color = inspection success, size = anomaly count.
@@ -30,33 +35,33 @@ export function FacilityMap({
         const path = (route ?? []).map((id) => byId.get(id)).filter((s): s is MapSite => !!s && s.floor === floor);
         return (
           <figure key={floor}>
-            <svg viewBox="-6 -6 112 112" className="w-full rounded-lg bg-[#0e1319] ring-1 ring-border" role="img" aria-label={`Floor ${floor} map`}>
-              {[20, 40, 60, 80].map((g) => (
-                <g key={g} stroke="#1f2a36" strokeWidth="0.3">
-                  <line x1={g} y1="0" x2={g} y2="100" />
-                  <line x1="0" y1={g} x2="100" y2={g} />
-                </g>
-              ))}
-              {path.length > 1 && <polyline points={path.map((s) => `${s.x},${s.y}`).join(" ")} fill="none" stroke="#4f9fe8" strokeWidth="0.8" strokeOpacity="0.8" />}
+            <svg viewBox="-6 -6 112 112" className="w-full rounded-xl bg-[#0c1016] ring-1 ring-white/[0.06]" role="img" aria-label={`Floor ${floor} map`}>
+              {/* Dot grid, 10 map units apart. */}
+              {DOTS.flatMap((gx) => DOTS.map((gy) => <circle key={`${gx}-${gy}`} cx={gx} cy={gy} r="0.35" fill="#2a3542" />))}
+              {path.length > 1 && (
+                <polyline points={path.map((s) => `${pos(s).x},${pos(s).y}`).join(" ")} fill="none" stroke="#4f9fe8" strokeWidth="0.8" strokeOpacity="0.8" strokeLinejoin="round" />
+              )}
               {sites
                 .filter((s) => s.floor === floor)
                 .map((s) => {
                   const pct = s.total ? Math.round((100 * s.ok) / s.total) : 100;
+                  const { x, y } = pos(s);
+                  const r = radius(s);
                   return (
                     <a
                       key={s.id}
                       href={`/waypoints/${s.id}`}
                       aria-label={`${s.id} ${s.name}: ${pct}% inspections OK, ${s.anomalies} anomalies`}
-                      className="focus-visible:outline-none [&:focus-visible>circle]:stroke-foreground [&:hover>circle]:fill-opacity-40"
+                      className="focus-visible:outline-none [&:focus-visible>circle]:stroke-foreground [&:hover>circle]:fill-opacity-45"
                     >
                       <title>{`${s.id} ${s.name}: ${pct}% inspections OK (${s.ok}/${s.total}), ${s.anomalies} anomalies`}</title>
-                      {outdoor.includes(s.id) && <circle cx={s.x} cy={s.y} r={6.5 + s.anomalies * 0.8} fill="none" stroke="#7ec4ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
-                      <circle cx={s.x} cy={s.y} r={3.5 + s.anomalies * 0.8} fill={tone(pct)} fillOpacity={0.22} stroke={tone(pct)} strokeWidth="0.8" />
-                      <text x={s.x} y={s.y + 1.4} textAnchor="middle" fontSize="3.8" fontWeight="600" fill="#f4f4f4">
+                      {outdoor.includes(s.id) && <circle cx={x} cy={y} r={r + 3} fill="none" stroke="#7ec4ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
+                      <circle cx={x} cy={y} r={r} fill={tone(pct)} fillOpacity={0.22} stroke={tone(pct)} strokeWidth="0.8" className="transition-[fill-opacity]" />
+                      <text x={x} y={y + 1.4} textAnchor="middle" fontSize="3.8" fontWeight="600" fill="#f4f4f4" className="pointer-events-none font-mono">
                         {s.id.slice(2)}
                       </text>
                       {dock === s.id && (
-                        <text x={s.x} y={s.y - 6} textAnchor="middle" fontSize="3.2" fill="#c6c6c6">
+                        <text x={x} y={y - r - 1.5} textAnchor="middle" fontSize="3.2" fill="#c6c6c6" className="font-mono">
                           DOCK
                         </text>
                       )}
@@ -64,15 +69,17 @@ export function FacilityMap({
                   );
                 })}
               {spot && byId.get(spot)?.floor === floor && (
-                <g>
-                  <circle cx={byId.get(spot)!.x} cy={byId.get(spot)!.y} r="2.2" fill="#f4f4f4" stroke="#161616" strokeWidth="0.8" />
-                  <text x={byId.get(spot)!.x + 3.5} y={byId.get(spot)!.y - 3} fontSize="3.6" fontWeight="600" fill="#f4f4f4">
+                // Keyed on the waypoint so the ping replays each time Spot moves.
+                <g key={spot} className="pointer-events-none">
+                  <circle cx={pos(byId.get(spot)!).x} cy={pos(byId.get(spot)!).y} r="2.2" fill="#f4f4f4" fillOpacity="0.5" className="origin-center animate-ping [transform-box:fill-box] motion-reduce:animate-none" />
+                  <circle cx={pos(byId.get(spot)!).x} cy={pos(byId.get(spot)!).y} r="2.2" fill="#f4f4f4" stroke="#161616" strokeWidth="0.8" />
+                  <text x={pos(byId.get(spot)!).x + 3.5} y={pos(byId.get(spot)!).y - 3} fontSize="3.6" fontWeight="600" fill="#f4f4f4" className="font-mono">
                     SPOT
                   </text>
                 </g>
               )}
             </svg>
-            <figcaption className="mt-1 text-center text-xs text-muted-foreground">Floor {floor}</figcaption>
+            <figcaption className="mt-1.5 text-center font-mono text-[11px] tracking-wider text-helper uppercase">Floor {floor}</figcaption>
           </figure>
         );
       })}

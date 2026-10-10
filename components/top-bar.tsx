@@ -33,14 +33,14 @@ export function TopBar({ search, openAnomalies, site }: { search: ReactNode; ope
   }, []);
 
   return (
-    <div className="flex items-center gap-3 border-b border-border px-8 py-3 print:hidden">
+    <div className="flex items-center gap-3 border-b border-white/[0.06] px-8 py-3 print:hidden">
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
         <span className="text-muted-foreground">Dogwatch</span>
         {crumbs.map((c, i) => (
           <span key={c.href} className="flex items-center gap-1.5">
             <ChevronRight aria-hidden className="size-3.5 text-helper" />
             {i === crumbs.length - 1 ? (
-              <span aria-current="page" className="truncate font-medium">
+              <span aria-current="page" className="truncate font-medium text-primary">
                 {c.label}
               </span>
             ) : (
@@ -53,19 +53,19 @@ export function TopBar({ search, openAnomalies, site }: { search: ReactNode; ope
       </nav>
       <div className="ml-auto flex items-center gap-2">
         <div className="hidden w-56 md:block">{search}</div>
-        <span className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground sm:flex">
+        <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/[0.06] sm:flex">
           <Clock aria-hidden className="size-3.5" />
           {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET
         </span>
         <Link
           href="/anomalies"
           aria-label={`${openAnomalies} anomalies need you`}
-          className="relative grid size-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          className="relative grid size-9 place-items-center rounded-lg bg-card text-muted-foreground ring-1 ring-white/[0.06] transition-colors hover:text-foreground hover:ring-white/[0.12] focus-visible:outline-2 focus-visible:outline-ring"
         >
           <Bell aria-hidden className="size-4" />
-          {openAnomalies > 0 && <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-recall ring-2 ring-background" />}
+          {openAnomalies > 0 && <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-recall ring-2 ring-card" />}
         </Link>
-        <span aria-label="Signed in as operator" className="grid size-9 place-items-center rounded-full bg-secondary text-xs font-semibold">
+        <span aria-label="Signed in as operator" className="grid size-9 place-items-center rounded-lg bg-secondary font-mono text-xs font-semibold ring-1 ring-white/[0.08]">
           OP
         </span>
       </div>

@@ -6,19 +6,21 @@ import { cn } from "@/lib/utils";
 export const VERDICT_UI: Record<Verdict, { Icon: typeof Pause; text: string; ring: string; fill: string }> = {
   GO: { Icon: CircleCheckBig, text: "text-go", ring: "ring-go/50", fill: "bg-go/10" },
   HOLD: { Icon: Pause, text: "text-hold", ring: "ring-hold/50", fill: "bg-hold/10" },
-  RECALL: { Icon: TriangleAlert, text: "text-recall", ring: "ring-recall/60", fill: "bg-recall/15" },
+  RECALL: { Icon: TriangleAlert, text: "text-recall", ring: "ring-recall/60", fill: "bg-recall/10" },
 };
 
 export function VerdictBlock({ verdict, caption }: { verdict: Verdict; caption?: string }) {
   const ui = VERDICT_UI[verdict];
   return (
-    // key on the verdict so the 240 ms flip plays only when it changes
-    <div key={verdict} role="status" aria-live="polite" className={cn("animate-verdict rounded-xl px-5 py-4 ring-1", ui.fill, ui.ring)}>
-      <div className={cn("flex items-center gap-3 text-4xl font-semibold tracking-tight", ui.text)}>
-        <ui.Icon aria-hidden className="size-9" strokeWidth={2.25} />
-        {verdict}
+    // key on the verdict so the 240 ms flip plays only when it changes; RECALL also breathes (animate-pulse-soft) until it clears
+    <div key={verdict} role="status" aria-live="polite" className={cn("rounded-xl ring-1", ui.fill, ui.ring, ui.text, verdict === "RECALL" && "animate-pulse-soft")}>
+      <div className="animate-verdict px-5 py-4">
+        <div className="flex items-center gap-3 text-4xl font-semibold tracking-tight">
+          <ui.Icon aria-hidden className="size-9" strokeWidth={2.25} />
+          {verdict}
+        </div>
+        {caption && <p className="mt-1 text-sm text-muted-foreground">{caption}</p>}
       </div>
-      {caption && <p className="mt-1 text-sm text-muted-foreground">{caption}</p>}
     </div>
   );
 }
@@ -26,7 +28,7 @@ export function VerdictBlock({ verdict, caption }: { verdict: Verdict; caption?:
 export function VerdictChip({ verdict, className }: { verdict: Verdict; className?: string }) {
   const ui = VERDICT_UI[verdict];
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-medium tracking-wide uppercase", ui.fill, ui.text, className)}>
+    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-medium tracking-wide uppercase ring-1 ring-current/15", ui.fill, ui.text, className)}>
       <ui.Icon aria-hidden className="size-3" />
       {verdict}
     </span>
@@ -51,7 +53,7 @@ export function ReasonList({ reasons }: { reasons: Reason[] }) {
 }
 
 export const SEVERITY_UI: Record<string, string> = {
-  CRITICAL: "bg-recall/15 text-recall ring-transparent font-mono tracking-wide",
+  CRITICAL: "bg-recall/10 text-recall ring-transparent font-mono tracking-wide",
   HIGH: "bg-[#f2936d]/12 text-[#f5a385] ring-transparent font-mono tracking-wide",
   MEDIUM: "bg-hold/12 text-hold ring-transparent font-mono tracking-wide",
   LOW: "bg-secondary text-muted-foreground ring-transparent font-mono tracking-wide",

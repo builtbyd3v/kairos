@@ -61,8 +61,15 @@ const SEGMENT = { pending: "bg-secondary", ok: "bg-go", failed: "bg-recall" };
 
 export function LiveRound({ missions, defaultId, events: stream, anomalies, readings, names, sites, dock, outdoor }: Props) {
   const startOf = (id: string) => stream.find((e) => e.missionId === id)!.at;
+  // First paint opens three actions in, so the page shows a round in progress instead of "none yet". Restart still goes to the start.
+  // note: capped just before the outdoor leg, so the floor model never downloads on first paint.
+  const openingOf = (id: string) => {
+    const evs = stream.filter((e) => e.missionId === id);
+    const third = evs.filter((e) => e.type === "ACTION_COMPLETED" || e.type === "ACTION_FAILED")[2]?.at ?? evs[0].at;
+    return Math.min(third, (outdoorArrival(evs, outdoor)?.at ?? Infinity) - 1);
+  };
   const [missionId, setMissionId] = useState(defaultId);
-  const [t, setT] = useState(() => startOf(defaultId));
+  const [t, setT] = useState(() => openingOf(defaultId));
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(30);
   const [wetFrame, setWetFrame] = useState(false);
@@ -127,13 +134,13 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
             className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary ring-1 ring-primary/40"
             title="Live (simulated from NextEra's replay stream)"
           >
-            <span aria-hidden className={cn("size-2 rounded-full bg-recall", running && "animate-pulse motion-reduce:animate-none")} />
+            <span aria-hidden className={cn("size-2 rounded-full bg-recall", running && "animate-pulse-soft")} />
             LIVE · simulated
           </span>
         }
       />
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
-        <Card>
+        <Card className="animate-rise">
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -181,22 +188,22 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 />
                 Simulate wet entrance
               </label>
-              <span className="ml-auto font-mono text-2xl tabular-nums">{kitClock(t)}</span>
+              <span className="ml-auto font-mono text-2xl font-medium tabular-nums">{kitClock(t)}</span>
               <span className="text-xs text-helper">kit time · Live (simulated from NextEra&apos;s replay stream)</span>
             </div>
-            <div>
-              <ol aria-label="Mission actions" className="flex gap-0.5">
+            <div className="panel-inset p-3">
+              <ol aria-label="Mission actions" className="flex gap-1">
                 {mission.plan.map((a, i) => {
                   const r = s.results[a.id] ?? "pending";
                   const text = `Action ${i + 1}, ${words(a.type)} at ${a.locationId}: ${r === "ok" ? "OK" : r}`;
                   return (
-                    <li key={a.id} title={text} className={cn("h-2 flex-1 rounded-sm", SEGMENT[r], s.current?.actionId === a.id && "ring-2 ring-foreground/70")}>
+                    <li key={a.id} title={text} className={cn("h-2.5 flex-1 rounded-[3px] transition-colors duration-300", SEGMENT[r], s.current?.actionId === a.id && "ring-2 ring-foreground/70")}>
                       <span className="sr-only">{text}</span>
                     </li>
                   );
                 })}
               </ol>
-              <p className="mt-1.5 text-xs text-helper tabular-nums">
+              <p className="mt-2 font-mono text-[11px] text-helper tabular-nums">
                 {s.done} of {mission.plan.length} actions done · green OK, red failed, gray pending
               </p>
             </div>
@@ -228,14 +235,14 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
         )}
 
         <div className="grid grid-cols-12 gap-5">
-          <Card className="col-span-12 lg:col-span-8">
+          <Card className="col-span-12 animate-rise [--rise-delay:80ms] lg:col-span-8">
             <CardHeader>
               <CardTitle>Where Spot is now</CardTitle>
               <CardDescription>Planned route for {mission.id}; white marker = current waypoint</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FacilityMap sites={sites} route={mission.plan.map((a) => a.locationId)} spot={s.current?.locationId} outdoor={outdoor} dock={dock} />
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-secondary px-4 py-3 text-sm">
+              <div className="panel-inset flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm">
                 <span>
                   <span className="text-muted-foreground">Action </span>
                   {s.current ? words(s.current.actionType) : s.phase}
@@ -250,12 +257,12 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
           </Card>
 
           <div className="col-span-12 space-y-5 lg:col-span-4">
-            <Card>
+            <Card className="animate-rise [--rise-delay:120ms]">
               <CardHeader>
                 <CardTitle>Now</CardTitle>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                <dl className="panel-inset grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 px-4 py-3 text-sm [&_dt]:font-mono [&_dt]:text-[11px] [&_dt]:tracking-wider [&_dt]:uppercase">
                   <dt className="text-muted-foreground">Phase</dt>
                   <dd className="capitalize">{s.phase}</dd>
                   <dt className="text-muted-foreground">Action</dt>
@@ -279,7 +286,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="animate-rise [--rise-delay:160ms]">
               <CardHeader>
                 <CardTitle>True status so far</CardTitle>
                 <CardDescription>What the operator should believe, not what the robot reports</CardDescription>
@@ -305,13 +312,13 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="animate-rise [--rise-delay:200ms]">
               <CardHeader>
                 <CardTitle>Floor check</CardTitle>
                 <CardDescription>Wet-floor model on the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <p className="text-[11px] tracking-wider text-helper uppercase">Frame: sample image (the kit has no camera frames)</p>
+                <p className="label-caps text-helper">Frame: sample image (the kit has no camera frames)</p>
                 {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
                 <img src={frame} alt={wetFrame ? "Sample frame: wet entrance" : "Sample frame: dry entrance"} className="max-h-36 w-full rounded object-cover ring-1 ring-border" />
                 <div aria-live="polite" className="space-y-2">
@@ -348,7 +355,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="animate-rise [--rise-delay:240ms]">
               <CardHeader>
                 <CardTitle>Event feed</CardTitle>
                 <CardDescription>Newest first</CardDescription>

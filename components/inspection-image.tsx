@@ -18,7 +18,7 @@ export function InspectionImage({ type, assetType, className }: { type: string; 
     <figure className={cn("w-full max-w-60", className)}>
       {/* Plain img on purpose: the files are ~240x166 and already tiny, so the next/image optimizer adds nothing. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/inspections/${img.src}`} alt={img.alt} loading="lazy" className="h-auto w-full rounded-md ring-1 ring-border" />
+      <img src={`/inspections/${img.src}`} alt={img.alt} loading="lazy" className="h-auto w-full rounded-lg ring-1 ring-white/[0.06]" />
       <figcaption className="mt-1 text-[11px] text-helper">Sample image from NextEra&apos;s kit (synthetic), not this exact capture</figcaption>
     </figure>
   );

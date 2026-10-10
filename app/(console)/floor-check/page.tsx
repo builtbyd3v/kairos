@@ -17,7 +17,7 @@ export default function FloorCheckPage() {
         subtitle="A forecast can't see the floor Spot walks on. Our fine-tuned open model flags standing water in a camera frame so the dispatcher can hold that waypoint. It runs in this browser with transformers.js."
       />
       <div className="grid grid-cols-12 gap-5 px-8 py-6">
-        <Card className="col-span-8">
+        <Card className="col-span-8 animate-rise">
           <CardHeader>
             <CardTitle>Try it</CardTitle>
             <CardDescription>Three held-out test images, three NextEra kit images, or your own</CardDescription>
@@ -26,24 +26,24 @@ export default function FloorCheckPage() {
             <FloorCheck />
           </CardContent>
         </Card>
-        <Card className="col-span-4">
+        <Card className="col-span-4 animate-rise [--rise-delay:60ms]">
           <CardHeader>
             <CardTitle>How good is it?</CardTitle>
             <CardDescription>752 held-out images (324 wet), 95% CIs in the model card. The browser loads a 34 MB int8 version (99.5% accuracy).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <table className="w-full text-left">
-              <thead className="text-xs text-muted-foreground">
+              <thead className="font-mono text-[11px] tracking-wider text-helper uppercase">
                 <tr>
                   <th className="py-1 font-medium">Model</th>
                   <th className="font-medium">Accuracy</th>
                   <th className="font-medium">Wet recall</th>
                 </tr>
               </thead>
-              <tbody className="font-mono">
+              <tbody className="font-mono tabular-nums">
                 {METRICS.map((m) => (
-                  <tr key={m.model} className="border-t border-border">
-                    <td className="py-1.5 font-sans">{m.model}</td>
+                  <tr key={m.model} className="border-t border-border/70">
+                    <td className="py-2.5 font-sans">{m.model}</td>
                     <td>{m.acc}</td>
                     <td>{m.wet}</td>
                   </tr>

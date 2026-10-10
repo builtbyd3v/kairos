@@ -51,13 +51,13 @@ export function FloorCheck() {
               onClick={() => classify(s.src)}
               disabled={busy}
               className={cn(
-                "overflow-hidden rounded text-left ring-1 ring-border hover:ring-link focus-visible:outline-2 focus-visible:outline-link disabled:opacity-60",
+                "overflow-hidden rounded-lg text-left ring-1 ring-white/[0.06] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:ring-link focus-visible:outline-2 focus-visible:outline-link disabled:opacity-60 motion-reduce:hover:translate-y-0",
                 result?.src === s.src && "ring-2 ring-link",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- local sample thumbnails, no optimization needed */}
               <img src={s.src} alt={s.label} className="aspect-video w-full object-cover" />
-              <span className="block bg-card px-2 py-1 text-xs text-muted-foreground">{s.label}</span>
+              <span className="block bg-card px-2 py-1.5 font-mono text-[11px] text-muted-foreground">{s.label}</span>
             </button>
           ))}
         </div>
@@ -86,14 +86,20 @@ export function FloorCheck() {
         )}
         {status === "error" && <p className="text-sm text-recall">The model could not load. Check the network and try again.</p>}
         {result && (
-          <div className={cn("space-y-2 rounded p-4 ring-1", wet ? "bg-hold/10 ring-hold/40" : "bg-secondary ring-border")}>
+          <div key={result.src} className={cn("animate-rise space-y-2 rounded-xl p-4", wet ? "bg-hold/10 ring-1 ring-hold/40" : "panel-inset")}>
             {/* eslint-disable-next-line @next/next/no-img-element -- user image preview */}
-            <img src={result.src} alt="Checked image" className="max-h-40 w-full rounded object-cover" />
+            <img src={result.src} alt="Checked image" className="max-h-40 w-full rounded-lg object-cover" />
             <p className="flex items-center gap-2 text-lg font-semibold">
               <Droplets aria-hidden className={cn("size-5", wet ? "text-hold" : "text-helper")} />
               {wet ? "Possible standing water" : "No water detected"}
             </p>
-            <p className="font-mono text-sm">p(wet) = {result.pWet.toFixed(2)} · {result.ms} ms in browser</p>
+            <p className="font-mono text-sm tabular-nums">p(wet) = {result.pWet.toFixed(2)} · {result.ms} ms in browser</p>
+            <svg viewBox="0 0 100 6" preserveAspectRatio="none" className="h-2 w-full" aria-hidden>
+              {Array.from({ length: 20 }, (_, i) => (
+                <rect key={i} x={i * 5} width={4} height={6} rx={1} className={i < Math.round(result.pWet * 20) ? (wet ? "fill-hold" : "fill-helper") : "fill-white/[0.06]"} />
+              ))}
+              <rect x={49.5} y={-1} width={1} height={8} className="fill-foreground/60" />
+            </svg>
             <p className="flex items-start gap-2 text-sm">
               {wet ? (
                 <>

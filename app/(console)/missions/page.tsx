@@ -4,8 +4,7 @@ import { isOutdoor, routeOf } from "@/lib/route";
 import { TRUTH_UI } from "@/components/status";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TablePill, TableRow } from "@/components/ui/table";
 
 const fmtTime = (iso: string) => iso.replace("T", " ").slice(5, 16);
 
@@ -21,7 +20,7 @@ export default async function MissionsPage() {
         subtitle={`${a.totals.missions} Autowalk rounds, ${a.totals.range[0]?.slice(0, 10)} to ${a.totals.range[1]?.slice(0, 10)} (kit time). ${notClean} of them need more than their reported status says.`}
       />
       <div className="px-8 py-6">
-        <Card>
+        <Card className="animate-rise">
           <CardContent>
             <Table>
               <TableHeader>
@@ -46,10 +45,14 @@ export default async function MissionsPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{fmtTime(m.start)}</TableCell>
-                    <TableCell>{m.config}</TableCell>
+                    <TableCell className="font-mono text-xs">{m.config}</TableCell>
                     <TableCell className="text-muted-foreground">{isOutdoor(routeOf(kit, m.id)) ? "Includes outdoor leg" : "Indoors"}</TableCell>
-                    <TableCell>{m.status}</TableCell>
-                    <TableCell className={cn("font-medium", TRUTH_UI[m.truth].text)}>{TRUTH_UI[m.truth].label}</TableCell>
+                    <TableCell>
+                      <TablePill className={m.status === "COMPLETED" ? "text-muted-foreground" : "text-recall"}>{m.status}</TablePill>
+                    </TableCell>
+                    <TableCell>
+                      <TablePill className={TRUTH_UI[m.truth].text}>{TRUTH_UI[m.truth].label}</TablePill>
+                    </TableCell>
                     <TableCell className="text-right font-mono tabular-nums">
                       {m.failed}/{m.actions}
                     </TableCell>

@@ -23,7 +23,7 @@ async function WorkOrders() {
     <>
       <PageHeader title="Work orders" subtitle={SUBTITLE} />
       <main className="mx-auto max-w-[1440px] px-8 py-6">
-        <p className="mb-3 text-[11px] tracking-wider text-helper uppercase">P1: critical anomaly or critical asset · P2: high severity · P3: everything else</p>
+        <p className="label-caps mb-3 text-helper">P1: critical anomaly or critical asset · P2: high severity · P3: everything else</p>
         <WorkOrderList kit={kit} reviews={reviews} now={now} />
       </main>
     </>

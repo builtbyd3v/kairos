@@ -30,7 +30,7 @@ export default async function InsightsPage() {
     <main>
       <PageHeader title="Insights" subtitle="Patterns across all 27 kit missions: where inspections fail, how battery and configuration matter, and how the dispatcher rules would have behaved on real weather." />
       <div className="grid grid-cols-12 gap-5 px-8 py-6">
-        <Card className="col-span-12">
+        <Card className="col-span-12 animate-rise">
           <CardHeader>
             <CardTitle>Before you trust these charts</CardTitle>
             <CardDescription>Data traps in the kit. Each number is recomputed from the kit files on every load.</CardDescription>
@@ -58,7 +58,7 @@ export default async function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card className="col-span-6 animate-rise [--rise-delay:60ms]">
           <CardHeader>
             <CardTitle>Facility map</CardTitle>
             <CardDescription>Where inspections fail. Hover a waypoint for details.</CardDescription>
@@ -68,12 +68,13 @@ export default async function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card id="battery-chart" className="col-span-6 scroll-mt-20">
+        <Card id="battery-chart" className="col-span-6 scroll-mt-20 animate-rise [--rise-delay:90ms]">
           <CardHeader>
             <CardTitle>Battery vs. inspection success</CardTitle>
             <CardDescription>V2 never ran below 52% battery, so part of its lead over V1 is battery, not configuration</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
+            <div className="panel-inset space-y-2.5 p-4">
             {a.bands.map((b) => (
               <div key={b.band} className="grid grid-cols-[4.5rem_1fr] items-center gap-3">
                 <span className="font-mono text-xs text-muted-foreground">{b.band}</span>
@@ -83,21 +84,24 @@ export default async function InsightsPage() {
                 </div>
               </div>
             ))}
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card className="col-span-6 animate-rise [--rise-delay:120ms]">
           <CardHeader>
             <CardTitle>Least reliable inspections</CardTitle>
             <CardDescription>Share of actions that succeeded, all 27 missions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
-            {a.byType.map((t) => (
-              <Bar key={t.type} label={t.type.replace("_INSPECTION", "").replace("_", " ").toLowerCase()} ok={t.ok} total={t.total} wide />
-            ))}
+            <div className="panel-inset space-y-2.5 p-4">
+              {a.byType.map((t) => (
+                <Bar key={t.type} label={t.type.replace("_INSPECTION", "").replace("_", " ").toLowerCase()} ok={t.ok} total={t.total} wide />
+              ))}
+            </div>
             <dl className="grid grid-cols-2 gap-3 pt-2 text-sm">
               {a.configs.map((c) => (
-                <div key={c.config} className="rounded bg-secondary/60 p-3">
+                <div key={c.config} className="panel-inset p-3">
                   <dt className="font-medium">Configuration {c.config}</dt>
                   <dd className="text-muted-foreground">
                     {pct(c.ok, c.total)}% actions OK · {c.avgDuration} min · {c.avgDrain}% battery per mission
@@ -108,14 +112,14 @@ export default async function InsightsPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6">
+        <Card className="col-span-6 animate-rise [--rise-delay:180ms]">
           <CardHeader>
             <CardTitle>Backtest: would it cry wolf?</CardTitle>
             <CardDescription>Today&apos;s rules run on the real archived weather at {SITE.name.split(" (")[0]} for each kit round time</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p>
-              <span className="font-mono text-3xl font-medium">{heldWeather.length}</span>
+              <span className="font-mono text-3xl font-medium tabular-nums">{heldWeather.length}</span>
               <span className="text-muted-foreground"> of {bt.length} rounds held for weather</span>
             </p>
             <ul className="space-y-1 text-xs text-muted-foreground">
@@ -126,7 +130,7 @@ export default async function InsightsPage() {
               ))}
             </ul>
             <p>
-              <span className="font-mono text-3xl font-medium">{heldBattery.length}</span>
+              <span className="font-mono text-3xl font-medium tabular-nums">{heldBattery.length}</span>
               <span className="text-muted-foreground"> of {bt.length} rounds held for battery (would dock under 20%)</span>
             </p>
             <p className="text-xs text-helper">
@@ -156,7 +160,7 @@ async function DecisionLog() {
   await connection();
   const rows = await recentDecisions();
   return (
-    <Card className="col-span-12">
+    <Card className="col-span-12 animate-rise [--rise-delay:300ms]">
       <CardHeader>
         <CardTitle>Decision log</CardTitle>
         <CardDescription>Every confirm or override is stored in Neon with the reasons the operator saw</CardDescription>
@@ -171,7 +175,7 @@ async function DecisionLog() {
                 <span className="font-mono text-xs text-helper">{d.created_at.slice(5, 16)} UTC</span>
                 <VerdictChip verdict={d.verdict} />
                 <span className="capitalize">{d.operator_action}</span>
-                <span className="rounded bg-secondary px-1.5 text-xs text-muted-foreground">{d.source}</span>
+                <span className="rounded-full bg-secondary px-2 font-mono text-[11px] text-muted-foreground uppercase">{d.source}</span>
                 <span className="text-muted-foreground">{d.reasons[0]?.text ?? "No limits close"}</span>
                 {d.orbit_call && <span className="font-mono text-xs text-helper">→ {d.orbit_call}</span>}
               </li>
@@ -183,18 +187,26 @@ async function DecisionLog() {
   );
 }
 
+const CELLS = 20; // one cell = 5 percentage points
+
+/** Success share as a segmented bar: filled cells over faint ghost cells, the waffle texture used across the console. */
 function Bar({ label, ok, total, wide }: { label: string; ok: number; total: number; wide?: boolean }) {
   const p = pct(ok, total);
+  const filled = Math.round((p / 100) * CELLS);
   return (
     <div className={cn("grid items-center gap-2", wide ? "grid-cols-[6rem_1fr_6.5rem]" : "grid-cols-[2rem_1fr_6.5rem]")}>
-      <span className="text-xs capitalize text-muted-foreground">{label}</span>
-      <progress
-        value={ok}
-        max={total || 1}
-        aria-label={`${label}: ${p}% of ${total}`}
-        className="h-2 w-full appearance-none overflow-hidden rounded [&::-moz-progress-bar]:bg-info [&::-webkit-progress-bar]:bg-secondary [&::-webkit-progress-value]:bg-info"
-      />
-      <span className="font-mono text-xs text-muted-foreground">{total ? `${p}% (${ok}/${total})` : "no runs"}</span>
+      <span className="font-mono text-[11px] tracking-wide text-muted-foreground uppercase">{label}</span>
+      <svg viewBox={`0 0 ${CELLS * 5} 6`} preserveAspectRatio="none" className="h-2 w-full" role="img" aria-label={`${label}: ${p}% of ${total}`}>
+        {Array.from({ length: CELLS }, (_, i) => (
+          <rect key={i} x={i * 5} width={4} height={6} rx={1} className="fill-white/[0.06]" />
+        ))}
+        <g className="animate-grow-x">
+          {Array.from({ length: total ? filled : 0 }, (_, i) => (
+            <rect key={i} x={i * 5} width={4} height={6} rx={1} className="fill-info" />
+          ))}
+        </g>
+      </svg>
+      <span className="font-mono text-xs text-muted-foreground tabular-nums">{total ? `${p}% (${ok}/${total})` : "no runs"}</span>
     </div>
   );
 }

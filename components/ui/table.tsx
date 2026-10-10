@@ -22,7 +22,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn("[&_tr]:border-b [&_tr]:hover:bg-transparent", className)}
       {...props}
     />
   )
@@ -56,7 +56,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        "border-b border-border/70 transition-colors hover:bg-white/[0.025] has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -69,7 +69,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        "h-10 px-3 text-left align-middle font-mono text-[11px] font-medium tracking-wider whitespace-nowrap text-helper uppercase [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -82,7 +82,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "px-3 py-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -103,8 +103,19 @@ function TableCaption({
   )
 }
 
+/** Status pill for table cells: a dot plus a word, tinted by `className` (a text color such as text-go). */
+function TablePill({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-current/10 px-2 py-0.5 font-mono text-[11px] font-medium tracking-wide uppercase", className)}>
+      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" />
+      {children}
+    </span>
+  )
+}
+
 export {
   Table,
+  TablePill,
   TableHeader,
   TableBody,
   TableFooter,

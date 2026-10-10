@@ -35,7 +35,7 @@ const ago = (ms: number) => {
 export function PriorityChip({ priority }: { priority: keyof typeof PRIORITY_UI }) {
   const { Icon, className } = PRIORITY_UI[priority];
   return (
-    <span className={cn("inline-flex w-12 shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ring-1", className)}>
+    <span className={cn("inline-flex w-14 shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ring-1", className)}>
       <Icon aria-hidden className="size-3" />
       {priority}
     </span>
@@ -46,7 +46,7 @@ export function WorkOrderList({ kit, reviews, now }: { kit: Kit; reviews: Record
   const rows = workOrders(kit, reviews);
   if (rows.length === 0)
     return (
-      <p className="rounded-xl bg-card px-5 py-10 text-center text-sm text-muted-foreground ring-1 ring-foreground/10">
+      <p className="animate-rise rounded-2xl bg-card px-5 py-10 text-center text-sm text-muted-foreground ring-1 ring-white/[0.06]">
         No work orders yet. Create one from an anomaly on{" "}
         <Link href="/" className="text-link underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">
           Today
@@ -56,9 +56,9 @@ export function WorkOrderList({ kit, reviews, now }: { kit: Kit; reviews: Record
     );
 
   return (
-    <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-foreground/10">
+    <ul className="animate-rise divide-y divide-border/70 overflow-hidden rounded-2xl bg-card ring-1 ring-white/[0.06]">
       {rows.map((w) => (
-        <li key={w.id} className="flex animate-row items-center gap-4 px-4 py-3">
+        <li key={w.id} className="flex animate-row items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.025]">
           <span className="w-16 shrink-0 font-mono text-sm tabular-nums">{w.wo}</span>
           <PriorityChip priority={w.priority} />
           <span className="min-w-0 flex-1">

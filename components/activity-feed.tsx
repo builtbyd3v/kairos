@@ -51,7 +51,7 @@ export async function ActivityFeed({ now }: { now: Date }) {
             Nothing yet today
           </p>
         ) : (
-          <ol className="space-y-3">
+          <ol className="panel-inset space-y-3 p-3">
             {items.map((it) => (
               <li key={it.key} className="flex animate-row items-start gap-2.5 text-sm">
                 {it.chip}

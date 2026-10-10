@@ -42,19 +42,22 @@ export function CommandPalette({ items }: { items: PaletteItem[] }) {
     <>
       <button
         onClick={() => dialog.current?.showModal()}
-        className="flex w-full items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+        className="flex w-full items-center gap-2 rounded-lg bg-card px-3 py-2 text-sm text-muted-foreground ring-1 ring-white/[0.06] transition-colors hover:text-foreground hover:ring-white/[0.12] focus-visible:outline-2 focus-visible:outline-ring"
       >
         <Search aria-hidden className="size-4" />
         Search…
-        <kbd className="ml-auto rounded border border-border px-1.5 font-mono text-[11px]">⌘K</kbd>
+        <span aria-hidden className="ml-auto flex gap-1 font-mono text-[11px]">
+          <kbd className="rounded bg-secondary px-1.5 ring-1 ring-white/[0.08]">⌘</kbd>
+          <kbd className="rounded bg-secondary px-1.5 ring-1 ring-white/[0.08]">K</kbd>
+        </span>
       </button>
       <dialog
         ref={dialog}
         aria-label="Search the console"
         onClose={() => setQuery("")}
-        className="m-auto mt-[15vh] w-full max-w-xl rounded-xl border border-border bg-popover p-0 text-foreground shadow-2xl backdrop:bg-black/60"
+        className="m-auto mt-[15vh] w-full max-w-xl animate-rise rounded-2xl bg-popover p-0 text-foreground shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] ring-1 ring-white/[0.08] backdrop:bg-black/60 backdrop:backdrop-blur-sm"
       >
-        <div className="flex items-center gap-2 border-b border-border px-4">
+        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4">
           <Search aria-hidden className="size-4 text-muted-foreground" />
           <input
             autoFocus
@@ -89,7 +92,7 @@ export function CommandPalette({ items }: { items: PaletteItem[] }) {
               onClick={() => go(r)}
               className={cn("flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm", i === active && "bg-accent")}
             >
-              <span className="w-20 shrink-0 text-[11px] tracking-wider text-helper uppercase">{r.group}</span>
+              <span className="label-caps w-20 shrink-0 text-helper">{r.group}</span>
               <span className="font-medium">{r.label}</span>
               <span className="truncate text-muted-foreground">{r.hint}</span>
               {i === active && <CornerDownLeft aria-hidden className="ml-auto size-3.5 text-helper" />}

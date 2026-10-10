@@ -4,7 +4,6 @@ import { HOLD_ALERTS, RECALL_ALERTS } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
 import { cn } from "@/lib/utils";
 
-
 /** Plant-wide strip under the page header: active NWS alerts that gate outdoor rounds, or missing live weather. */
 export function WeatherBanner() {
   return (
@@ -34,7 +33,7 @@ async function Banner() {
       role="status"
       className={cn("flex items-center gap-2 border-b px-8 py-2.5 text-sm font-medium", red ? "border-recall/40 bg-recall/15 text-recall" : "border-hold/40 bg-hold/10 text-hold")}
     >
-      <Icon aria-hidden className="size-4 shrink-0" />
+      <Icon aria-hidden className={cn("size-4 shrink-0 rounded-full", red && "animate-pulse-soft")} />
       NWS {events.join(", ")} in effect for {SITE.name}. Outdoor rounds hold.
     </div>
   );

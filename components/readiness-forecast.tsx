@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type CSSProperties } from "react";
 import { connection } from "next/server";
 import { loadKit } from "@/lib/kit";
 import { getLiveWeather } from "@/lib/weather";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 
 const W = 900;
+const TIP_W = 170;
+const BAR_W = (bandW: number) => Math.max(1, Math.min(bandW, 14)); // thin bar centered in its ghost slot, like the reference
 const noData = (s: Slot) => s.reasons.some((r) => r.text === NO_DATA);
 // HOLD for "no forecast yet" is drawn fainter than a weather HOLD so the operator can tell them apart. RECALL cannot occur before launch.
 const fill = (s: Slot) => (s.verdict === "GO" ? "fill-go/70" : s.verdict === "RECALL" ? "fill-recall/80" : noData(s) ? "fill-hold/20" : "fill-hold/70");
@@ -56,7 +58,7 @@ async function ForecastCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ul aria-label="Legend" className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <ul aria-label="Legend" className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] tracking-wide text-muted-foreground uppercase">
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="size-2.5 rounded-sm bg-go/70" /> GO
           </li>
@@ -71,44 +73,58 @@ async function ForecastCard() {
           </li>
         </ul>
 
-        <svg viewBox={`0 0 ${W} 76`} width="100%" aria-hidden className="overflow-visible text-[11px]">
-          {f.bands.map((b) => (
-            <rect key={b.start.toISOString()} x={x(b.start)} y={18} width={Math.max(0, x(b.end) - x(b.start) - 1)} height={32} rx={2} className={fill(b)}>
-              <title>{`${time(b.start)} ET: ${label(b)}${b.verdict === "GO" ? "" : `. ${b.reasons[0]?.text ?? ""}`}`}</title>
-            </rect>
-          ))}
-          {/* Green cap: the outdoor leg is the only blocker, so an indoor-only round could launch. */}
-          {f.bands
-            .filter((b) => b.indoorOnly)
-            .map((b) => (
-              <rect key={`i${b.start.toISOString()}`} x={x(b.start)} y={18} width={Math.max(0, x(b.end) - x(b.start) - 1)} height={5} className="fill-go" />
+        <div className="panel-inset px-4 pt-3 pb-2">
+          <svg viewBox={`0 0 ${W} 76`} width="100%" aria-hidden className="overflow-visible text-[11px]">
+            {f.bands.map((b, i) => {
+              const bx = x(b.start);
+              const bw = Math.max(0, x(b.end) - bx - 4);
+              const tipX = Math.min(Math.max(bx + bw / 2 - TIP_W / 2, 0), W - TIP_W);
+              return (
+                // note: per-bar stagger is data-driven, so it rides a CSS var in style rather than a static class.
+                <g key={b.start.toISOString()} className="group/bar" style={{ "--rise-delay": `${i * 25}ms` } as CSSProperties}>
+                  <rect x={bx} y={14} width={bw} height={36} rx={3} className="fill-white/[0.035] transition-colors group-hover/bar:fill-white/[0.08]" />
+                  <rect x={bx + bw / 2 - BAR_W(bw) / 2} y={18} width={BAR_W(bw)} height={32} rx={2} className={cn("animate-grow-y", fill(b))}>
+                    <title>{`${time(b.start)} ET: ${label(b)}${b.verdict === "GO" ? "" : `. ${b.reasons[0]?.text ?? ""}`}`}</title>
+                  </rect>
+                  {/* Green cap: the outdoor leg is the only blocker, so an indoor-only round could launch. */}
+                  {b.indoorOnly && <rect x={bx + bw / 2 - BAR_W(bw) / 2} y={18} width={BAR_W(bw)} height={5} rx={1} className="fill-go" />}
+                  <g className="pointer-events-none opacity-0 transition-opacity group-hover/bar:opacity-100">
+                    <rect x={tipX} y={-44} width={TIP_W} height={38} rx={6} className="fill-popover stroke-border" />
+                    <text x={tipX + 10} y={-29} className="fill-muted-foreground font-mono text-[10px]">
+                      {time(b.start)} ET
+                    </text>
+                    <text x={tipX + 10} y={-14} className="fill-foreground font-medium">
+                      {label(b)}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+            <line x1={0} x2={W} y1={54} y2={54} strokeDasharray="1 4" className="stroke-helper/60" />
+            {ticks.map((b) => (
+              <text key={b.start.toISOString()} x={x(b.start)} y={70} textAnchor="middle" className="fill-helper font-mono text-[10px]">
+                {hourEt(b.start) === 0 ? et(b.start, { weekday: "short" }).toUpperCase() : et(b.start, { hour: "numeric" })}
+              </text>
             ))}
-          {ticks.map((b) => (
-            <g key={b.start.toISOString()} className="fill-helper stroke-border">
-              <line x1={x(b.start)} x2={x(b.start)} y1={52} y2={58} />
-              <text x={x(b.start)} y={71} textAnchor="middle" stroke="none">
-                {hourEt(b.start) === 0 ? et(b.start, { weekday: "short" }) : et(b.start, { hour: "numeric" })}
+            <g className="fill-foreground stroke-foreground">
+              <line x1={1} x2={1} y1={10} y2={58} strokeWidth={2} />
+              <text x={0} y={70} stroke="none" className="font-mono text-[10px] font-medium">
+                NOW
               </text>
             </g>
-          ))}
-          <g className="fill-foreground stroke-foreground">
-            <line x1={1} x2={1} y1={14} y2={58} strokeWidth={2} />
-            <text x={0} y={71} stroke="none" className="font-medium">
-              Now
-            </text>
-          </g>
-          {f.rounds.map((r) => {
-            const rx = x(r.start);
-            return (
-              <g key={r.start.toISOString()} className="fill-foreground stroke-foreground">
-                <line x1={rx} x2={rx} y1={14} y2={54} strokeDasharray="3 2" />
-                <text x={rx} y={10} stroke="none" textAnchor={rx < 40 ? "start" : rx > W - 40 ? "end" : "middle"}>
-                  {et(r.start, { hour: "numeric" })} round
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+            {f.rounds.map((r) => {
+              const rx = x(r.start);
+              return (
+                <g key={r.start.toISOString()} className="pointer-events-none fill-foreground stroke-foreground">
+                  <line x1={rx} x2={rx} y1={10} y2={54} strokeDasharray="3 2" />
+                  <text x={rx} y={6} stroke="none" textAnchor={rx < 40 ? "start" : rx > W - 40 ? "end" : "middle"} className="font-mono text-[10px]">
+                    {et(r.start, { hour: "numeric" })} round
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
         <p className="sr-only">
           Launch verdicts over the next 24 hours, Eastern Time:{" "}
           {runs.map((r) => `${r.label} from ${time(r.start)} to ${time(r.end)}`).join("; ")}.
@@ -116,7 +132,7 @@ async function ForecastCard() {
 
         <ul aria-label="Scheduled rounds" className="grid grid-cols-3 gap-3">
           {f.rounds.map((r) => (
-            <li key={r.start.toISOString()} className="rounded-md bg-secondary/60 px-3 py-2.5">
+            <li key={r.start.toISOString()} className="panel-inset px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-xs tabular-nums text-muted-foreground">
                   {et(r.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET
