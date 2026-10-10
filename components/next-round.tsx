@@ -4,7 +4,7 @@ import { decide, ORBIT_CALL } from "@/lib/verdict";
 import { getLiveWeather, SITE } from "@/lib/weather";
 import { logDecision } from "@/lib/decisions";
 import { drainPerMin, isOutdoor, OUTDOOR_WAYPOINTS, routeOf } from "@/lib/route";
-import { ReasonList, VerdictBlock } from "@/components/status";
+import { ReasonList, VerdictBlock, VerdictChip } from "@/components/status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -47,7 +47,7 @@ export async function planNextRound(kit: Kit, now: Date) {
 
 export type RoundPlan = Awaited<ReturnType<typeof planNextRound>>;
 
-export function NextRound({ plan, strip = true }: { plan: RoundPlan; strip?: boolean }) {
+export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; strip?: boolean; nextGo?: Date | null }) {
   const { verdict, reasons, indoorOnly, last, route, minutes, start, health, weather } = plan;
   const kept = route.filter((id) => !OUTDOOR_WAYPOINTS.has(id)).length;
   return (
@@ -62,6 +62,18 @@ export function NextRound({ plan, strip = true }: { plan: RoundPlan; strip?: boo
       </CardHeader>
       <CardContent className="space-y-4">
         <VerdictBlock verdict={verdict} caption={verdict === "GO" ? "Safe to launch on schedule" : verdict === "HOLD" ? "Do not launch yet" : "Bring Spot back now"} />
+        {verdict !== "GO" && nextGo !== undefined && (
+          <p className="flex items-center gap-2 rounded-lg bg-go/10 px-3 py-2.5 text-sm ring-1 ring-go/40">
+            <VerdictChip verdict="GO" />
+            {nextGo ? (
+              <span>
+                Next safe launch <span className="font-mono font-semibold tabular-nums">{et(nextGo, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</span>
+              </span>
+            ) : (
+              <span>No safe launch in the next 24 hours</span>
+            )}
+          </p>
+        )}
         <ReasonList reasons={reasons.slice(0, 3)} />
         <form action={logDecision} className="flex flex-wrap gap-2">
           <input type="hidden" name="verdict" value={verdict} />

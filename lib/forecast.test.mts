@@ -44,3 +44,8 @@ test("hours past the forecast horizon hold, never GO", () => {
   assert.ok(late.every((b) => b.verdict === "HOLD" && b.reasons.some((r) => r.text === NO_DATA)));
   assert.equal(f.rounds[2].verdict, "HOLD"); // the 02:00 ET round is past the horizon
 });
+
+test("nextGo is the first hour a round would launch GO, or null", () => {
+  assert.equal(forecast(calm, kit, now).nextGo?.getTime(), now.getTime());
+  assert.equal(forecast(null, kit, now).nextGo, null);
+});

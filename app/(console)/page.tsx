@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { ArrowRight } from "lucide-react";
 import { loadKit } from "@/lib/kit";
+import { forecast } from "@/lib/forecast";
 import { PageHeader } from "@/components/page-header";
 import { VerdictChip } from "@/components/status";
 import { et, NextRound, planNextRound, WeatherStrip } from "@/components/next-round";
@@ -37,6 +38,7 @@ async function Dashboard() {
   const now = new Date();
   const kit = await loadKit();
   const plan = await planNextRound(kit, now);
+  const { nextGo } = forecast(plan.weather, kit, now);
 
   return (
     <>
@@ -46,6 +48,7 @@ async function Dashboard() {
           <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
             Next round {et(plan.start, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET{" "}
             <VerdictChip verdict={plan.verdict} className={cn(plan.verdict === "RECALL" && "animate-pulse-soft")} />
+            {plan.verdict !== "GO" && nextGo && <> · next safe launch {et(nextGo, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET</>}
           </span>
         }
         actions={
@@ -83,7 +86,7 @@ async function Dashboard() {
             </div>
           </div>
           <aside aria-label="Next round" className="animate-rise [--rise-delay:120ms]">
-            <NextRound plan={plan} strip={false} />
+            <NextRound plan={plan} strip={false} nextGo={nextGo} />
           </aside>
         </div>
       </main>

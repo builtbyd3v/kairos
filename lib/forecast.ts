@@ -62,7 +62,9 @@ export function forecast(weather: Weather | null, kit: Kit, now: Date) {
     const band = slot(new Date(t));
     bands.push({ ...band, end: new Date(Math.min(Math.floor(t / HOUR) * HOUR + HOUR, now.getTime() + DAY)) });
   }
-  return { from: now, to: new Date(now.getTime() + DAY), minutes, outdoor: health.outdoor, rounds, bands };
+  // The next safe step after a HOLD: the first hour a full round would launch GO. Null if none in the next 24 h.
+  const nextGo = bands.find((b) => b.verdict === "GO")?.start ?? null;
+  return { from: now, to: new Date(now.getTime() + DAY), minutes, outdoor: health.outdoor, rounds, bands, nextGo };
 }
 
 export type Forecast = ReturnType<typeof forecast>;
