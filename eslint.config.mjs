@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Local tool state, not project code.
     ".remember/**",
+    ".claude/**", // agent worktrees live here
   ]),
 ]);
 

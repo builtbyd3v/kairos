@@ -56,6 +56,7 @@ export function decide(
   health: Health,
   { now, start, end }: { now: Date; start: Date; end: Date },
   inProgress: boolean,
+  vision?: Vision,
 ): { verdict: Verdict; reasons: Reason[]; indoorOnly: Reason | null } {
   const reasons: Reason[] = [];
   let indoorSafe = false; // weather is fresh, covers the window, and no site-wide alert is active
@@ -122,6 +123,8 @@ export function decide(
   for (const r of health.routeRisk.filter((r) => r.successPct < 75))
     reasons.push({ verdict: "GO", text: `${r.name} succeeds only ${r.successPct}% of the time; check results there first`, source: "NextEra kit" });
 
+  if (vision) reasons.push(visionReason(vision));
+
   const verdict = reasons.reduce<Verdict>((v, r) => (RANK[r.verdict] > RANK[v] ? r.verdict : v), "GO");
   // Blocking reasons first, then advisories.
   reasons.sort((a, b) => RANK[b.verdict] - RANK[a.verdict]);
@@ -135,6 +138,25 @@ export function decide(
       ? { verdict: "GO" as const, text: "Indoor only: skip the outdoor leg, run the indoor stops", source: "Dispatcher rule: weather limits apply outdoors only; tornado, tropical, flood and heat alerts block it (our assumption)" }
       : null;
   return { verdict, reasons, indoorOnly };
+}
+
+// Water vision: what the floor model saw at the current waypoint. Boxes are normalized 0-1, origin top-left.
+export type Box = { x: number; y: number; w: number; h: number };
+export type Vision = { status: "ok" | "pending" | "stale" | "error"; waypoint: string; boxes: (Box & { score: number })[]; model: string };
+
+// note: ASSUMPTION: Spot's walking corridor is the middle 40% of the frame, lower half. No Spot camera calibration in the kit.
+export const PATH = { xMin: 0.3, xMax: 0.7, yMin: 0.5 } as const;
+export const inPath = (b: Box) => b.x < PATH.xMax && b.x + b.w > PATH.xMin && b.y + b.h > PATH.yMin;
+
+/** Floor rule: water in Spot's path holds Spot at the waypoint until an operator confirms. Unknown floor is never GO. */
+export function visionReason(v: Vision): Reason {
+  const source = `Water model ${v.model}; advisory, operator confirms`;
+  if (v.status !== "ok")
+    return { verdict: "HOLD", text: `Floor at ${v.waypoint} is unknown: water model ${v.status === "pending" ? "still checking" : v.status}`, source: "Dispatcher rule: unknown is never GO" };
+  const hit = v.boxes.filter(inPath).sort((a, b) => b.score - a.score)[0];
+  if (hit) return { verdict: "HOLD", text: `Water in Spot's path at ${v.waypoint} (score ${hit.score.toFixed(2)}, ${(hit.w * hit.h * 100).toFixed(1)}% of frame): hold at this waypoint`, source };
+  if (v.boxes.length) return { verdict: "GO", text: `Water seen at ${v.waypoint}, outside Spot's path; check it after the round`, source };
+  return { verdict: "GO", text: `No water seen at ${v.waypoint} (advisory only)`, source };
 }
 
 // The Orbit call each verdict maps to. note: simulated; real endpoints per Boston Dynamics Orbit API docs.

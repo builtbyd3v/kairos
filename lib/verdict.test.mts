@@ -1,7 +1,7 @@
 // Run: npm test. Checks the dispatcher rules on hand-built cases.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decide, type Weather } from "./verdict.ts";
+import { decide, inPath, type Vision, type Weather } from "./verdict.ts";
 
 const now = new Date("2025-05-05T18:00:00Z");
 const end = new Date("2025-05-05T18:45:00Z");
@@ -79,4 +79,17 @@ test("no indoor-only GO when battery, unknown weather, a site-wide alert, or a l
   assert.equal(decide({ ...gusty, alerts: ["Tornado Warning"] }, healthy, window, false).indoorOnly, null);
   assert.equal(decide(gusty, healthy, window, true).indoorOnly, null);
   assert.equal(decide(calm, healthy, window, false).indoorOnly, null); // already GO
+});
+
+test("water in Spot's path holds at the waypoint, even mid-mission", () => {
+  const wet: Vision = { status: "ok", waypoint: "LOC-07", model: "v2", boxes: [{ x: 0.45, y: 0.7, w: 0.05, h: 0.04, score: 0.8 }] };
+  assert.equal(decide(calm, healthy, { now, start: now, end }, true, wet).verdict, "HOLD");
+});
+
+test("water outside the path stays GO; an unknown floor never does", () => {
+  const side: Vision = { status: "ok", waypoint: "LOC-07", model: "v2", boxes: [{ x: 0.02, y: 0.7, w: 0.1, h: 0.1, score: 0.9 }] };
+  assert.equal(inPath(side.boxes[0]), false);
+  assert.equal(decide(calm, healthy, { now, start: now, end }, true, side).verdict, "GO");
+  for (const status of ["error", "stale", "pending"] as const)
+    assert.equal(decide(calm, healthy, { now, start: now, end }, true, { ...side, boxes: [], status }).verdict, "HOLD");
 });

@@ -17,6 +17,7 @@ export function FacilityMap({
   sites,
   route,
   spot,
+  wet,
   outdoor = [],
   dock,
   className,
@@ -24,6 +25,8 @@ export function FacilityMap({
   sites: MapSite[];
   route?: string[];
   spot?: string;
+  wet?: string; // waypoint where the water model flagged water in Spot's path
+
   outdoor?: string[];
   dock?: string;
   className?: string;
@@ -68,6 +71,11 @@ export function FacilityMap({
                     </a>
                   );
                 })}
+              {wet && byId.get(wet)?.floor === floor && (
+                <text x={pos(byId.get(wet)!).x + 3.5} y={pos(byId.get(wet)!).y + 6} fontSize="3.6" fontWeight="600" fill="var(--hold)" className="font-mono">
+                  WATER
+                </text>
+              )}
               {spot && byId.get(spot)?.floor === floor && (
                 // Keyed on the waypoint so the ping replays each time Spot moves.
                 <g key={spot} className="pointer-events-none">

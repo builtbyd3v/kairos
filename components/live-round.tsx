@@ -21,7 +21,8 @@ import {
   TriangleAlert,
   WifiOff,
 } from "lucide-react";
-import { checkFloor, floorModel, type FloorResult } from "@/lib/floor-model";
+import { checkFloor, FLOOR_MODEL, floorModel, type FloorResult } from "@/lib/floor-model";
+import { ORBIT_CALL, PATH, inPath, visionReason, type Vision } from "@/lib/verdict";
 import { endOf, kitClock, kitDate, liveState, outdoorArrival, type EventType, type LiveAnomaly, type LiveEvent, type LiveReading, type Truth } from "@/lib/live";
 import { FacilityMap, type MapSite } from "@/components/facility-map";
 import { PageHeader } from "@/components/page-header";
@@ -75,19 +76,13 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [wetFrame, setWetFrame] = useState(false);
   const [progress, setProgress] = useState(0);
   const [floor, setFloor] = useState<{ key: string; result?: FloorResult; failed?: boolean } | null>(null);
+  // Operator's answer to a floor HOLD, keyed to the waypoint + frame it answers.
+  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override" } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
   const events = useMemo(() => stream.filter((e) => e.missionId === missionId), [stream, missionId]);
   const start = events[0].at;
   const end = endOf(events);
-  const running = playing && t < end;
-
-  // Playback clock: the interval is the outside system. It stops itself at the mission's end.
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setT((prev) => Math.min(end, prev + speed * TICK_MS)), TICK_MS);
-    return () => clearInterval(id);
-  }, [running, speed, end]);
 
   const s = liveState(events, t, anomalies, readings);
   const startedBy = new Map(events.filter((e) => e.type === "ACTION_STARTED").map((e) => [e.actionId, e]));
@@ -112,7 +107,28 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
     };
   }, [floorKey, frame]);
   const check = floor?.key === floorKey ? floor : undefined;
-  const wet = check?.result !== undefined && check.result.pWet > 0.5;
+  // note: v1 is an image classifier, so a wet frame becomes one full-frame box. The v2 detector returns real boxes.
+  const vision: Vision | null = arrival
+    ? {
+        status: check?.failed ? "error" : check?.result ? "ok" : "pending",
+        waypoint: arrival.locationId!,
+        model: FLOOR_MODEL,
+        boxes: check?.result && check.result.pWet > 0.5 ? [{ x: 0, y: 0, w: 1, h: 1, score: check.result.pWet }] : [],
+      }
+    : null;
+  const floorCall = vision ? visionReason(vision) : null;
+  const wet = vision?.boxes.some(inPath) ?? false;
+  const answered = answer?.key === floorKey ? answer : null;
+  // Spot waits at the waypoint while the floor is wet or unknown, until the operator answers. Playback is the stand-in for Spot.
+  const held = floorCall?.verdict === "HOLD" && !answered;
+  const running = playing && t < end && !held;
+
+  // Playback clock: the interval is the outside system. It stops itself at the mission's end or a floor hold.
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setT((prev) => Math.min(end, prev + speed * TICK_MS)), TICK_MS);
+    return () => clearInterval(id);
+  }, [running, speed, end]);
   const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
   // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
   const warm = () => void floorModel(setProgress).catch(() => {});
@@ -163,7 +179,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                   setPlaying((p) => !p);
                 }} disabled={t >= end} aria-label={running ? "Pause playback" : "Play playback"}>
                 {running ? <Pause aria-hidden /> : <Play aria-hidden />}
-                {running ? "Pause" : t >= end ? "Ended" : "Play"}
+                {running ? "Pause" : t >= end ? "Ended" : held ? "Held" : "Play"}
               </Button>
               <div role="group" aria-label="Playback speed" className="flex gap-1">
                 {SPEEDS.map((v) => (
@@ -241,7 +257,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
               <CardDescription>Planned route for {mission.id}; white marker = current waypoint</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FacilityMap sites={sites} route={mission.plan.map((a) => a.locationId)} spot={s.current?.locationId} outdoor={outdoor} dock={dock} />
+              <FacilityMap sites={sites} route={mission.plan.map((a) => a.locationId)} spot={s.current?.locationId} wet={wet && answered?.label !== "reject" ? vision?.waypoint : undefined} outdoor={outdoor} dock={dock} />
               <div className="panel-inset flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm">
                 <span>
                   <span className="text-muted-foreground">Action </span>
@@ -318,35 +334,68 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
                 <CardDescription>Wet-floor model on the outdoor leg ({outdoor.join(", ")}, assumed outdoors)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <p className="label-caps text-helper">Frame: sample image (the kit has no camera frames)</p>
-                {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
-                <img src={frame} alt={wetFrame ? "Sample frame: wet entrance" : "Sample frame: dry entrance"} className="max-h-36 w-full rounded object-cover ring-1 ring-border" />
+                <p className="label-caps text-helper">Frame: public sample image, not NextEra (the kit has no camera frames)</p>
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local sample frame, no optimization needed */}
+                  <img src={frame} alt={wetFrame ? "Sample frame: wet entrance" : "Sample frame: dry entrance"} className="max-h-36 w-full rounded object-cover ring-1 ring-border" />
+                  <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden className="pointer-events-none absolute inset-0 size-full">
+                    <rect x={PATH.xMin} y={PATH.yMin} width={PATH.xMax - PATH.xMin} height={1 - PATH.yMin} fill="none" stroke="#f4f4f4" strokeOpacity="0.6" strokeWidth="1.5" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+                    {vision?.boxes.map((b, i) => (
+                      <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} fill="var(--hold)" fillOpacity="0.15" stroke="var(--hold)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                    ))}
+                  </svg>
+                </div>
+                <p className="text-xs text-helper">Dashed box: Spot&apos;s assumed walking path (our assumption, no camera calibration in the kit).</p>
                 <div aria-live="polite" className="space-y-2">
                   {!hasOutdoorLeg ? (
                     <p className="text-muted-foreground">This route has no outdoor leg. No floor check runs.</p>
                   ) : !arrival ? (
                     <p className="text-muted-foreground">Runs when Spot reaches {outdoor.join(", ")}.</p>
-                  ) : check?.failed ? (
-                    <p className="flex items-center gap-2 text-hold">
-                      <TriangleAlert aria-hidden className="size-4" /> Floor model unavailable. Playback continues.
-                    </p>
-                  ) : !check?.result ? (
+                  ) : !check ? (
                     <label className="block space-y-1 text-muted-foreground">
-                      {progress < 100 ? `Downloading floor model ${progress}%` : "Checking frame"}
+                      Spot waits at {arrival.locationId}: {progress < 100 ? `downloading water model ${progress}%` : "checking frame"}
                       <progress value={progress} max={100} className="block h-1.5 w-full accent-primary" />
                     </label>
                   ) : (
                     <>
-                      <p className="font-mono tabular-nums">
-                        p(wet) = {check.result.pWet.toFixed(2)} · {check.result.ms} ms in browser
-                      </p>
-                      {wet ? (
-                        <p className="flex items-start gap-2">
-                          <VerdictChip verdict="HOLD" /> Standing water at {arrival.locationId} entrance: hold this waypoint, operator confirms
+                      {check.result && (
+                        <p className="font-mono tabular-nums">
+                          p(wet) = {check.result.pWet.toFixed(2)} · {check.result.ms} ms in browser
                         </p>
-                      ) : (
-                        <p className="flex items-center gap-2 text-muted-foreground">
-                          <Droplets aria-hidden className="size-4 text-helper" /> No water detected (advisory only)
+                      )}
+                      <p className="flex items-start gap-2">
+                        <VerdictChip verdict={floorCall!.verdict} /> {floorCall!.text}
+                      </p>
+                      {held && (
+                        <div className="panel-inset space-y-2 p-3">
+                          <p className="font-medium">Operator: is there water in Spot&apos;s path?</p>
+                          <div className="flex flex-wrap gap-2">
+                            {check.failed ? (
+                              <Button size="sm" variant="outline" onClick={() => setAnswer({ key: floorKey!, label: "override" })}>
+                                Continue without floor check
+                              </Button>
+                            ) : (
+                              <>
+                                <Button size="sm" onClick={() => setAnswer({ key: floorKey!, label: "confirm" })}>
+                                  Confirm water: skip this waypoint
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setAnswer({ key: floorKey!, label: "reject" })}>
+                                  Reject: floor is dry
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                          <p className="label-caps text-helper">Calls Kairos would make · SIMULATED, not sent</p>
+                          <ul className="space-y-1 font-mono text-[11px] text-muted-foreground">
+                            <li>Spot: CORE I/O Network Compute Bridge worker returns the water detection</li>
+                            <li>Spot: Hazard Avoidance AddHazards (prefer avoid) at {arrival.locationId}</li>
+                            <li>Orbit: {ORBIT_CALL.HOLD}</li>
+                          </ul>
+                        </div>
+                      )}
+                      {answered && (
+                        <p className="text-muted-foreground">
+                          Operator {answered.label === "confirm" ? "confirmed water; Spot skips this waypoint" : answered.label === "reject" ? "rejected the detection; Spot continues" : "overrode the missing floor check"}.
                         </p>
                       )}
                     </>
