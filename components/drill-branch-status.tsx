@@ -23,7 +23,7 @@ async function Line() {
         </p>
       ) : (
         <p className="text-muted-foreground">
-          {s.off === "no-key" ? "Neon branching is off (no API key). Drill decisions go to main." : "No drill branch yet. Drill decisions go to main."}
+          {s.off === "no-key" ? "Neon branching is off (no API key). Drill decisions are not saved, and never go to main." : "No drill branch yet. Drill decisions are not saved until one is ready, and never go to main."}
         </p>
       )}
       {/* Auto-start once when there is no branch yet, so a judge's first Confirm already lands on a branch. */}

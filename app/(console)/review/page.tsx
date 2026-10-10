@@ -15,14 +15,17 @@ const SUBTITLE = "Open the decision log exactly as it was at a past minute. Neon
 
 const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
 
-/** "HH:MM" in plant time to the latest such minute at or before now (so 23:50 just after midnight means yesterday). */
+/** "HH:MM" in plant time to the latest such minute at or before now (so 23:50 just after midnight means yesterday). "YYYY-MM-DDTHH:MM" picks the day. */
 function plantMinute(at: string, now: Date): Date | null {
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(at)) return null;
-  const day = now.toLocaleDateString("en-CA", { timeZone: TZ });
+  const m = /^(?:(\d{4}-\d\d-\d\d)T)?(([01]\d|2[0-3]):[0-5]\d)$/.exec(at);
+  if (!m) return null;
+  if (m[1]) at = m[2];
+  const day = m[1] ?? now.toLocaleDateString("en-CA", { timeZone: TZ });
   // note: uses today's UTC offset; a minute across a DST switch lands one hour off, twice a year.
   const off = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" }).formatToParts(now).find((p) => p.type === "timeZoneName")!.value.slice(3);
   const t = new Date(`${day}T${at}:00${off}`);
-  return t > now ? new Date(t.getTime() - 86400000) : t;
+  if (Number.isNaN(t.getTime())) return null;
+  return t > now && !m[1] ? new Date(t.getTime() - 86400000) : t;
 }
 
 export default function ReviewPage({ searchParams }: PageProps<"/review">) {
@@ -44,23 +47,33 @@ async function AsOf({ searchParams }: Pick<PageProps<"/review">, "searchParams">
   const raw = (await searchParams).at;
   const at = typeof raw === "string" ? raw : hhmm(new Date(now.getTime() - 30 * 60000));
   const t = plantMinute(at, now);
-  const invalid = !t ? "Enter a time as HH:MM." : now.getTime() - t.getTime() > WINDOW_MS ? `Neon keeps 6 hours of history. Pick a minute after ${hhmm(new Date(now.getTime() - WINDOW_MS))} ET.` : null;
+  const invalid = !t ? "Enter a date and time." : t > now ? "Pick a minute in the past." : null;
 
-  let result: Awaited<ReturnType<typeof decisionsAt>> | string;
+  // Inside Neon's 6 h history window: branch main at that minute. Older, or if branching fails: the durable receipts on main.
+  let result: Awaited<ReturnType<typeof decisionsAt>> | Awaited<ReturnType<typeof receiptsAt>> | string;
   if (invalid) result = invalid;
   else
     try {
-      result = await decisionsAt(t!);
-    } catch (e) {
-      result = `That minute is not available right now (${e instanceof Error ? e.message : "Neon API error"}). Try a minute a little earlier or later.`;
+      result = now.getTime() - t!.getTime() > WINDOW_MS ? await receiptsAt(t!) : await decisionsAt(t!);
+    } catch {
+      try {
+        result = await receiptsAt(t!);
+      } catch (e) {
+        result = `That minute is not available right now (${e instanceof Error ? e.message : "Neon error"}). Try again in a moment.`;
+      }
     }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Decision log as of {at} ET</CardTitle>
+        <CardTitle>Decision log as of {at.replace("T", " ")} ET</CardTitle>
         <CardDescription>
-          {typeof result === "string" ? "No branch created." : (
+          {typeof result === "string" ? "No branch created." : !result.branch ? (
+            <>
+              Read from durable receipts on main, a copy of each decision saved when it was logged. Neon keeps 6 hours of history; receipts keep the rest.{" "}
+              {result.total} decisions existed at that minute.
+            </>
+          ) : (
             <>
               Read from Neon branch <span className="font-mono">{result.branch.name}</span>, created in <span className="font-mono">{result.branch.ms} ms</span> and deleted after this page loaded.{" "}
               {result.total} decisions existed at that minute.
@@ -71,9 +84,9 @@ async function AsOf({ searchParams }: Pick<PageProps<"/review">, "searchParams">
       <CardContent className="space-y-4">
         <form className="flex flex-wrap items-center gap-2">
           <label htmlFor="at" className="text-sm text-muted-foreground">
-            Plant time (ET), last 6 hours
+            Plant time (ET)
           </label>
-          <input id="at" name="at" type="time" required defaultValue={at} className="h-8 rounded-lg bg-secondary px-2 font-mono text-sm ring-1 ring-border" />
+          <input id="at" name="at" type="datetime-local" required defaultValue={t ? t.toLocaleString("sv-SE", { timeZone: TZ }).slice(0, 16).replace(" ", "T") : at} className="h-8 rounded-lg bg-secondary px-2 font-mono text-sm ring-1 ring-border" />
           <Button size="sm" type="submit">
             Open log
           </Button>
@@ -116,4 +129,14 @@ async function decisionsAt(t: Date) {
   } finally {
     await deleteBranch(branch.id).catch(() => {});
   }
+}
+
+// note: receipts never see deletes (a replay reset), so a row deleted before that minute can still show. Live decisions are never deleted.
+async function receiptsAt(t: Date) {
+  const sql = neon(process.env.DATABASE_URL!);
+  const [rows, [{ n }]] = await Promise.all([
+    sql`SELECT body FROM receipts WHERE kind = 'decision' AND at <= ${t.toISOString()} ORDER BY at DESC LIMIT 20`,
+    sql`SELECT count(*)::int AS n FROM receipts WHERE kind = 'decision' AND at <= ${t.toISOString()}`,
+  ]);
+  return { branch: null, rows: rows.map((r) => r.body as Decision), total: n as number };
 }

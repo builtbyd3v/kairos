@@ -22,7 +22,7 @@ export function FreshCopyButton({ auto }: { auto: boolean }) {
       <Button variant="outline" size="sm" onClick={run} disabled={pending}>
         <RotateCcw aria-hidden /> {pending ? "Copying main…" : "Fresh copy"}
       </Button>
-      {error && <span className="text-xs text-recall">Branching failed ({error}). Drill decisions go to main.</span>}
+      {error && <span className="text-xs text-recall">Branching failed ({error}). Drill decisions are not saved until a branch is ready.</span>}
     </>
   );
 }

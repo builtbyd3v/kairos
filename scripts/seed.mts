@@ -1,5 +1,6 @@
 // Rebuilds the Neon schema and loads NextEra's kit from data/kit.
-// Run: npm run db:seed (reads DATABASE_URL from .env.local). Destroys existing rows, including decisions.
+// Run: npm run db:seed (reads DATABASE_URL from .env.local). Destroys existing kit rows, decisions and reviews.
+// Evidence, labels, receipts and eval scores survive: the DROP never names them, and migrate.mts below only adds.
 import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 
@@ -37,3 +38,6 @@ console.log(`replay_events: ${events.length}`);
 
 const [counts] = await sql`SELECT (SELECT count(*) FROM missions) AS missions, (SELECT count(*) FROM actions) AS actions, (SELECT count(*) FROM anomalies) AS anomalies`;
 console.log("check:", counts);
+
+// Additive tables and the seeded demo evidence. Idempotent.
+await import("./migrate.mts");
