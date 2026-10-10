@@ -9,6 +9,8 @@ import { et, NextRound, planNextRound } from "@/components/next-round";
 import { ActivityFeed } from "@/components/activity-feed";
 import { WeatherBanner } from "@/components/weather-banner";
 import { ReadinessForecast } from "@/components/readiness-forecast";
+import { DockDoor } from "@/components/dock-door";
+import { doorWeather } from "@/lib/door-rain";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -57,6 +59,7 @@ async function Dashboard() {
       <WeatherBanner />
 
       <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
+        <DockDoor weather={doorWeather(plan.weather, now)} source="Open-Meteo 15-minute rain for the St. Lucie plant (CC BY 4.0) and the NWS forecast grid" />
         <div className="grid grid-cols-[minmax(0,1fr)_24rem] items-start gap-5">
           <div className="min-w-0 animate-rise space-y-5">
             <ReadinessForecast />

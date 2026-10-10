@@ -21,9 +21,9 @@ export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   else if (pRain >= DOOR_RAIN_THRESHOLD) hold.push(`Door camera sees rain (p=${pRain.toFixed(2)})`);
   else ok.push(`Door camera sees no rain (p=${pRain.toFixed(2)})`);
 
-  if (weather.observedRain === null) hold.push("Observed rain unknown");
-  else if (weather.observedRain) hold.push("Rain observed at the site");
-  else ok.push("No rain observed");
+  if (weather.observedRain === null) hold.push("Rain now unknown (no 15-minute nowcast)");
+  else if (weather.observedRain) hold.push("Rain now at the site (15-minute nowcast)");
+  else ok.push("No rain now (15-minute nowcast)");
 
   if (weather.forecastRain === null) hold.push("Rain forecast unknown");
   else if (weather.forecastRain) hold.push("Rain forecast for the round");
@@ -58,4 +58,20 @@ export async function classifyDoor(image: string): Promise<{ pRain: number; ms: 
     classifier = null; // let the next call retry the download
     throw e;
   }
+}
+
+/**
+ * Weather half of the door check, from the live feed. Rain now = the latest step that started in the last 15 minutes
+ * (Open-Meteo's 15-minute nowcast); forecast = any rain in the next hour. No feed, or no step in a window, is unknown (null).
+ */
+export function doorWeather(
+  weather: { steps: { time: string; precipMmPerHour: number | null }[] } | null,
+  now: Date,
+): DoorInput["weather"] {
+  if (!weather) return { observedRain: null, forecastRain: null };
+  const t = now.getTime();
+  const known = weather.steps.filter((s) => s.precipMmPerHour !== null).map((s) => ({ at: Date.parse(s.time), mm: s.precipMmPerHour! }));
+  const current = known.filter((s) => s.at <= t && s.at > t - 15 * 60000).sort((a, b) => b.at - a.at)[0];
+  const ahead = known.filter((s) => s.at > t && s.at <= t + 3600000);
+  return { observedRain: current ? current.mm > 0 : null, forecastRain: ahead.length ? ahead.some((s) => s.mm > 0) : null };
 }
