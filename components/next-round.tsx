@@ -113,13 +113,13 @@ export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; str
   );
 }
 
-export function WeatherStrip({ weather }: { weather: RoundPlan["weather"] }) {
+export function WeatherStrip({ weather, recorded = false }: { weather: RoundPlan["weather"]; recorded?: boolean }) {
   if (!weather) return <p className="text-sm text-hold">Live weather is unavailable, so outdoor rounds hold until it returns.</p>;
   const hourly = weather.steps.filter((s) => s.tempC !== null).slice(0, 12);
   return (
     <div>
       <p className="mb-2 font-mono text-[11px] text-muted-foreground">
-        Live · {SITE.name.split(" (")[0]} ·{" "}
+        {recorded ? "Recorded" : "Live"} · {SITE.name.split(" (")[0]} ·{" "}
         <a className="underline-offset-4 hover:underline" href="https://www.weather.gov/documentation/services-web-api">
           NWS
         </a>{" "}

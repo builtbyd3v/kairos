@@ -52,7 +52,8 @@ async function Watch() {
   await connection();
   const [{ weather, now, scenario }, kit] = await Promise.all([weatherNow(), loadKit()]);
   // Recorded story: this is the round at the next safe launch (the storm has passed). Live: as if Spot were out right now.
-  const at = scenario === "recorded" ? (forecast(weather, kit, now).nextGo ?? now) : now;
+  const nextGo = scenario === "recorded" ? forecast(weather, kit, now).nextGo : null;
+  const at = nextGo ?? now;
   // Weather only: full battery and no route risk, so the verdict here is the weather's alone.
   const health = { outdoor: true, batteryPct: 100, projectedEndPct: 100, routeRisk: [] };
   const { verdict, reasons } = decide(weather, health, { now, start: at, end: new Date(at.getTime() + ROUND_MIN * 60000) }, true);
@@ -74,11 +75,15 @@ async function Watch() {
           <span className="font-semibold">{verdict === "RECALL" ? "Bring Spot home" : verdict === "HOLD" ? "Hold Spot" : "Weather is clear"}</span>
           <span className="text-muted-foreground">
             {" "}
-            · {scenario === "recorded" ? `${when} ET round, after the storm` : (top?.text.split(";")[0] ?? "nothing before Spot can dock")}
+            · {nextGo ? `${when} ET round, after the storm` : (top?.text.split(";")[0] ?? "nothing before Spot can dock")}
           </span>
         </p>
         <Why label="Details">
-          <p>Live weather at {SITE.name.split(" (")[0]}, checked as if Spot were out now ({ROUND_MIN} min to dock).</p>
+          <p>
+            {nextGo
+              ? `Forecast recorded ${et(now, { weekday: "short", hour: "numeric", minute: "2-digit" })} ET for the ${when} ET round, once the storm has passed. The storm itself is the Storm drill.`
+              : `Weather at ${SITE.name.split(" (")[0]}, checked as if Spot were out now (${ROUND_MIN} min to dock).`}
+          </p>
           {verdict === "RECALL" && <p className="font-mono">Orbit call: {ORBIT_CALL.RECALL}</p>}
           {reasons.map((r) => (
             <p key={r.text}>

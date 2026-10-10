@@ -140,6 +140,7 @@ export function DockDoor({ checks, source }: { checks: Check[]; source: string }
                       : `No water · ${shown.ms} ms`
                     : "Not checked"}
               </p>
+              {shown?.pRain !== undefined && !busy && <p className="text-xs text-helper">Rain look {Math.round(shown.pRain * 100)}% (advice only)</p>}
             </div>
           </div>
           </div>

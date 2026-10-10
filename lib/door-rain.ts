@@ -30,9 +30,9 @@ export function doorVerdict({ camera, weather }: DoorInput): DoorVerdict {
   else if (camera.wetGround) hold.push("Wet ground at the door (water model)");
   else ok.push("Ground at the door looks dry");
 
-  if (weather.observedRain === null) hold.push("Rain now unknown (no 15-minute nowcast)");
-  else if (weather.observedRain) hold.push("Rain now at the site (15-minute nowcast)");
-  else ok.push("No rain now (15-minute nowcast)");
+  if (weather.observedRain === null) hold.push("Rain now unknown");
+  else if (weather.observedRain) hold.push("Rain now at the site");
+  else ok.push("No rain now");
 
   if (weather.forecastRain === null) hold.push("Rain forecast unknown");
   else if (weather.forecastRain) hold.push("Rain forecast for the round");

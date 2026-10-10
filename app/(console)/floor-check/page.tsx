@@ -7,11 +7,12 @@ import { WATER_MODEL_ID, WATER_REVISION } from "@/lib/water-model";
 import { cn } from "@/lib/utils";
 
 // Held-out test numbers from docs/model/water-v2/RESULTS.md (never trained on; threshold picked on a separate calibration split).
+// fp32 column: what runs on WebGPU in the browser. The int8 file (WASM fallback) is within a point: see RESULTS.md.
 const STATS = [
-  { value: "85%", label: "Wet photos caught", note: "461 of 543, from a source it never trained on", tone: "text-go" },
-  { value: "2.3", label: "False alarms per 100 Spot frames", note: "4 of 172 dry frames from a camera on a Spot robot", tone: "text-go" },
-  { value: "67 ms", label: "Per frame, in your browser", note: "WebGPU; no server, no upload", tone: "text-foreground" },
-  { value: "7%", label: "Tiny puddles found", note: "4 of 57 under 1% of the frame. The known gap; your operators' labels close it", tone: "text-hold" },
+  { value: "85%", label: "Wet photos caught", note: "463 of 543, from a source it never trained on", tone: "text-go" },
+  { value: "1.2", label: "False alarms per 100 Spot frames", note: "2 of 172 dry frames from a camera on a Spot robot", tone: "text-go" },
+  { value: "67 ms", label: "Per frame, in your browser", note: "WebGPU p50 (p95 89 ms); no server, no upload", tone: "text-foreground" },
+  { value: "11%", label: "Tiny puddles found", note: "6 of 57 under 1% of the frame. The known gap; operator labels feed the next training run", tone: "text-hold" },
 ];
 
 const SAMPLES = [0, 1, 3, 5].map((i) => ({ src: `/captures/demo-wet-${i}.jpg`, label: `Held-out puddle photo ${i + 1}` })).concat([{ src: "/captures/demo-dry-0.jpg", label: "Dry floor, Spot camera" }]);

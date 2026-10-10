@@ -33,7 +33,7 @@ export default function Launch() {
 // note: Orbit already shows anomalies, missions, insights and shift handoff. This page shows only what Kairos adds: weather + health before launch.
 async function Dashboard() {
   await connection();
-  const { now } = await weatherNow();
+  const { now, scenario } = await weatherNow();
   const kit = await loadKit();
   const plan = await planNextRound(kit, now);
   const { nextGo } = forecast(plan.weather, kit, now);
@@ -74,7 +74,7 @@ async function Dashboard() {
               <CardTitle>Next 12 hours</CardTitle>
             </CardHeader>
             <CardContent>
-              <WeatherStrip weather={plan.weather} />
+              <WeatherStrip weather={plan.weather} recorded={scenario === "recorded"} />
             </CardContent>
           </Card>
           <Suspense fallback={<Card className="px-4 text-sm text-muted-foreground">Loading activity…</Card>}>

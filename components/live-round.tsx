@@ -112,7 +112,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const [speed, setSpeed] = useState(30);
   const [wetFrame, setWetFrame] = useState(true);
   // Operator's answer to a floor HOLD, keyed to the waypoint visit it answers (one answer covers the rest of that walk).
-  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; saved?: number | "failed" } | null>(null);
+  const [answer, setAnswer] = useState<{ key: string; label: "confirm" | "reject" | "override"; frame: string; saved?: number | "failed" } | null>(null);
 
   const mission = missions.find((m) => m.id === missionId)!;
   const events = useMemo(() => stream.filter((e) => e.missionId === missionId), [stream, missionId]);
@@ -130,11 +130,13 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   // While a capture is being checked, Spot waits (unknown floor is never GO).
   const arrival = outdoorArrival(s.events, outdoor);
   const floorKey = arrival ? `${arrival.id}|${wetFrame ? "wet" : "dry"}` : null;
-  const answered = answer?.key === floorKey ? answer : null;
   const walk = WALKS[wetFrame ? "wet" : "dry"];
   // Held is derived below from the camera's own verdict; the camera stops capturing while Spot is held.
   const [camHeld, setCamHeld] = useState(false);
   const cam = useSpotCam(walk, { active: !!arrival, paused: camHeld, waypoint: arrival?.locationId ?? "" });
+  // Confirm or override covers the whole stop (the hazard is marked); a reject covers only the capture it answered,
+  // so new water on a later capture asks again.
+  const answered = answer?.key === floorKey && (answer.label !== "reject" || answer.frame === cam.frame.src) ? answer : null;
   const vision = cam.vision;
   const floorCall = vision ? visionReason(vision) : null;
   const wet = vision?.boxes.some(inPath) ?? false;
@@ -151,7 +153,7 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   }, [running, speed, end]);
   const answerFloor = (label: "confirm" | "reject" | "override") => {
     const key = floorKey!;
-    setAnswer({ key, label });
+    setAnswer({ key, label, frame: cam.frame.src });
     if (label === "override" || !vision?.boxes.length) return;
     saveEvidence(cam.frame, vision, label).then(
       (saved) => setAnswer((a) => (a?.key === key ? { ...a, saved } : a)),
@@ -161,6 +163,10 @@ export function LiveRound({ missions, defaultId, events: stream, anomalies, read
   const hasOutdoorLeg = mission.plan.some((a) => outdoor.includes(a.locationId));
   // Pre-warm on the first playback control press, not on first paint, so the page stays fast.
   const warm = () => void waterModel().catch(() => {});
+  // Start the model download as soon as the page opens, so the camera stop never waits on venue wifi.
+  useEffect(() => {
+    void waterModel().catch(() => {});
+  }, []);
 
   const pick = (id: string) => {
     warm();
