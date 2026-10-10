@@ -1,0 +1,147 @@
+"""Quantize + evaluate the v2 water detector on the calib and test splits, with v1 ConvNeXt as image-level baseline.
+
+Usage: python -I evaluate.py <pack_dir> <v2_model_dir> <v1_model_dir> <v1_manifest.csv> <out.json> [quant_ops]
+quant_ops: "all" (default, ConvInteger + MatMulInteger) or "matmul" (MatMul/Gemm only, convs fp32).
+
+Rules fixed before looking at test:
+- Detections: sigmoid score per query, greedy NMS at IoU 0.5 (same as lib/water-model.ts decode()).
+- Threshold: lowest score cutoff whose CALIB dry-frame false alarm rate is <= 5 per 100 frames (SCAND + Kaggle dry pooled).
+- A water box is found if an unmatched detection overlaps it at IoU >= 0.5 (also reported at IoU >= 0.25: puddle edges are vague).
+- Tiny = box area < 1% of the frame. Frame alarm = any detection at or above the threshold.
+"""
+import collections, csv, json, os, sys
+import numpy as np
+import onnxruntime as ort
+from PIL import Image
+from transformers import AutoImageProcessor
+
+PACK, V2, V1, V1_MANIFEST, OUT = sys.argv[1:6]
+QOPS = sys.argv[6] if len(sys.argv) > 6 else "all"
+recs = [json.loads(l) for l in open(os.path.join(PACK, "labels.jsonl"))]
+recs = [r for r in recs if r["split"] in ("calib", "test")]
+recs = recs[:: int(os.environ.get("EVAL_STRIDE", "1"))]  # note: stride > 1 only for smoke runs of this script
+
+q8_path = os.path.join(V2, "onnx", "model_quantized.onnx")
+if not os.path.exists(q8_path):
+    from onnxruntime.quantization import quantize_dynamic, QuantType
+    ops = ["MatMul", "Gemm"] if QOPS == "matmul" else None
+    quantize_dynamic(os.path.join(V2, "onnx", "model.onnx"), q8_path, weight_type=QuantType.QUInt8, op_types_to_quantize=ops)
+
+proc = AutoImageProcessor.from_pretrained(V2)
+sess = {k: ort.InferenceSession(os.path.join(V2, "onnx", f), providers=["CPUExecutionProvider"])
+        for k, f in (("fp32", "model.onnx"), ("q8", "model_quantized.onnx"))}
+v1proc = AutoImageProcessor.from_pretrained(V1)
+v1 = ort.InferenceSession(os.path.join(V1, "onnx", "model_quantized.onnx"), providers=["CPUExecutionProvider"])
+v1_wet = int({v: k for k, v in json.load(open(os.path.join(V1, "config.json")))["id2label"].items()}["wet"])
+# v1 split per original file name: v1 numbers are reported only on frames v1 never trained or tuned on.
+v1_split = {os.path.basename(r["path"]): r["split"] for r in csv.DictReader(open(V1_MANIFEST))}
+
+
+def iou(a, b):
+    ix = max(0, min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0]))
+    iy = max(0, min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1]))
+    inter = ix * iy
+    return inter / (a[2] * a[3] + b[2] * b[3] - inter + 1e-9)
+
+
+def decode(logits, boxes, floor=0.05):
+    s = 1 / (1 + np.exp(-logits[:, 0]))
+    dets = []
+    for q in np.argsort(-s):
+        if s[q] < floor:
+            break
+        cx, cy, w, h = boxes[q]
+        x, y = max(0.0, cx - w / 2), max(0.0, cy - h / 2)
+        b = [x, y, min(1.0, cx + w / 2) - x, min(1.0, cy + h / 2) - y]
+        if all(iou(k[0], b) < 0.5 for k in dets):
+            dets.append((b, float(s[q])))
+    return dets
+
+
+rows = []
+for i, r in enumerate(recs):
+    im = Image.open(os.path.join(PACK, r["file"])).convert("RGB")
+    px = proc(im, return_tensors="np")["pixel_values"].astype(np.float32)
+    row = {"r": r}
+    for k, s in sess.items():
+        lg, bx = s.run(["logits", "pred_boxes"], {"pixel_values": px})
+        row[k] = decode(lg[0], bx[0])
+    lv = v1.run(None, {v1.get_inputs()[0].name: v1proc(im, return_tensors="np")["pixel_values"].astype(np.float32)})[0][0]
+    row["v1_pwet"] = float(np.exp(lv[v1_wet]) / np.exp(lv).sum())
+    rows.append(row)
+    if i % 200 == 0:
+        print(i, len(recs), flush=True)
+
+
+def group(r):
+    if r["source"] == "scand":
+        return "scand_dry"
+    if r["source"] == "kaggle":
+        return "kaggle_wet" if r["boxes"] else "kaggle_dry"
+    return "pwwbs_wet"
+
+
+def score(split, key, thr):
+    sub = [x for x in rows if x["r"]["split"] == split]
+    frames = collections.defaultdict(lambda: [0, 0])  # group -> [alarm frames, n]
+    tp = {0.5: 0, 0.25: 0}; tiny_tp = {0.5: 0, 0.25: 0}; n_gt = n_tiny = n_pred = matched = 0
+    for x in sub:
+        dets = [d for d in x[key] if d[1] >= thr]
+        n_pred += len(dets)
+        g = group(x["r"])
+        frames[g][0] += bool(dets); frames[g][1] += 1
+        gts = x["r"]["boxes"]
+        n_gt += len(gts); n_tiny += sum(b[2] * b[3] < 0.01 for b in gts)
+        for t in (0.5, 0.25):
+            used = set()
+            for gt in gts:
+                best = max(((iou(d[0], gt), j) for j, d in enumerate(dets) if j not in used), default=(0, -1))
+                if best[0] >= t:
+                    used.add(best[1]); tp[t] += 1; tiny_tp[t] += gt[2] * gt[3] < 0.01
+            if t == 0.5:
+                matched += len(used)
+    return {
+        "threshold": thr, "n_frames": len(sub), "n_boxes": n_gt, "n_tiny_boxes": n_tiny, "n_detections": n_pred,
+        "box_recall_iou50": tp[0.5] / max(n_gt, 1), "box_recall_iou25": tp[0.25] / max(n_gt, 1),
+        "tiny_recall_iou50": tiny_tp[0.5] / max(n_tiny, 1), "tiny_recall_iou25": tiny_tp[0.25] / max(n_tiny, 1),
+        "box_precision_iou50": matched / max(n_pred, 1),
+        "hits": {"box50": tp[0.5], "box25": tp[0.25], "tiny50": tiny_tp[0.5], "tiny25": tiny_tp[0.25], "matched_dets": matched},
+        "frames": {g: {"alarm": a, "n": n, "per100": round(100 * a / n, 1)} for g, (a, n) in sorted(frames.items())},
+    }
+
+
+# Threshold from calib only (fp32 detections; q8 uses the same cutoff, as shipped).
+calib = [x for x in rows if x["r"]["split"] == "calib"]
+dry = [x for x in calib if not x["r"]["boxes"]]
+thr = 0.95
+for t in np.arange(0.05, 0.96, 0.01):
+    if sum(any(d[1] >= t for d in x["fp32"]) for x in dry) / len(dry) <= 0.05:
+        thr = round(float(t), 2)
+        break
+
+res = {"threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames", "threshold": thr,
+       "quant_ops": QOPS, "calib": score("calib", "fp32", thr), "test_fp32": score("test", "fp32", thr), "test_q8": score("test", "q8", thr)}
+
+# q8 vs fp32 parity on test: frames whose alarm flips, max score gap of the top detection.
+test = [x for x in rows if x["r"]["split"] == "test"]
+top = lambda ds: ds[0][1] if ds else 0.0
+res["q8_parity"] = {"alarm_flips": sum((top(x["fp32"]) >= thr) != (top(x["q8"]) >= thr) for x in test), "n": len(test),
+                    "max_top_score_gap": round(max(abs(top(x["fp32"]) - top(x["q8"])) for x in test), 4)}
+
+# v1 image-level baseline at p(wet) > 0.5 on the same test frames, excluding frames v1 trained/tuned on.
+v1res = collections.defaultdict(lambda: [0, 0])
+v2res = collections.defaultdict(lambda: [0, 0])
+for x in test:
+    if v1_split.get(x["r"]["orig_name"], "test") != "test":
+        continue
+    g = group(x["r"])
+    v1res[g][0] += x["v1_pwet"] > 0.5; v1res[g][1] += 1
+    v2res[g][0] += top(x["q8"]) >= thr; v2res[g][1] += 1
+res["image_level_same_frames"] = {g: {"v1_q8_flag": v1res[g][0], "v2_q8_flag": v2res[g][0], "n": v1res[g][1]} for g in sorted(v1res)}
+res["v1_excluded_frames"] = sum(v1_split.get(x["r"]["orig_name"], "test") != "test" for x in test)
+
+# Per-frame dump for error review.
+res["test_frames"] = [{"file": x["r"]["file"], "orig": x["r"]["orig_name"], "group": group(x["r"]), "n_gt": len(x["r"]["boxes"]),
+                       "top_fp32": round(top(x["fp32"]), 3), "top_q8": round(top(x["q8"]), 3), "v1_pwet": round(x["v1_pwet"], 3)} for x in test]
+json.dump(res, open(OUT, "w"), indent=1)
+print(json.dumps({k: v for k, v in res.items() if k != "test_frames"}, indent=1))
