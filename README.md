@@ -4,14 +4,14 @@
 
 **A weather and water dashboard for Boston Dynamics Spot, built as a plugin for Orbit.** Spot is rated IP54: light rain is fine, harsh rain and storms are not, and no forecast can see a puddle in its path. Kairos watches both on every round: when the weather turns mid-round it says **RECALL**, and when Spot's camera sees water in its path it says **HOLD** until an operator confirms. Every call is logged.
 
-Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
+Built solo by Dev Goswami at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
 
 Works for any plant Spot patrols: point it at the plant's coordinates. The demo site is NextEra's St. Lucie plant in Florida.
 
 **Live:** https://kairos.boston · **Intro video:** `public/intro/intro.mp4`
 
 ## Why
-- **NextEra's Spot engineer told us the two problems directly:** Spot cannot see a storm coming once it is out on its route, and small puddles and spills on the route are hard to catch.
+- **NextEra's Spot engineer told me the two problems directly:** Spot cannot see a storm coming once it is out on its route, and small puddles and spills on the route are hard to catch.
 - **Orbit gates the launch, not the round.** Orbit can block a launch on a rain forecast. Nothing keeps checking rain, thunder, gusts and heat against Spot's limits while the round is running, and recalling Spot mid-round on weather needs a custom integration. Kairos is that integration.
 - **Spot is IP54.** Splashes and light rain only. Above 2.5 mm/h (the end of "light rain") Spot should not be out.
 
@@ -34,7 +34,7 @@ Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Or
 | Sponsor | What it does in Kairos | Without it |
 |---|---|---|
 | NextEra | The challenge (a Spot management dashboard), the robot data (synthetic SPOT kit), and the problem itself, from their Spot engineer. | No problem worth solving and no robot data. |
-| Hugging Face | Our water detector, fine-tuned from RT-DETRv2-R18 on Hugging Face Jobs, published on the Hub with an honest model card, and run in the browser with transformers.js (WebGPU, about 70 to 100 ms per frame). | Kairos can see the sky but not the floor. |
+| Hugging Face | My water detector, fine-tuned from RT-DETRv2-R18 on Hugging Face Jobs, published on the Hub with an honest model card, and run in the browser with transformers.js (WebGPU, about 70 to 100 ms per frame). | Kairos can see the sky but not the floor. |
 | Neon | The evidence log (every detection and label), a frozen branch that scores each model version, a copy-on-write branch per visitor and per storm drill so nobody's clicks touch production, and snapshot branches for Incident review. | No audit trail, no model scoring, and a public demo anyone could break. |
 | GoDaddy Registry | The `kairos.boston` domain. | |
 
@@ -45,13 +45,13 @@ Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Or
 - **Speed:** about 70 to 100 ms per frame on WebGPU in Chrome (two measurements: 67 ms p50, and 101 ms median of 10 runs).
 - **By puddle size (fp32, IoU >= 0.5, test):** finds 10.5% of water under 1% of the frame (6 of 57), 33.7% at 1-5% (60 of 178), 57.2% at 5-15% (107 of 187), 56.3% over 15% (249 of 442). Only 3 of 600 wet frames have nothing but tiny water. `docs/model/water-v2/SIZE.md`.
 - **Inference tricks tried, none shipped:** mirrored second pass (flip TTA) and 2x2 tiles, thresholds re-picked on calib. Flip cut Spot false alarms to 0 of 172 but lost recall (440 vs 461 of 543, int8); tiles found 1 of 57 tiny boxes and raised Spot false alarms to 19 of 172. `docs/model/water-v2/TTA.md`.
-- **We tried a second fine-tune (v3) aimed at tiny puddles and it lost to v2 on every recall metric, so v2 stays.** Details: `docs/model/water-v3/RESULTS.md`.
+- **I tried a second fine-tune (v3) aimed at tiny puddles and it lost to v2 on every recall metric, so v2 stays.** Details: `docs/model/water-v3/RESULTS.md`.
 - **Weather backtest:** at the kit's 27 round times, on archive weather for the plant, Kairos would hold 1 round for weather. It does not cry wolf.
 
 ## Rules (all in `lib/verdict.ts`, cited in the UI)
 - Rain above 2.5 mm/h before Spot can dock (beyond IP54's light rain) → HOLD before launch, RECALL during a round.
 - NWS warning → HOLD / RECALL. NWS watch or advisory → HOLD.
-- Thunder chance ≥ 30%, gusts ≥ 50 km/h → HOLD / RECALL (**our assumptions**: the Spot guide is silent).
+- Thunder chance ≥ 30%, gusts ≥ 50 km/h → HOLD / RECALL (**my assumptions**: the Spot guide is silent).
 - Air temperature within 5 °C of Spot's -20 / 55 °C limits → HOLD / RECALL.
 - Water in Spot's path → HOLD at that waypoint until an operator confirms or rejects. An unknown floor (model loading or failed) also holds.
 - Missing or stale weather never shows GO.
@@ -69,8 +69,8 @@ npm test                     # rule, model-confidence, branch-routing tests
 ## Disclosure (Knight Hacks rules)
 - **Not affiliated:** Kairos is an independent student hackathon project. It is not affiliated with, sponsored by, or endorsed by NextEra Energy or Boston Dynamics. Spot and Orbit are Boston Dynamics products, named here only to describe what Kairos works with.
 All project code, both fine-tuned models and the data pipelines were made during the event (hacking began Fri 2026-10-09, 11 PM EDT).
-- **AI tools:** Claude Code (Anthropic Claude models) wrote most of the code under our direction; OpenAI Codex reviewed facts and evaluations. We chose the problem, the rules and every product decision, and reviewed and tested the output. Decisions and trade-offs: `DECISIONS.md`. The intro narration is an ElevenLabs voice ("Misa", from the author's ElevenLabs account).
-- **Base models:** `PekingU/rtdetr_v2_r18vd` (Apache 2.0), fine-tuned by us into `builtbyd3v/kairos-water-rtdetr`. Earlier experiments: `facebook/convnext-tiny-224` (Apache 2.0) into `builtbyd3v/spot-wetfloor-convnext-tiny` and `builtbyd3v/kairos-door-rain`.
+- **AI tools:** Claude Code (Anthropic Claude models) wrote most of the code under my direction; OpenAI Codex reviewed facts and evaluations. I chose the problem, the rules and every product decision, and reviewed and tested the output. Decisions and trade-offs: `DECISIONS.md`. The intro narration is an ElevenLabs voice ("Misa", from the author's ElevenLabs account).
+- **Base models:** `PekingU/rtdetr_v2_r18vd` (Apache 2.0), fine-tuned by me into `builtbyd3v/kairos-water-rtdetr`. Earlier experiments: `facebook/convnext-tiny-224` (Apache 2.0) into `builtbyd3v/spot-wetfloor-convnext-tiny` and `builtbyd3v/kairos-door-rain`.
 - **Datasets:** Bhutad and Patil (2021), *Dataset of Stagnant Water and Wet Surface with Annotations*, Mendeley Data V4, doi:10.17632/y6zyrnxbfm.4 (CC BY 4.0); Roboflow Universe `slipp/spill_detection`, `hk-hsse/puddle-qrpyh` and `projects-pwwbs/water-puddle-joyj6` (CC BY 4.0); Kaggle `muftirestumahesa` obstacles in public spaces (CC0); UT Austin SCAND, Karnan et al., doi:10.18738/T8/0PRYRH (CC0); for the door-rain experiment, Kaggle Weather Image Recognition (CC0), Multi-class Weather Dataset (CC BY 4.0) and Weather-Time (CC0).
 - **Challenge data:** NextEra Energy's SPOT KnightHacks Challenge Kit (synthetic).
 - **APIs and weather data:** National Weather Service api.weather.gov; Open-Meteo (CC BY 4.0); NEXRAD radar tiles via the Iowa Environmental Mesonet; map tiles © OpenStreetMap contributors.
