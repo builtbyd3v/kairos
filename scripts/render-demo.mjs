@@ -37,41 +37,47 @@ const UI = {
   saved: /Saved to Neon as evidence/,
   recall: /RECALL:/,
   docked: /Spot is docked/,
-  warmSample: "Dry floor, Spot camera",
   sample: "Held-out puddle photo 4",
   modelReady: /Drop a photo here/,
-  modelDone: /wet area|no water found|model failed/,
-  modelHit: /\d wet area/,
+  modelHit: /\d wet areas? · \d+ ms/,
   evidenceReady: /live round/,
 };
 
-// Narration, same voice as the intro. Lines state only what is on screen.
+// Narration, same voice as the intro, a little faster and livelier (VOICE). Lines state only what is on screen.
 const LINES = {
-  dash: "On the dashboard, a storm we recorded at St. Lucie pushes rain past Spot's IP54 limit, so Kairos calls a recall. The plant map pins water on the route.",
-  walk: "In a simulated round, our water model checks Spot's camera at every stop.",
-  hold: "Water in the path. Spot holds until the operator confirms.",
-  recall: "Then the recorded storm reaches 2.8 millimeters an hour. Kairos sends a recall, and Spot walks home.",
-  model: "The water model is ours, fine-tuned and running in the browser. It catches 85 percent of wet photos from a source it never saw, and tiny puddles are its weak spot.",
-  evidence: "Every detection and operator label lands in Neon, and each model version is scored on a frozen Neon branch.",
+  dash: "A storm we recorded at St. Lucie. Rain is over Spot's IP54 limit, so Kairos calls a recall.",
+  walk: "On a simulated round, our water model checks every stop.",
+  hold: "Water in the path. Spot holds, and the operator confirms.",
+  recall: "The storm hits 2.8 millimeters an hour. Recall. Spot walks home.",
+  model: "Our fine-tuned water model runs right in the browser, and catches 85 percent of wet photos.",
+  evidence: "Every detection and label lands in Neon, scored on a frozen branch.",
 };
+// ElevenLabs voice_settings (https://elevenlabs.io/docs/api-reference/text-to-speech/convert). speed runs 0.7 to 1.2
+// (https://elevenlabs.io/docs/best-practices/prompting/controls); lower stability = broader emotional range; style 0 is the default.
+const VOICE = { stability: 0.35, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true, speed: 1.12 };
+// note: the water model page labels the photo with its measured ms. In the Aside browser that is about 200 ms (bench p50 196 ms),
+// next to the page's "~100 ms" stat measured on WebGPU in Chrome. The video hides that one label instead of showing a
+// misleading pair; nothing is changed. Set false to show it.
+const HIDE_MS = true;
 
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 const seconds = (file) => Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]));
 
 // Same ElevenLabs voice and model as scripts/render-intro.mjs ("Misa - Sweet & Calm Conversations").
 const ELEVEN = { id: "XlDdozLmuTofIxK4BjPD", model: "eleven_multilingual_v2" };
+const VOICE_KEY = JSON.stringify(VOICE);
 async function voice() {
   mkdirSync(join(OUT, "vo"), { recursive: true });
   const files = {};
   let chars = 0;
   for (const [key, text] of Object.entries(LINES)) {
-    const file = join(OUT, "vo", `${createHash("sha1").update(`${ELEVEN.id} ${text}`).digest("hex").slice(0, 12)}.mp3`);
+    const file = join(OUT, "vo", `${createHash("sha1").update(`${ELEVEN.id} ${VOICE_KEY} ${text}`).digest("hex").slice(0, 12)}.mp3`);
     if (!existsSync(file)) {
       if (!process.env.ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY is not set and a narration clip is missing");
       const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN.id}?output_format=mp3_44100_128`, {
         method: "POST",
         headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
-        body: JSON.stringify({ text, model_id: ELEVEN.model }),
+        body: JSON.stringify({ text, model_id: ELEVEN.model, voice_settings: VOICE }),
       });
       if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
       writeFileSync(file, Buffer.from(await res.arrayBuffer()));
@@ -156,7 +162,7 @@ async function record(port, vo) {
   };
   const say = (key) => {
     cues.push([n, key]);
-    return n + Math.ceil((vo[key].dur + 0.15) * FPS); // frame after the line ends, plus a breath
+    return n + Math.ceil((vo[key].dur + 0.1) * FPS); // frame after the line ends, plus a breath
   };
   const holdUntil = (frame, min = 0) => shoot({ n: Math.max(min, frame - n) });
   const open = async (path, ready) => {
@@ -169,54 +175,48 @@ async function record(port, vo) {
   const { dir } = await a.call(HELPERS);
   const seg = {};
   try {
-    // 2. Dashboard: RECALL headline, the rain chart over the IP54 limit, the plant map with water pins.
+    // 2. Dashboard: RECALL headline and the rain chart, then a quick move to the plant map.
     seg.dash = n;
     await open("/", UI.dashReady);
     let end = say("dash");
-    await shoot({ n: 75 });
-    await shoot({ n: 24, pan: [UI.chart, "top"] });
-    await shoot({ n: 90 });
-    await shoot({ n: 24, pan: [UI.map, "top"] });
-    await holdUntil(end, 60);
+    await shoot({ n: Math.round((end - n) * 0.55) });
+    await shoot({ n: 12, pan: [UI.map, "top"] });
+    await holdUntil(end + 20, 30);
 
-    // 3. Live round at the app's 4x, sped up 2.5x more while Spot walks to the puddle.
+    // 3. Live round at the app's 4x, sped up 4x more on the walk to the puddle. Each line starts on its action.
     seg.live = n;
     await open("/live", UI.firstCheck);
     await click(UI.speed);
     await click(UI.restart);
     say("walk");
-    await shoot({ n: 15 });
-    await shoot({ n: 900, rate: 2.5, busy: UI.busy, until: UI.held });
+    await shoot({ n: 8 });
+    await shoot({ n: 900, rate: 4, busy: UI.busy, until: UI.held });
     end = say("hold");
-    await shoot({ n: 20, pan: [UI.confirm, "bottom"] }); // the HOLD card and its buttons sit under the camera
-    await holdUntil(end, 45);
+    await shoot({ n: 12, pan: [UI.confirm, "bottom"] }); // the HOLD card and its buttons sit under the camera
+    await holdUntil(end - 20, 30); // click as the line says "confirms"
     await click(UI.confirm);
     await r(`await waitFor(${JSON.stringify(UI.saved.source)}, 90000)`);
-    end = say("recall"); // starts as Spot walks on, so "recall" lands about when the storm does
-    await shoot({ n: 20 });
-    await shoot({ n: 20, pan: [null, "top"] }); // back up to the weather watch for the recall
-    await shoot({ n: 600, busy: UI.busy, until: UI.recall });
+    await shoot({ n: 12 }); // "Saved to Neon as evidence #N"
+    await shoot({ n: 12, rate: 2, pan: [null, "top"] }); // back up to the weather watch
+    await shoot({ n: 600, rate: 2, busy: UI.busy, until: UI.recall });
+    end = say("recall");
     await shoot({ n: 600, until: UI.docked });
-    await holdUntil(end, 30);
+    await holdUntil(end, 15);
 
-    // 4. Water model: a warm-up run off camera (the first run includes the model load), then a dry floor, then a puddle.
+    // 4. Water model: one wet photo with its "water N%" box. The first run (model load) is off camera.
     seg.model = n;
     await open("/floor-check", UI.modelReady);
-    await click(UI.warmSample);
-    await r(`await waitFor(${JSON.stringify(UI.modelDone.source)}, 120000)`);
-    await click(UI.warmSample);
-    await r(`await sleep(400); await waitFor(${JSON.stringify(UI.modelDone.source)}, 60000)`);
-    end = say("model");
-    await shoot({ n: 40 });
     await click(UI.sample);
-    await r(`await waitFor(${JSON.stringify(UI.modelHit.source)}, 60000)`);
-    await holdUntil(end, 90);
+    await r(`await sleep(400); await waitFor(${JSON.stringify(UI.modelHit.source)}, 120000)`);
+    if (HIDE_MS) await r(`await page.evaluate((s) => { const re = new RegExp(s); const e = [...document.querySelectorAll("body *")].find((e) => re.test(e.textContent) && ![...e.children].some((c) => re.test(c.textContent))); if (e) e.style.visibility = "hidden"; }, ${JSON.stringify(UI.modelHit.source)})`);
+    end = say("model");
+    await holdUntil(end, 60);
 
     // 5. Evidence: this run's detection and the operator's label in Neon, and the frozen-branch scores.
     seg.evidence = n;
     await open("/evidence", UI.evidenceReady);
     end = say("evidence");
-    await holdUntil(end, 150);
+    await holdUntil(end + 10, 90);
   } finally {
     await a.call(`if (page) await closeTab(page); console.log("RESULT {}")`).catch(() => {});
     a.close();
