@@ -13,12 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 
 // Dashboard pieces built from NextEra's kit: Spot's latest round, the fleet KPIs, the plant map, and round health.
-// note: the kit has one robot and no live telemetry, so "Spot now" is the latest kit round plus today's weather call.
+// note: the kit has one robot and no live telemetry, so "Spot now" is the latest kit round.
 
 type Analysis = ReturnType<typeof analyze>;
 
-/** One row: which Spot, its latest round, true status, battery, and the call for a Spot on route right now. */
-export function SpotStrip({ kit, a, now }: { kit: Kit; a: Analysis; now: Verdict }) {
+/** One row: which Spot, its latest round, true status, battery and route. */
+export function SpotStrip({ kit, a }: { kit: Kit; a: Analysis }) {
   const last = a.missionRows.at(-1)!;
   const truth = TRUTH_UI[last.truth];
   const items = [
@@ -37,10 +37,6 @@ export function SpotStrip({ kit, a, now }: { kit: Kit; a: Analysis; now: Verdict
             <p className="font-semibold">SPOT-01</p>
             <p className="text-xs text-muted-foreground">St. Lucie demo site</p>
           </div>
-        </div>
-        <div>
-          <p className="label-caps text-helper">On route now</p>
-          <VerdictChip verdict={now} className="mt-1" />
         </div>
         <div>
           <p className="label-caps text-helper">True status</p>
@@ -142,7 +138,7 @@ export function PlantMap({ kit, a, water, weather }: { kit: Kit; a: Analysis; wa
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FacilityMap sites={a.sites} route={route} outdoor={[...OUTDOOR_WAYPOINTS]} dock={DOCK} wet={wet} />
+        <FacilityMap sites={a.sites} route={route} outdoor={[...OUTDOOR_WAYPOINTS]} dock={DOCK} wet={wet} names />
       </CardContent>
     </Card>
   );

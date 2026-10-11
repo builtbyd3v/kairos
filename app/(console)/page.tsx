@@ -68,23 +68,21 @@ async function Board() {
           {launchLine && <span className="text-muted-foreground">{launchLine}</span>}
           <span className="text-muted-foreground">{waterLine}</span>
         </p>
-        <SpotStrip kit={kit} a={a} now={onRoute} />
+        <SpotStrip kit={kit} a={a} />
         <Kpis a={a} water={water} weatherHolds={weatherHolds} />
-        {/* Weather first: Spot is IP54, so harsh rain and storms are what stop it. Then the plant, water on the route, and round health. */}
-        {/* Two independent columns, so a tall Next round card never leaves a hole under the rain chart. */}
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <div className="space-y-5">
+        {/* Weather first: Spot is IP54, so harsh rain and storms are what stop it. Left: weather, plant, water. Right: the call, radar, round health. */}
+        {/* Columns stretch to the same height and each column's last card fills the rest, so both bottoms line up. */}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-5 [&>*:last-child]:flex-1">
             <Ip54Panel />
             <PlantMap kit={kit} a={a} water={water} weather={onRoute} />
+            <RouteWater />
           </div>
-          <div className="space-y-5">
+          <div className="flex flex-col gap-5 [&>*:last-child]:flex-1">
             <NextRound plan={plan} strip={false} nextGo={nextGo} />
             <LiveRadar />
+            <RoundHealth a={a} />
           </div>
-        </div>
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <RouteWater />
-          <RoundHealth a={a} />
         </div>
       </main>
     </>

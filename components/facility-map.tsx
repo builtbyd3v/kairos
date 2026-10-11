@@ -9,6 +9,8 @@ const radius = (s: MapSite) => 2.5 + Math.sqrt(s.anomalies) * 1.2; // area grows
 // note: WP04 and WP05 sit 4.5 map units apart in the kit, so their circles merged into one blob. Draw them nudged apart (display only; data coords unchanged).
 const NUDGE: Record<string, [number, number]> = { WP04: [-0.5, 1.2], WP05: [-4.6, 4.7] };
 export const pos = (s: Pick<MapSite, "id" | "x" | "y">) => ({ x: s.x + (NUDGE[s.id]?.[0] ?? 0), y: s.y + (NUDGE[s.id]?.[1] ?? 0) });
+// Where a waypoint's name sits when names are on: below by default; crowded waypoints move so labels do not cover circles.
+const NAME_AT: Record<string, "above" | "right" | "left"> = { WP04: "right", WP07: "above", WP05: "left", WP10: "right", WP12: "right" };
 const DOTS = Array.from({ length: 11 }, (_, i) => i * 10);
 const PATH_UI = {
   walked: { stroke: "#4f9fe8", width: 1.6, dash: undefined, opacity: 1 },
@@ -41,6 +43,7 @@ export function FacilityMap({
   paths = [],
   spotAt,
   neutral,
+  names = false,
   className,
 }: {
   sites: MapSite[];
@@ -53,6 +56,7 @@ export function FacilityMap({
   paths?: MapPath[]; // drawn in order, in map coords (see pos)
   spotAt?: Pt; // Spot between waypoints, in map coords
   neutral?: string[]; // waypoints in neutral tones (these ids brighter), so only the paths and Spot carry color
+  names?: boolean; // print each waypoint's name next to its circle
   className?: string;
 }) {
   const byId = new Map(sites.map((s) => [s.id, s]));
@@ -110,6 +114,16 @@ export function FacilityMap({
                       <text x={x} y={y + 1.4} textAnchor="middle" fontSize="3.8" fontWeight="600" fill="#f4f4f4" className="pointer-events-none font-mono">
                         {s.id.slice(2)}
                       </text>
+                      {names && (() => {
+                        const at = NAME_AT[s.id] ?? "below";
+                        const [nx, ny, anchor]: [number, number, "start" | "middle" | "end"] =
+                          at === "above" ? [x, y - r - 1.6, "middle"] : at === "right" ? [x + r + 1.4, y + 1, "start"] : at === "left" ? [x - r - 1.4, y + 1, "end"] : [x, y + r + 3.6, "middle"];
+                        return (
+                          <text x={nx} y={ny} textAnchor={anchor} fontSize="2.9" fill="#a8a8a2" stroke="#0c1016" strokeWidth="0.8" paintOrder="stroke" className="pointer-events-none">
+                            {s.name}
+                          </text>
+                        );
+                      })()}
                       {dock === s.id && (
                         <text x={x} y={y - r - 1.5} textAnchor="middle" fontSize="3.2" fill="#c6c6c6" className="font-mono">
                           DOCK
