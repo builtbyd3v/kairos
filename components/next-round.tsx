@@ -89,22 +89,27 @@ export function NextRound({ plan, strip = true, nextGo }: { plan: RoundPlan; str
             </Button>
           )}
         </form>
-        {indoorOnly && (
-          <form action={logDecision} className="space-y-2 rounded-xl bg-go/10 p-3 ring-1 ring-go/40">
-            <p className="text-sm">Weather only blocks the outdoor stop.</p>
-            <input type="hidden" name="verdict" value="GO" />
-            <input type="hidden" name="source" value="live" />
-            <input type="hidden" name="missionId" value={last.id} />
-            {/* The indoor-only reason goes first, so the log reads "Confirmed GO, indoor only". */}
-            <input type="hidden" name="reasons" value={JSON.stringify([indoorOnly, ...reasons])} />
-            <Button name="action" value="confirmed" variant="outline">
-              Launch indoors only, skip {[...OUTDOOR_WAYPOINTS].join(", ")} ({kept} of {route.length} stops)
-            </Button>
-          </form>
-        )}
-        {ORBIT_CALL[verdict] && (
-          <Why label="Orbit call">
-            <code className="block font-mono break-all">{ORBIT_CALL[verdict]}</code>
+        {/* Less common choices sit one click away, so the card reads as: verdict, when, why, confirm. */}
+        {(indoorOnly || ORBIT_CALL[verdict]) && (
+          <Why label="More options">
+            {indoorOnly && (
+              <form action={logDecision} className="space-y-2 rounded-xl bg-go/10 p-3 text-sm text-foreground ring-1 ring-go/40">
+                <p>Weather only blocks the outdoor stop.</p>
+                <input type="hidden" name="verdict" value="GO" />
+                <input type="hidden" name="source" value="live" />
+                <input type="hidden" name="missionId" value={last.id} />
+                {/* The indoor-only reason goes first, so the log reads "Confirmed GO, indoor only". */}
+                <input type="hidden" name="reasons" value={JSON.stringify([indoorOnly, ...reasons])} />
+                <Button name="action" value="confirmed" variant="outline">
+                  Launch indoors only, skip {[...OUTDOOR_WAYPOINTS].join(", ")} ({kept} of {route.length} stops)
+                </Button>
+              </form>
+            )}
+            {ORBIT_CALL[verdict] && (
+              <p>
+                Orbit call: <code className="font-mono break-all">{ORBIT_CALL[verdict]}</code>
+              </p>
+            )}
           </Why>
         )}
         {strip && <WeatherStrip weather={weather} />}

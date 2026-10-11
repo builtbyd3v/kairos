@@ -27,7 +27,8 @@ async function Water() {
   const pct = d ? waterLikelihood(d.score)?.pct : undefined;
   const hazards = rows.filter((r) => r.label === "confirm");
   const where = (r: { waypoint: string | null }) => (r.waypoint ? `${r.waypoint} ${names.get(r.waypoint) ?? ""}`.trim() : "the route");
-  const recent = rows.filter((r) => r.id !== d?.id).slice(0, 4);
+  // One tile per photo: repeated live-round runs store the same demo frame again.
+  const recent = rows.filter((r, i) => r.frame_uri !== d?.frame_uri && rows.findIndex((x) => x.frame_uri === r.frame_uri) === i).slice(0, 4);
   const state = waiting.length
     ? { Icon: TriangleAlert, title: "Needs an operator", caption: `Water seen at ${where(waiting[0])}: Spot holds there until someone confirms or rejects it`, text: "text-hold", ring: "bg-hold/10 ring-hold/40" }
     : hazards.length
@@ -80,7 +81,7 @@ async function Water() {
                     {/* eslint-disable-next-line @next/next/no-img-element -- stored frame URI */}
                     <img src={r.frame_uri} alt={`Spot camera at ${where(r)}`} className="block aspect-[4/3] w-full object-cover" />
                   </div>
-                  <p className="truncate text-xs font-medium">{r.waypoint ? where(r) : "Route"}</p>
+                  <p className="truncate text-xs font-medium">{r.waypoint ? where(r) : r.source === "seed" ? "Held-out test photo" : "Route"}</p>
                   <p className="text-xs text-muted-foreground">
                     {waterLikelihood(r.score)?.pct ?? Math.round(r.score * 100)}% · {r.label === "confirm" ? "confirmed" : r.label === "reject" ? "rejected" : "waiting"}
                   </p>
