@@ -11,8 +11,8 @@ Works for any plant Spot patrols: point it at the plant's coordinates. The demo 
 **Live:** https://kairos.boston · **Intro video:** `public/intro/intro.mp4`
 
 ## Why
-- **NextEra's Spot engineer told me the two problems directly:** Spot cannot see a storm coming once it is out on its route, and small puddles and spills on the route are hard to catch.
-- **Orbit gates the launch, not the round.** Orbit can block a launch on a rain forecast. Nothing keeps checking rain, thunder, gusts and heat against Spot's limits while the round is running, and recalling Spot mid-round on weather needs a custom integration. Kairos is that integration.
+- **NextEra's Spot team named two problems:** weather on the route is not caught as early as they want, and a storm that builds mid-round is the hard case. Small puddles and spills on the route are also hard to catch.
+- **Orbit gates the launch, not the round.** Orbit can block a launch on a rain forecast. The gap is after launch: Kairos keeps checking rain, thunder, gusts and heat against Spot's limits while the round runs, and calls a recall when they cross.
 - **Spot is IP54.** Splashes and light rain only. Above 2.5 mm/h (the end of "light rain") Spot should not be out.
 
 ## What it does
