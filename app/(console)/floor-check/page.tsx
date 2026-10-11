@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const STATS = [
   { value: "85%", label: "Wet photos caught", note: "463 of 543, from a source it never trained on", tone: "text-go" },
   { value: "1.2", label: "False alarms per 100 Spot frames", note: "2 of 172 dry frames from a camera on a Spot robot", tone: "text-go" },
-  { value: "67 ms", label: "Per frame, in your browser", note: "WebGPU p50 (p95 89 ms); no server, no upload", tone: "text-foreground" },
+  { value: "~100 ms", label: "Per frame, in your browser", note: "WebGPU, measured 67-101 ms; no server, no upload", tone: "text-foreground" },
   { value: "11%", label: "Tiny puddles found", note: "6 of 57 under 1% of the frame. The known gap; operator labels feed the next training run", tone: "text-hold" },
 ];
 

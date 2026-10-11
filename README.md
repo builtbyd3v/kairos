@@ -34,14 +34,16 @@ Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Or
 | Sponsor | What it does in Kairos | Without it |
 |---|---|---|
 | NextEra | The challenge (a Spot management dashboard), the robot data (synthetic SPOT kit), and the problem itself, from their Spot engineer. | No problem worth solving and no robot data. |
-| Hugging Face | Our water detector, fine-tuned from RT-DETRv2-R18 on Hugging Face Jobs, published on the Hub with an honest model card, and run in the browser with transformers.js (WebGPU, about 67 ms per frame). | Kairos can see the sky but not the floor. |
+| Hugging Face | Our water detector, fine-tuned from RT-DETRv2-R18 on Hugging Face Jobs, published on the Hub with an honest model card, and run in the browser with transformers.js (WebGPU, about 70 to 100 ms per frame). | Kairos can see the sky but not the floor. |
 | Neon | The evidence log (every detection and label), a frozen branch that scores each model version, a copy-on-write branch per visitor and per storm drill so nobody's clicks touch production, and snapshot branches for Incident review. | No audit trail, no model scoring, and a public demo anyone could break. |
 | GoDaddy Registry | The `kairos.boston` domain. | |
 
 ## The numbers (all on public photos; no NextEra camera frames exist)
 - **Water model, held out (never trained on):** flags 85% of wet photos from a puddle source it never saw (463 of 543); 1.2 false alarms per 100 frames from a camera on a real Spot (2 of 172). **Known gap:** tiny puddles under 1% of the frame, 6 of 57. Details: `docs/model/water-v2/RESULTS.md`.
 - **Confidence that means something:** "water 90%" means 9 in 10 boxes at that score were real water, measured on a calibration split (315 boxes) and checked on test (680 boxes). `docs/model/water-v2/CONFIDENCE.md`.
-- **Speed:** 67 ms per frame (p50, p95 89 ms) in Chrome on WebGPU.
+- **Plant-like floors:** on the industrial-like test slice (indoor hard floors and spills), it flags 86% of wet frames (245 of 284) with 2.4 false alarms per 100 indoor Spot frames (4 of 165).
+- **Speed:** about 70 to 100 ms per frame on WebGPU in Chrome (two measurements: 67 ms p50, and 101 ms median of 10 runs).
+- **We tried a second fine-tune (v3) aimed at tiny puddles and it lost to v2 on every recall metric, so v2 stays.** Details: `docs/model/water-v3/RESULTS.md`.
 - **Weather backtest:** at the kit's 27 round times, on archive weather for the plant, Kairos would hold 1 round for weather. It does not cry wolf.
 
 ## Rules (all in `lib/verdict.ts`, cited in the UI)
