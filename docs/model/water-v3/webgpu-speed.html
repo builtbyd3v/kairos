@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>WebGPU speed</title>
+<pre id="out">running...</pre>
+<script type="module">
+import * as ort from "./ort/ort.webgpu.bundle.min.mjs";
+ort.env.wasm.wasmPaths = location.origin + "/ort/";
+const out = document.getElementById("out");
+const log = (s) => { out.textContent += "\n" + s; console.log(s); };
+const models = (new URLSearchParams(location.search).get("m") || "v2s640,v2s800,v2s960").split(",");
+const results = {};
+for (const m of models) {
+  const size = (await (await fetch(`${m}/preprocessor_config.json`)).json()).size.height;
+  const t0 = performance.now();
+  const s = await ort.InferenceSession.create(`${m}/onnx/model.onnx`, { executionProviders: ["webgpu"] });
+  const load = Math.round(performance.now() - t0);
+  const x = new ort.Tensor("float32", Float32Array.from({ length: 3 * size * size }, () => Math.random()), [1, 3, size, size]);
+  const ms = [];
+  for (let i = 0; i < 13; i++) {
+    const t = performance.now();
+    const r = await s.run({ pixel_values: x });
+    await r.logits.getData?.(); // outputs on CPU already for default; keeps timing honest if on GPU
+    ms.push(performance.now() - t);
+  }
+  const timed = ms.slice(3).sort((a, b) => a - b);
+  results[m] = { size, load_ms: load, median_ms: Math.round(timed[5]), min_ms: Math.round(timed[0]), max_ms: Math.round(timed[9]), runs: 10 };
+  log(JSON.stringify({ m, ...results[m] }));
+  await s.release();
+}
+log("DONE " + JSON.stringify(results));
+window.__speed = results;
+</script>
