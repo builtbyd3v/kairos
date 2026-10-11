@@ -43,6 +43,8 @@ Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Or
 - **Confidence that means something:** "water 90%" means 9 in 10 boxes at that score were real water, measured on a calibration split (315 boxes) and checked on test (680 boxes). `docs/model/water-v2/CONFIDENCE.md`.
 - **Plant-like floors (int8 file):** on the industrial-like test slice (indoor hard floors and spills), it flags 86% of wet frames (245 of 284) with 2.4 false alarms per 100 indoor Spot frames (4 of 165).
 - **Speed:** about 70 to 100 ms per frame on WebGPU in Chrome (two measurements: 67 ms p50, and 101 ms median of 10 runs).
+- **By puddle size (fp32, IoU >= 0.5, test):** finds 10.5% of water under 1% of the frame (6 of 57), 33.7% at 1-5% (60 of 178), 57.2% at 5-15% (107 of 187), 56.3% over 15% (249 of 442). Only 3 of 600 wet frames have nothing but tiny water. `docs/model/water-v2/SIZE.md`.
+- **Inference tricks tried, none shipped:** mirrored second pass (flip TTA) and 2x2 tiles, thresholds re-picked on calib. Flip cut Spot false alarms to 0 of 172 but lost recall (440 vs 461 of 543, int8); tiles found 1 of 57 tiny boxes and raised Spot false alarms to 19 of 172. `docs/model/water-v2/TTA.md`.
 - **We tried a second fine-tune (v3) aimed at tiny puddles and it lost to v2 on every recall metric, so v2 stays.** Details: `docs/model/water-v3/RESULTS.md`.
 - **Weather backtest:** at the kit's 27 round times, on archive weather for the plant, Kairos would hold 1 round for weather. It does not cry wolf.
 
