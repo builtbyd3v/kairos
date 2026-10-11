@@ -1,8 +1,11 @@
 // Render the Kairos demo video: the intro up to "Here is how it works.", a narrated recording of the real app, then the intro's end card.
-//   node --env-file=.env.local scripts/render-demo.mjs 3020      writes out/kairos-demo.mp4 (1920x1080, 30 fps, H.264 + AAC) and out/still-*.jpg
-//   node --env-file=.env.local scripts/render-demo.mjs --audio   narration clips only (out/vo/*.mp3)
+//   node --env-file=.env.local scripts/render-demo.mjs 3020       record the app, then write both voice variants:
+//        out/kairos-demo.mp4 (voice A) and out/kairos-demo-voiceB.mp4 (1920x1080, 30 fps, H.264 + AAC), plus out/still-*.jpg
+//   node --env-file=.env.local scripts/render-demo.mjs --encode   re-mix both variants from the last recording (out/app.mp4, out/timeline.json)
+//   node --env-file=.env.local scripts/render-demo.mjs --audio    narration clips only (out/vo/*.mp3)
+//   node --env-file=.env.local scripts/render-demo.mjs --stt      transcribe every clip back (local Whisper), to check pronunciation
 // Start the app first: npm run build && npm start -- -p 3020
-// note: narration clips are cached in out/vo/ by a hash of their text, so a re-run spends no ElevenLabs credit unless a line changed.
+// note: narration clips are cached in out/vo/ by a hash of voice, settings and text, so a re-run spends no ElevenLabs credit unless one changed.
 //       Copy out/vo/ along if you render from another checkout.
 // How it works: the app has a recording hook (app/layout.tsx, inert unless ?rec=1) that freezes the page clock. This script drives
 // the Aside browser through one long-lived `aside repl`, steps the clock one video frame at a time, and screenshots each frame.
@@ -12,7 +15,7 @@
 // After a UI change, only the UI text below should need edits; nothing here uses pixel coordinates.
 import { spawn, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -43,18 +46,28 @@ const UI = {
   evidenceReady: /live round/,
 };
 
-// Narration, same voice as the intro, a little faster and livelier (VOICE). Lines state only what is on screen.
+// Narration. Lines state only what is on screen. This is the SPOKEN text: terms are respelled so the voice reads them right
+// (Multilingual v2 has no phoneme tags; https://elevenlabs.io/docs/best-practices/prompting/controls). The screen text is unchanged.
 const LINES = {
-  dash: "A storm we recorded at St. Lucie. Rain is over Spot's IP54 limit, so Kairos calls a recall.",
+  dash: "A recorded Saint Lucie storm pushes rain past Spot's I P fifty-four limit, so Kairos calls a recall.",
   walk: "On a simulated round, our water model checks every stop.",
   hold: "Water in the path. Spot holds, and the operator confirms.",
-  recall: "The storm hits 2.8 millimeters an hour. Recall. Spot walks home.",
-  model: "Our fine-tuned water model runs right in the browser, and catches 85 percent of wet photos.",
+  recall: "The storm hits two point eight millimeters an hour. Recall. Spot walks home.",
+  model: "Our model runs right in the browser, and catches eighty-five percent of wet photos.",
   evidence: "Every detection and label lands in Neon, scored on a frozen branch.",
 };
+// Seconds each line gets on screen before the next beat. Fixed (they were the v2 clip lengths), so the cut stays the same
+// whatever the voice; a clip longer than its slot fails the encode, and the fix is shorter wording, not a sped-up clip.
+const SLOT = { dash: 6.455, walk: 3.483, hold: 3.344, recall: 5.108, model: 5.573, evidence: 5.573 };
 // ElevenLabs voice_settings (https://elevenlabs.io/docs/api-reference/text-to-speech/convert). speed runs 0.7 to 1.2
-// (https://elevenlabs.io/docs/best-practices/prompting/controls); lower stability = broader emotional range; style 0 is the default.
-const VOICE = { stability: 0.35, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true, speed: 1.12 };
+// (https://elevenlabs.io/docs/best-practices/prompting/controls); lower stability = broader range but a less even pace.
+const SETTINGS = { stability: 0.55, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true, speed: 1.06 };
+// A: the intro's voice. B: an alternative, chosen from the account's premade voices for a calm, warm, clear read.
+const VOICES = {
+  A: { name: "Misa - Sweet & Calm Conversations", id: "XlDdozLmuTofIxK4BjPD", out: "kairos-demo.mp4" },
+  B: { name: "Sarah - Mature, Reassuring, Confident", id: "EXAVITQu4vr4xnSDxMaL", out: "kairos-demo-voiceB.mp4" },
+};
+const MODEL = "eleven_multilingual_v2"; // same model as scripts/render-intro.mjs
 // note: the water model page labels the photo with its measured ms. In the Aside browser that is about 200 ms (bench p50 196 ms),
 // next to the page's "~100 ms" stat measured on WebGPU in Chrome. The video hides that one label instead of showing a
 // misleading pair; nothing is changed. Set false to show it.
@@ -62,22 +75,25 @@ const HIDE_MS = true;
 
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 const seconds = (file) => Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]));
+// Integrated loudness (LUFS) of a file, from ffmpeg's ebur128 summary.
+const lufs = (file) =>
+  Number(run("sh", ["-c", `ffmpeg -hide_banner -nostats -i "${file}" -af ebur128 -f null - 2>&1 | grep -A1 "Integrated loudness" | tail -1`]).match(/(-?[\d.]+) LUFS/)[1]);
+// Every line is matched to the loudness of the intro's narration (render-intro.mjs: its clips at volume 2.5), whatever the voice.
+const LINE_LUFS = lufs("public/intro/vo-6.mp3") + 20 * Math.log10(2.5);
 
-// Same ElevenLabs voice and model as scripts/render-intro.mjs ("Misa - Sweet & Calm Conversations").
-const ELEVEN = { id: "XlDdozLmuTofIxK4BjPD", model: "eleven_multilingual_v2" };
-const VOICE_KEY = JSON.stringify(VOICE);
-async function voice() {
+const KEY = process.env.ELEVENLABS_API_KEY;
+async function voice(v) {
   mkdirSync(join(OUT, "vo"), { recursive: true });
   const files = {};
   let chars = 0;
   for (const [key, text] of Object.entries(LINES)) {
-    const file = join(OUT, "vo", `${createHash("sha1").update(`${ELEVEN.id} ${VOICE_KEY} ${text}`).digest("hex").slice(0, 12)}.mp3`);
+    const file = join(OUT, "vo", `${createHash("sha1").update(`${v.id} ${JSON.stringify(SETTINGS)} ${text}`).digest("hex").slice(0, 12)}.mp3`);
     if (!existsSync(file)) {
-      if (!process.env.ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY is not set and a narration clip is missing");
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN.id}?output_format=mp3_44100_128`, {
+      if (!KEY) throw new Error("ELEVENLABS_API_KEY is not set and a narration clip is missing");
+      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${v.id}?output_format=mp3_44100_128`, {
         method: "POST",
-        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "content-type": "application/json", accept: "audio/mpeg" },
-        body: JSON.stringify({ text, model_id: ELEVEN.model, voice_settings: VOICE }),
+        headers: { "xi-api-key": KEY, "content-type": "application/json", accept: "audio/mpeg" },
+        body: JSON.stringify({ text, model_id: MODEL, voice_settings: SETTINGS }),
       });
       if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`);
       writeFileSync(file, Buffer.from(await res.arrayBuffer()));
@@ -85,8 +101,17 @@ async function voice() {
     }
     files[key] = { file, dur: seconds(file) };
   }
-  console.log(`narration: ${Object.keys(files).length} clips, ${chars} new ElevenLabs characters`);
+  console.log(`narration ${v.name}: ${Object.keys(files).length} clips, ${chars} new ElevenLabs characters`);
   return files;
+}
+
+// What each clip actually says: Whisper (small.en) run locally with transformers.js, already a dependency.
+// note: the project's ElevenLabs key has no speech_to_text permission, so this does not use their STT.
+let asr = null;
+async function transcribe(file) {
+  asr ??= await (await import("@huggingface/transformers")).pipeline("automatic-speech-recognition", "onnx-community/whisper-small.en", { dtype: "q8" });
+  const pcm = execFileSync("ffmpeg", ["-v", "error", "-i", file, "-ac", "1", "-ar", "16000", "-f", "f32le", "-"], { maxBuffer: 1 << 26 });
+  return (await asr(new Float32Array(pcm.buffer, pcm.byteOffset, pcm.byteLength / 4))).text.trim();
 }
 
 // One long-lived Aside REPL, so a page keeps its state between calls. Each call is one line; the code prints "RESULT <json>".
@@ -139,7 +164,7 @@ globalThis.shoot = async ({ n, rate = 1, until = null, busy = null, pan = null, 
 await fs.mkdir("./artifacts/demo", { recursive: true });
 console.log("RESULT " + JSON.stringify({ dir: pwd }));`;
 
-async function record(port, vo) {
+async function record(port) {
   const base = `http://kairos-${Date.now().toString(36)}.localhost:${port}`;
   const a = aside();
   const r = (code) => a.call(`${code}; console.log("RESULT " + JSON.stringify({ n: D.n }))`);
@@ -162,7 +187,7 @@ async function record(port, vo) {
   };
   const say = (key) => {
     cues.push([n, key]);
-    return n + Math.ceil((vo[key].dur + 0.1) * FPS); // frame after the line ends, plus a breath
+    return n + Math.ceil((SLOT[key] + 0.1) * FPS); // frame after the line's slot, plus a breath
   };
   const holdUntil = (frame, min = 0) => shoot({ n: Math.max(min, frame - n) });
   const open = async (path, ready) => {
@@ -221,12 +246,26 @@ async function record(port, vo) {
     await a.call(`if (page) await closeTab(page); console.log("RESULT {}")`).catch(() => {});
     a.close();
   }
-  return { dir: join(dir, "artifacts", "demo"), frames: n, cues, seg };
+  // Keep the recording, so voice variants re-mix without re-recording (--encode).
+  const tmp = mkdtempSync(join(tmpdir(), "kairos-demo-"));
+  const src = join(dir, "artifacts", "demo");
+  readdirSync(src).filter((f) => /^f\d{5}\.jpg$/.test(f)).forEach((f) => (copyFileSync(join(src, f), join(tmp, f)), rmSync(join(src, f))));
+  run("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", join(tmp, "f%05d.jpg"), "-vf", "scale=1920:1080:flags=lanczos,setsar=1,format=yuv420p", "-c:v", "libx264", "-crf", "12", "-preset", "slow", join(OUT, "app.mp4")]);
+  rmSync(tmp, { recursive: true });
+  writeFileSync(join(OUT, "timeline.json"), JSON.stringify({ frames: n, cues, seg }));
 }
 
-function encode({ dir, frames, cues, seg }, vo) {
-  const tmp = mkdtempSync(join(tmpdir(), "kairos-demo-"));
-  readdirSync(dir).filter((f) => /^f\d{5}\.jpg$/.test(f)).forEach((f) => (copyFileSync(join(dir, f), join(tmp, f)), rmSync(join(dir, f))));
+function encode(v, vo, stills) {
+  const { frames, cues, seg } = JSON.parse(readFileSync(join(OUT, "timeline.json"), "utf8"));
+  // Each clip must end before the next line starts (or its segment ends). Too long: shorten the wording, never speed up the clip.
+  const ends = [...cues.slice(1).map(([f]) => f), frames];
+  const segEnd = (f) => Math.min(...[seg.live, seg.model, seg.evidence, frames].filter((x) => x > f));
+  cues.forEach(([f, key], i) => {
+    const room = (Math.min(ends[i], segEnd(f)) - f) / FPS;
+    // note: 0.3 s of slack: every clip ends in about 0.25 s of silence.
+    if (vo[key].dur > room + 0.3) throw new Error(`${v.name}: "${key}" is ${vo[key].dur.toFixed(2)} s but has ${room.toFixed(2)} s; shorten its wording`);
+    if (vo[key].dur > SLOT[key] + 0.3) console.warn(`${v.name}: "${key}" runs ${(vo[key].dur - SLOT[key]).toFixed(2)} s past its slot`);
+  });
   const app = frames / FPS;
   const total = CUT + app + (TAIL[1] - TAIL[0]);
   if (total >= 90) console.warn(`total ${total.toFixed(2)} s is over the 90 s limit: shorten a line or a hold`);
@@ -234,27 +273,27 @@ function encode({ dir, frames, cues, seg }, vo) {
   const st = "aformat=sample_rates=48000:channel_layouts=stereo";
   const graph = [
     `[0:v]trim=0:${CUT},setpts=PTS-STARTPTS[v0]`,
-    `[1:v]scale=1920:1080:flags=lanczos,setsar=1,format=yuv420p[v1]`,
+    `[1:v]setsar=1,format=yuv420p[v1]`,
     `[0:v]trim=${TAIL[0]}:${TAIL[1]},setpts=PTS-STARTPTS[v2]`,
     `[v0][v1][v2]concat=n=3:v=1:a=0[v]`,
     `[0:a]atrim=0:${CUT},afade=t=out:st=${CUT - 0.3}:d=0.3,${st}[a0]`,
     `[0:a]atrim=${TAIL[0]}:${TAIL[1]},asetpts=PTS-STARTPTS,afade=t=out:st=${TAIL[1] - TAIL[0] - 0.4}:d=0.4,${st},adelay=${Math.round((CUT + app) * 1000)}:all=1[a1]`,
-    // Same chain as the intro's lines (render-intro.mjs): 48 kHz mono, volume 2.5.
-    ...cues.map(([f], i) => `[${i + 2}:a]aresample=48000,aformat=channel_layouts=mono,volume=2.5,${st},adelay=${Math.round((CUT + f / FPS) * 1000)}:all=1[c${i}]`),
+    // 48 kHz mono like the intro's lines, each set to the intro narration's loudness (LINE_LUFS).
+    ...cues.map(([f, key], i) => `[${i + 2}:a]aresample=48000,aformat=channel_layouts=mono,volume=${(LINE_LUFS - lufs(vo[key].file)).toFixed(2)}dB,${st},adelay=${Math.round((CUT + f / FPS) * 1000)}:all=1[c${i}]`),
     `[a0][a1]${cues.map((_, i) => `[c${i}]`).join("")}amix=inputs=${cues.length + 2}:normalize=0,atrim=0:${total},loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000[a]`,
   ].join(";");
-  const out = join(OUT, "kairos-demo.mp4");
+  const out = join(OUT, v.out);
   run("ffmpeg", [
     "-y", "-loglevel", "error",
     "-i", INTRO,
-    "-framerate", String(FPS), "-i", join(tmp, "f%05d.jpg"),
+    "-i", join(OUT, "app.mp4"),
     ...voIn,
     "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
     "-c:v", "libx264", "-crf", "18", "-preset", "slow", "-r", String(FPS),
     "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
     out,
   ]);
-  rmSync(tmp, { recursive: true });
+  if (!stills) return console.log(`wrote ${out}: ${seconds(out).toFixed(2)} s`);
   // One still per segment (its middle frame), for a quick look after each render.
   const mid = (a, b) => CUT + (a + b) / 2 / FPS;
   const at = { intro: 10, dash: mid(seg.dash, seg.live), live: mid(seg.live, seg.model), model: mid(seg.model, seg.evidence), evidence: mid(seg.evidence, frames), end: total - 1.5 };
@@ -262,5 +301,12 @@ function encode({ dir, frames, cues, seg }, vo) {
   console.log(`wrote ${out}: ${seconds(out).toFixed(2)} s (app part ${app.toFixed(2)} s, ${frames} frames)`);
 }
 
-const vo = await voice();
-if (process.argv[2] !== "--audio") encode(await record(Number(process.argv[2] ?? 3020), vo), vo);
+const mode = process.argv[2] ?? "3020";
+const vos = {};
+for (const [k, v] of Object.entries(VOICES)) vos[k] = await voice(v);
+if (mode === "--stt") {
+  for (const [k, v] of Object.entries(VOICES)) for (const key of Object.keys(LINES)) console.log(`${k} ${key}: ${await transcribe(vos[k][key].file)}`);
+} else if (mode !== "--audio") {
+  if (mode !== "--encode") await record(Number(mode));
+  Object.entries(VOICES).forEach(([k, v], i) => encode(v, vos[k], i === 0));
+}
