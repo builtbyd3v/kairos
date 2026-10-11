@@ -137,7 +137,8 @@ export function PlantMap({ kit, a, water, weather }: { kit: Kit; a: Analysis; wa
           </span>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      {/* Centered in the card: on wide screens its row is set by the taller water card. */}
+      <CardContent className="flex flex-1 flex-col justify-center">
         <FacilityMap sites={a.sites} route={route} outdoor={[...OUTDOOR_WAYPOINTS]} dock={DOCK} wet={wet} names />
       </CardContent>
     </Card>

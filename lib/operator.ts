@@ -134,12 +134,24 @@ export async function writeDb(live: boolean) {
   return "refused" in t ? t : { sql: neon(t.url), branch: t.branch };
 }
 
+type Rows = Awaited<ReturnType<ReturnType<typeof neon>>>;
+/** Tagged-template SQL for page reads. */
+export type ReadSql = (strings: TemplateStringsArray, ...values: unknown[]) => Promise<Rows>;
+
 /** SQL for page reads: an operator reads main; a visitor reads their own branch (so they see their clicks), or main before their first write. */
-export async function readDb() {
-  const main = mainUrl();
-  if (await isOperator()) return neon(main);
+export async function readDb(): Promise<ReadSql> {
+  const main = neon(mainUrl());
+  if (await isOperator()) return (s, ...v) => main(s, ...v);
   const b = await sessionBranch().catch(() => null);
-  return neon(b?.uri ?? main);
+  if (!b) return (s, ...v) => main(s, ...v);
+  const branch = neon(b.uri);
+  // A visitor's branch can be pruned by another visitor's first write while its route is still cached (see liveBranch).
+  // Then the read falls back to main instead of crashing the page; the next write makes a fresh branch.
+  return (s, ...v) =>
+    branch(s, ...v).catch(() => {
+      routes.clear();
+      return main(s, ...v);
+    });
 }
 
 export type Sandbox = { mode: "operator" } | { mode: "visitor"; branch: string | null; branching: boolean };

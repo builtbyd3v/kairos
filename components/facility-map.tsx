@@ -164,7 +164,36 @@ export function FacilityMap({
           </figure>
         );
       })}
-      {!neutral && <div className="col-span-full">
+      {/* Named maps (the dashboard) show the legend outright: a first-time viewer needs it to read the map. */}
+      {!neutral && names && (
+        <ul className="col-span-full flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-muted-foreground">
+          <li className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full bg-go" />
+            <span className="size-2.5 rounded-full bg-hold" />
+            <span className="size-2.5 rounded-full bg-recall" />
+            Inspections OK: 85%+, 70%+, below
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span className="size-3.5 rounded-full border border-helper" />
+            Bigger = more anomalies
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 rounded-full bg-primary" />
+            Latest route
+          </li>
+          {outdoor.length > 0 && (
+            <li className="flex items-center gap-1.5">
+              <span className="size-3.5 rounded-full border border-dashed border-link" />
+              Outdoor stop, gated by weather (assumed)
+            </li>
+          )}
+          <li className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] font-semibold text-hold">WATER</span>
+            Water the model found
+          </li>
+        </ul>
+      )}
+      {!neutral && !names && <div className="col-span-full">
         <Why label="Legend">
           Color = share of inspections OK there (green ≥ 85%, yellow ≥ 70%, red below). Size = anomaly count.
           {outdoor.length > 0 && " Dashed ring = outdoor leg (assumed)."}
