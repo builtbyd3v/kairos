@@ -40,9 +40,10 @@ function CardTitle({
   info,
   children,
   ...props
-}: React.ComponentProps<"div"> & { info?: string }) {
+}: React.ComponentProps<"h2"> & { info?: string }) {
+  // h2: every card is a section of its page, so screen reader users can jump card to card by heading.
   return (
-    <div
+    <h2
       data-slot="card-title"
       className={cn(
         "flex items-center gap-1.5 font-mono text-[11px] leading-4 font-medium tracking-[0.12em] text-muted-foreground uppercase",
@@ -57,7 +58,7 @@ function CardTitle({
           <span className="sr-only">{info}</span>
         </span>
       )}
-    </div>
+    </h2>
   )
 }
 

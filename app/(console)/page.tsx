@@ -19,10 +19,16 @@ export default function Dashboard() {
   return (
     <Suspense
       fallback={
-        <>
+        // Skeleton in the board's own shape, so the real cards stream into reserved space instead of pushing the page.
+        <main aria-busy="true">
           <PageHeader title="Dashboard" subtitle="Loading weather, rounds and water…" />
-          <p className="px-8 py-6 text-sm text-muted-foreground">Loading weather and Spot&apos;s health…</p>
-        </>
+          <div className="max-w-[1800px] space-y-4 px-8 py-4 *:animate-pulse *:rounded-2xl *:bg-card motion-reduce:*:animate-none">
+            <div className="h-7 max-w-2xl" />
+            <div className="h-19" />
+            <div className="h-26" />
+            <div className="h-[48rem]" />
+          </div>
+        </main>
       }
     >
       <Board />
@@ -54,15 +60,15 @@ async function Board() {
   const waterLine = waiting ? `Water at ${waiting.waypoint ?? "the route"} needs an operator.` : hazard ? `Water hazard marked at ${hazard.waypoint ?? "the route"}.` : "Route dry.";
 
   return (
-    <>
+    <main>
       <PageHeader
         title="Dashboard"
         subtitle="Spot is IP54: light rain is fine, harsh rain and storms are not. Kairos watches both, and water on the route."
       />
       <WeatherBanner />
 
-      <main className="mx-auto max-w-[1440px] space-y-5 px-8 py-6">
-        <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-lg">
+      <div className="max-w-[1800px] space-y-4 px-8 py-4">
+        <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-lg xl:text-base 3xl:text-lg">
           <VerdictChip verdict={onRoute} />
           <span>{weatherLine}</span>
           {launchLine && <span className="text-muted-foreground">{launchLine}</span>}
@@ -70,21 +76,29 @@ async function Board() {
         </p>
         <SpotStrip kit={kit} a={a} />
         <Kpis a={a} water={water} weatherHolds={weatherHolds} />
-        {/* Weather first: Spot is IP54, so harsh rain and storms are what stop it. Left: weather, plant, water. Right: the call, radar, round health. */}
-        {/* Columns stretch to the same height and each column's last card fills the rest, so both bottoms line up. */}
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <div className="flex flex-col gap-5 [&>*:last-child]:flex-1">
+        {/* DOM order is the story (weather: IP54, next round, radar; then plant map, water, round health), so phones read it top to bottom.
+            Laptop (xl): rows of wide | narrow, each row's cards stretch to the same height. Wide desktop (1800+): two rows of four columns. */}
+        <div className="grid gap-4 *:flex *:flex-col *:*:flex-1 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] 3xl:grid-cols-4">
+          <div className="3xl:col-span-2">
             <Ip54Panel />
+          </div>
+          <div>
+            <NextRound plan={plan} strip={false} nextGo={nextGo} />
+          </div>
+          <div className="xl:col-start-2 xl:row-start-2 3xl:col-start-4 3xl:row-start-1">
+            <LiveRadar />
+          </div>
+          <div className="xl:col-start-1 xl:row-start-2 3xl:col-span-2">
             <PlantMap kit={kit} a={a} water={water} weather={onRoute} />
+          </div>
+          <div className="xl:col-start-1 xl:row-start-3 3xl:col-start-3 3xl:row-start-2">
             <RouteWater />
           </div>
-          <div className="flex flex-col gap-5 [&>*:last-child]:flex-1">
-            <NextRound plan={plan} strip={false} nextGo={nextGo} />
-            <LiveRadar />
+          <div className="xl:col-start-2 xl:row-start-3 3xl:col-start-4 3xl:row-start-2">
             <RoundHealth a={a} />
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

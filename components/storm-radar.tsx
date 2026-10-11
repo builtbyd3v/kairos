@@ -12,7 +12,7 @@ export const RADAR_FRAMES = ["-m50m", "-m40m", "-m30m", "-m20m", "-m10m", "now"]
 export function StormRadar({ frame, stamp, className }: { frame: number; stamp: string; className?: string }) {
   return (
     <div className={cn("relative aspect-square overflow-hidden rounded-lg ring-1 ring-border", className)}>
-      <div className="absolute inset-0 grid grid-cols-3">
+      <div className="keep-grid absolute inset-0 grid grid-cols-3">
         {YS.flatMap((y) =>
           XS.map((x) => (
             // eslint-disable-next-line @next/next/no-img-element -- third-party map tiles
@@ -21,7 +21,7 @@ export function StormRadar({ frame, stamp, className }: { frame: number; stamp: 
         )}
       </div>
       {RADAR_FRAMES.map((f, i) => (
-        <div key={f} aria-hidden className={cn("absolute inset-0 grid grid-cols-3 transition-opacity duration-500", i === frame ? "opacity-85" : "opacity-0")}>
+        <div key={f} aria-hidden className={cn("keep-grid absolute inset-0 grid grid-cols-3 transition-opacity duration-500", i === frame ? "opacity-85" : "opacity-0")}>
           {YS.flatMap((y) =>
             XS.map((x) => (
               // eslint-disable-next-line @next/next/no-img-element -- recorded radar tiles

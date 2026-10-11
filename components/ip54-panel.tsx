@@ -43,7 +43,7 @@ function hourly(weather: Weather | null, now: Date): Hour[] {
 /** Dashboard hero: rain against Spot's IP54 limit, now and for the next 12 hours, with the call for a Spot on route. */
 export function Ip54Panel() {
   return (
-    <Suspense fallback={<Card className="min-h-96 animate-pulse" />}>
+    <Suspense fallback={<Card className="min-h-96 animate-pulse motion-reduce:animate-none" />}>
       <Panel />
     </Suspense>
   );
@@ -63,13 +63,61 @@ async function Panel() {
   const temp = Math.max(...window.map((s) => s.tempC ?? -99));
 
   // Chart geometry: one axis (mm/h), bars from the baseline, the IP54 limit as a labeled rule.
-  const W = 720, H = 250, PAD_L = 34, PAD_B = 22, top = 10;
+  const PAD_L = 34, PAD_B = 22, top = 10;
   const yMax = Math.max(LIMIT * 2, ...hours.map((h) => h.rain ?? 0)) * 1.1;
-  const y = (mm: number) => top + (H - PAD_B - top) * (1 - mm / yMax);
-  const slot = (W - PAD_L) / HOURS;
-  const barW = Math.min(28, slot - 6);
   const top3 = Math.floor(yMax / 1.1);
   const ticks = top3 > LIMIT * 1.4 ? [0, LIMIT, top3] : [0, LIMIT];
+  // SVG text scales with the viewBox, so the viewBox width is close to the drawn width: labels land near 12 px on a phone and on a desktop card.
+  const chart = (W: number, H: number, className: string) => {
+    const y = (mm: number) => top + (H - PAD_B - top) * (1 - mm / yMax);
+    const slot = (W - PAD_L) / HOURS;
+    const barW = Math.min(28, slot - 6);
+    const go = nextGo && nextGo.getTime() < hours[HOURS - 1].at.getTime() + 3600000 ? PAD_L + ((nextGo.getTime() - hours[0].at.getTime()) / 3600000) * slot : null;
+    return (
+      <svg viewBox={`0 0 ${W} ${H + 26}`} className={cn("w-full", className)} role="img" aria-label={`Rain forecast for the next ${HOURS} hours against Spot's IP54 limit of ${LIMIT} mm per hour. Hourly values are in Details and data.`}>
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={PAD_L} x2={W} y1={y(v)} y2={y(v)} stroke="#ffffff" strokeOpacity={v === LIMIT ? 0 : 0.07} />
+            <text x={PAD_L - 6} y={y(v) + 4} textAnchor="end" fontSize="12" fill="#8d8d8d" className="font-mono">
+              {v}
+            </text>
+          </g>
+        ))}
+        {hours.map((h, i) => {
+          const x = PAD_L + i * slot + (slot - barW) / 2;
+          const mm = h.rain ?? 0;
+          const b = band(h.rain);
+          return (
+            <g key={h.at.toISOString()}>
+              <title>{`${et(h.at, { hour: "numeric" })}: ${h.rain === null ? "no data" : `${h.rain.toFixed(1)} mm/h`}${h.thunder !== null ? `, thunder ${Math.round(h.thunder)}%` : ""} (${BAND[b].label})`}</title>
+              {/* Wide invisible hit target for the tooltip. */}
+              <rect x={PAD_L + i * slot} y={top} width={slot} height={H - PAD_B - top} fill="transparent" />
+              <rect x={x} y={Math.min(y(mm), y(0) - 3)} width={barW} height={Math.max(3, y(0) - y(mm))} rx="4" className={BAND[b].fill} />
+              {i % 2 === 0 && (
+                <text x={x + barW / 2} y={H - 4} textAnchor="middle" fontSize="12" fill="#8d8d8d" className="font-mono">
+                  {i === 0 ? "now" : et(h.at, { hour: "numeric" }).replace(" ", "").toLowerCase()}
+                </text>
+              )}
+              {/* Thunder strip under the axis: its own row, not a second scale. */}
+              <rect x={x} y={H + 6} width={barW} height="8" rx="2" className={h.thunder === null ? "fill-white/5" : h.thunder >= LIMITS.thunderPct ? "fill-hold" : "fill-white/10"} />
+            </g>
+          );
+        })}
+        <line x1={PAD_L} x2={W} y1={y(LIMIT)} y2={y(LIMIT)} stroke="var(--recall)" strokeWidth="2" strokeDasharray="6 4" />
+        <text x={W - 4} y={y(LIMIT) - 6} textAnchor="end" fontSize="12" fill="var(--recall)" className="font-mono">
+          IP54 limit {LIMIT} mm/h
+        </text>
+        {go !== null && (
+          <g>
+            <line x1={go} x2={go} y1={top} y2={H - PAD_B} stroke="var(--go)" strokeWidth="2" />
+            <text x={go + 5} y={top + 12} fontSize="12" fill="var(--go)" className="font-mono">
+              next safe launch
+            </text>
+          </g>
+        )}
+      </svg>
+    );
+  };
 
   return (
     <Card className="animate-rise">
@@ -100,55 +148,8 @@ async function Panel() {
             </div>
           </div>
           <figure className="space-y-2">
-            <svg viewBox={`0 0 ${W} ${H + 26}`} className="w-full" role="img" aria-label={`Rain forecast for the next ${HOURS} hours against Spot's IP54 limit of ${LIMIT} mm per hour`}>
-              {ticks.map((v) => (
-                <g key={v}>
-                  <line x1={PAD_L} x2={W} y1={y(v)} y2={y(v)} stroke="#ffffff" strokeOpacity={v === LIMIT ? 0 : 0.07} />
-                  <text x={PAD_L - 6} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#8d8d8d" className="font-mono">
-                    {v}
-                  </text>
-                </g>
-              ))}
-              {hours.map((h, i) => {
-                const x = PAD_L + i * slot + (slot - barW) / 2;
-                const mm = h.rain ?? 0;
-                const b = band(h.rain);
-                return (
-                  <g key={h.at.toISOString()}>
-                    <title>{`${et(h.at, { hour: "numeric" })}: ${h.rain === null ? "no data" : `${h.rain.toFixed(1)} mm/h`}${h.thunder !== null ? `, thunder ${Math.round(h.thunder)}%` : ""} (${BAND[b].label})`}</title>
-                    {/* Wide invisible hit target for the tooltip. */}
-                    <rect x={PAD_L + i * slot} y={top} width={slot} height={H - PAD_B - top} fill="transparent" />
-                    <rect x={x} y={Math.min(y(mm), y(0) - 3)} width={barW} height={Math.max(3, y(0) - y(mm))} rx="4" className={BAND[b].fill} />
-                    {i % 2 === 0 && (
-                      <text x={x + barW / 2} y={H - 4} textAnchor="middle" fontSize="11" fill="#8d8d8d" className="font-mono">
-                        {i === 0 ? "now" : et(h.at, { hour: "numeric" }).replace(" ", "").toLowerCase()}
-                      </text>
-                    )}
-                    {/* Thunder strip under the axis: its own row, not a second scale. */}
-                    <rect x={x} y={H + 6} width={barW} height="8" rx="2" className={h.thunder === null ? "fill-white/5" : h.thunder >= LIMITS.thunderPct ? "fill-hold" : "fill-white/10"} />
-                  </g>
-                );
-              })}
-              <line x1={PAD_L} x2={W} y1={y(LIMIT)} y2={y(LIMIT)} stroke="var(--recall)" strokeWidth="2" strokeDasharray="6 4" />
-              <text x={W - 4} y={y(LIMIT) - 6} textAnchor="end" fontSize="12" fill="var(--recall)" className="font-mono">
-                IP54 limit {LIMIT} mm/h
-              </text>
-              {nextGo && nextGo.getTime() < hours[HOURS - 1].at.getTime() + 3600000 && (
-                <g>
-                  <line
-                    x1={PAD_L + ((nextGo.getTime() - hours[0].at.getTime()) / 3600000) * slot}
-                    x2={PAD_L + ((nextGo.getTime() - hours[0].at.getTime()) / 3600000) * slot}
-                    y1={top}
-                    y2={H - PAD_B}
-                    stroke="var(--go)"
-                    strokeWidth="2"
-                  />
-                  <text x={PAD_L + ((nextGo.getTime() - hours[0].at.getTime()) / 3600000) * slot + 5} y={top + 12} fontSize="11" fill="var(--go)" className="font-mono">
-                    next safe launch
-                  </text>
-                </g>
-              )}
-            </svg>
+            {chart(340, 190, "md:hidden")}
+            {chart(470, 230, "hidden md:block")}
             <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {(["dry", "light", "heavy"] as const).map((b) => (
                 <span key={b} className="inline-flex items-center gap-1.5">

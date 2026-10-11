@@ -4,12 +4,16 @@ import { drillStatus } from "@/lib/decisions";
 import { operatorSignIn, operatorSignOut, sandboxStatus } from "@/lib/operator";
 import { FreshCopyButton } from "@/components/fresh-copy-button";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const LINE_H = "min-h-32 sm:min-h-27 lg:min-h-7";
 
 /** One line under the storm drill: which Neon branch the drill writes to, plus a Fresh copy button. Mount anywhere; it suspends on its own. */
 export function DrillBranchStatus() {
   return (
     <div className="space-y-2">
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Checking the drill&apos;s Neon branch…</p>}>
+      {/* The line reserves its tallest height at each width (fallback, no branch yet, branch ready), so the player below never jumps. */}
+      <Suspense fallback={<p className={cn(LINE_H, "text-sm text-muted-foreground")}>Checking the drill&apos;s Neon branch…</p>}>
         <Line />
       </Suspense>
       <SandboxStatus />
@@ -20,7 +24,7 @@ export function DrillBranchStatus() {
 async function Line() {
   const s = await drillStatus();
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className={cn(LINE_H, "flex flex-wrap content-start items-center gap-3 text-sm")}>
       <GitBranch aria-hidden className="size-4 text-muted-foreground" />
       {"name" in s ? (
         <p>
@@ -41,7 +45,7 @@ async function Line() {
 /** Where this visitor's clicks go: their own Neon branch, or production for a signed-in operator. Suspends on its own. */
 export function SandboxStatus() {
   return (
-    <Suspense fallback={<p className="text-sm text-muted-foreground">Checking where your clicks are saved…</p>}>
+    <Suspense fallback={<p className="min-h-24 text-sm text-muted-foreground sm:min-h-5">Checking where your clicks are saved…</p>}>
       <Sandbox />
     </Suspense>
   );

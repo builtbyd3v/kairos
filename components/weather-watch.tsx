@@ -18,7 +18,7 @@ const ROUND_MIN = 30; // ASSUMPTION: Spot needs up to 30 min to finish or return
 /** Radar card for the live round. Reads the clock (radar cache-buster), so it carries its own Suspense. */
 export function LiveRadar() {
   return (
-    <Suspense fallback={<Card className="aspect-square animate-pulse" />}>
+    <Suspense fallback={<Card className="aspect-square animate-pulse motion-reduce:animate-none" />}>
       <RadarCard />
     </Suspense>
   );
@@ -101,7 +101,7 @@ async function Watch({ mode }: { mode: "now" | "next" }) {
 /** Dashboard hero: the weather call for a Spot on route right now, with the radar that explains it. */
 export function RouteWeatherCard() {
   return (
-    <Suspense fallback={<Card className="min-h-96 animate-pulse" />}>
+    <Suspense fallback={<Card className="min-h-96 animate-pulse motion-reduce:animate-none" />}>
       <RouteWeather />
     </Suspense>
   );

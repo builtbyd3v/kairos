@@ -37,7 +37,7 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
   }, [recordedAt]);
 
   return (
-    <div className="flex items-center gap-3 border-b border-white/[0.06] px-8 py-3 print:hidden">
+    <header className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 sm:px-8 print:hidden">
       <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1.5 text-sm sm:flex">
         <span className="text-muted-foreground">Kairos</span>
         {crumbs.map((c, i) => (
@@ -61,7 +61,7 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
           {(["recorded", "live"] as const).map((v) => {
             const on = (v === "recorded") === Boolean(recordedAt);
             return (
-              <button key={v} name="scenario" value={v} aria-pressed={on} className={cn("rounded-md px-2 py-1 transition-colors", on ? (v === "live" ? "bg-go/20 text-go" : "bg-hold/20 text-hold") : "text-muted-foreground hover:text-foreground")}>
+              <button key={v} name="scenario" value={v} aria-pressed={on} className={cn("min-h-10 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring lg:min-h-0 lg:px-2", on ? (v === "live" ? "bg-go/20 text-go" : "bg-hold/20 text-hold") : "text-muted-foreground hover:text-foreground")}>
                 {v === "recorded" ? (
                   <>
                     <span className="sm:hidden">STORM</span>
@@ -74,22 +74,22 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
             );
           })}
         </form>
-        <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/[0.06] sm:flex">
+        <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs whitespace-nowrap text-muted-foreground ring-1 ring-white/[0.06] xl:flex">
           <Clock aria-hidden className="size-3.5" />
-          Demo site: {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET
+          Demo site: {site} · <span className="inline-block min-w-[11ch] text-right font-mono tabular-nums">{clock ?? "--"}</span> ET
         </span>
         <Link
           href="/anomalies"
           aria-label={`${openAnomalies} anomalies need you`}
-          className="relative grid size-9 place-items-center rounded-lg bg-card text-muted-foreground ring-1 ring-white/[0.06] transition-colors hover:text-foreground hover:ring-white/[0.12] focus-visible:outline-2 focus-visible:outline-ring"
+          className="relative grid size-11 place-items-center rounded-lg bg-card lg:size-9 text-muted-foreground ring-1 ring-white/[0.06] transition-colors hover:text-foreground hover:ring-white/[0.12] focus-visible:outline-2 focus-visible:outline-ring"
         >
           <Bell aria-hidden className="size-4" />
           {openAnomalies > 0 && <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-recall ring-2 ring-card" />}
         </Link>
-        <span aria-label="Signed in as operator" className="grid size-9 place-items-center rounded-lg bg-secondary font-mono text-xs font-semibold ring-1 ring-white/[0.08]">
+        <span role="img" aria-label="Signed in as operator" className="grid size-9 place-items-center rounded-lg bg-secondary font-mono text-xs font-semibold ring-1 ring-white/[0.08]">
           OP
         </span>
       </div>
-    </div>
+    </header>
   );
 }

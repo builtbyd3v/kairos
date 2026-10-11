@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 /** Dashboard hero: water Spot's camera found on the route, newest first, waiting for an operator's Confirm or Reject. */
 export function RouteWater() {
   return (
-    <Suspense fallback={<Card className="min-h-96 animate-pulse" />}>
+    <Suspense fallback={<Card className="min-h-[27rem] animate-pulse motion-reduce:animate-none" />}>
       <Water />
     </Suspense>
   );
@@ -35,17 +35,17 @@ async function Water() {
       ? { Icon: Droplets, title: `Hazard marked at ${where(hazards[0])}`, caption: "Confirmed water: Spot routes around it on the next rounds", text: "text-[#8ab8ff]", ring: "bg-[#6ea8fe]/10 ring-[#6ea8fe]/40" }
       : { Icon: CircleCheckBig, title: "Route dry", caption: "No water seen on recent rounds", text: "text-go", ring: "bg-go/10 ring-go/40" };
   return (
-    <Card className="animate-rise [--rise-delay:60ms]">
+    <Card className="@container animate-rise [--rise-delay:60ms]">
       <CardHeader>
         <CardTitle>Water on the route</CardTitle>
       </CardHeader>
-      {/* Wide screens: the state and the answer on the left, the camera frame on the right. */}
-      <CardContent className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Wide card: the state and the answer on the left, the camera frame on the right. Narrow card (phone, wide-desktop column): stacked. */}
+      <CardContent className="grid items-start gap-4 @xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-4">
           {/* The state says what the water IS: unanswered, a marked hazard, or none. Never "GO" next to a picture of water. */}
           <div className={cn("rounded-xl px-5 py-4 ring-1", state.ring)}>
-            <p className={cn("flex items-center gap-2 text-2xl font-semibold tracking-tight", state.text)}>
-              <state.Icon aria-hidden className="size-6" />
+            <p className={cn("flex items-center gap-2 text-xl font-semibold tracking-tight", state.text)}>
+              <state.Icon aria-hidden className="size-5 shrink-0" />
               {state.title}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">{state.caption}</p>
@@ -57,29 +57,30 @@ async function Water() {
             </p>
           )}
           {d && <EvidenceLabelButtons id={d.id} current={d.label} />}
-          <Link href="/evidence" className="inline-flex items-center gap-1 text-sm text-link hover:underline">
+          <Link href="/evidence" className="inline-flex min-h-6 items-center gap-1 text-sm text-link hover:underline">
             All water evidence <ArrowRight aria-hidden className="size-4" />
           </Link>
         </div>
         {/* The overlay sits on the image's own box, so normalized coordinates map for any aspect ratio. */}
         {d && (
           <div className="relative mx-auto w-fit overflow-hidden rounded-lg ring-1 ring-border">
+            {/* Fixed height: the card never grows when the photo arrives. */}
             {/* eslint-disable-next-line @next/next/no-img-element -- stored frame URI */}
-            <img src={d.frame_uri} alt={`Spot camera at ${d.waypoint ?? "the route"}`} className="block h-auto max-h-56 w-auto" />
+            <img src={d.frame_uri} alt={`Spot camera at ${d.waypoint ?? "the route"}`} className="block h-44 w-auto max-w-full" />
             <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden className="absolute inset-0 size-full">
               <rect x={d.box_x} y={d.box_y} width={d.box_w} height={d.box_h} fill="#6ea8fe" fillOpacity="0.1" stroke="#8ab8ff" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
             </svg>
           </div>
         )}
         {recent.length > 0 && (
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2 @xl:col-span-2">
             <p className="label-caps text-helper">Recent catches by the water model</p>
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <ul className="keep-grid grid grid-cols-2 gap-3 @min-[30rem]:grid-cols-4">
               {recent.map((r) => (
                 <li key={r.id} className="space-y-1">
                   <div className="relative overflow-hidden rounded-lg ring-1 ring-border">
                     {/* eslint-disable-next-line @next/next/no-img-element -- stored frame URI */}
-                    <img src={r.frame_uri} alt={`Spot camera at ${where(r)}`} className="block aspect-[4/3] w-full object-cover" />
+                    <img src={r.frame_uri} alt={`Spot camera at ${where(r)}`} loading="lazy" decoding="async" className="block aspect-[4/3] w-full object-cover" />
                   </div>
                   <p className="truncate text-xs font-medium">{r.waypoint ? where(r) : r.source === "seed" ? "Held-out test photo" : "Route"}</p>
                   <p className="text-xs text-muted-foreground">

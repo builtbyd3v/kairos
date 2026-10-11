@@ -23,46 +23,51 @@ const base = (x: number, y: number) => `https://tile.openstreetmap.org/${Z}/${x}
 export function RainRadar({ stamp, label, recorded = false }: { stamp: number; label: string; recorded?: boolean }) {
   // Recorded scenario: the frames captured with the weather snapshot, served from public/demo/radar.
   const tile = (f: string, x: number, y: number) => (recorded ? `/demo/radar/${f || "now"}-${x}-${y}.png` : radar(f, x, y, stamp));
-  const [step, setStep] = useState(FRAMES.length - 1); // first paint shows the live frame
-  // The loop timer is the outside system; people who prefer reduced motion keep the live frame.
+  // null = the loop has not started: show the live frame, and mount only its 9 tiles (the 45 past-frame tiles wait for the first tick).
+  const [step, setStep] = useState<number | null>(null);
+  // The loop timer is the outside system; people who prefer reduced motion keep the live frame and never load the past ones.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => setStep((s) => (s + 1) % (FRAMES.length + HOLD_LAST - 1)), STEP_MS);
+    const id = setInterval(() => setStep((s) => ((s ?? FRAMES.length - 1) + 1) % (FRAMES.length + HOLD_LAST - 1)), STEP_MS);
     return () => clearInterval(id);
   }, []);
-  const frame = Math.min(step, FRAMES.length - 1);
+  const looping = step !== null;
+  const frame = Math.min(step ?? FRAMES.length - 1, FRAMES.length - 1);
 
   return (
-    <figure className="space-y-1.5">
-      <div className="relative aspect-square overflow-hidden rounded-lg ring-1 ring-border">
-        <div className="absolute inset-0 grid grid-cols-3">
-          {YS.flatMap((y) => XS.map((x) => (
-            // eslint-disable-next-line @next/next/no-img-element -- third-party map tiles
-            <img key={`${x}-${y}`} src={base(x, y)} alt="" className="size-full brightness-75 contrast-125 grayscale invert" />
-          )))}
-        </div>
-        {FRAMES.map((f, i) => (
-          <div key={f || "now"} aria-hidden className={cn("absolute inset-0 grid grid-cols-3 transition-opacity duration-300", i === frame ? "opacity-80" : "opacity-0")}>
+    <figure className="mx-auto max-w-lg space-y-1.5 xl:max-w-none">
+      {/* Laptop (1280 to 1799 px): a 4:3 window on the square tile grid, centered on the plant's latitude (both rings stay in view), so the card matches the plant map's height. */}
+      <div className="relative aspect-square overflow-hidden rounded-lg ring-1 ring-border xl:aspect-[4/3] 3xl:aspect-square">
+        <div className="absolute inset-x-0 top-1/2 aspect-square -translate-y-1/2">
+          <div className="keep-grid absolute inset-0 grid grid-cols-3">
             {YS.flatMap((y) => XS.map((x) => (
-              // eslint-disable-next-line @next/next/no-img-element -- third-party radar tiles
-              <img key={`${x}-${y}`} src={tile(f, x, y)} alt="" className="size-full" />
+              // eslint-disable-next-line @next/next/no-img-element -- third-party map tiles
+              <img key={`${x}-${y}`} src={base(x, y)} alt="" width={256} height={256} decoding="async" className="size-full brightness-75 contrast-125 grayscale invert" />
             )))}
           </div>
-        ))}
-        <svg viewBox="0 0 768 768" className="pointer-events-none absolute inset-0 size-full" role="img" aria-label={`${label}. Rings at 20 and 50 km.`}>
-          {[20, 50].map((km) => (
-            <g key={km}>
-              <circle cx={PLANT.x} cy={PLANT.y} r={km * KM_PX} fill="none" stroke="#f4f4f4" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="5 5" />
-              <text x={PLANT.x + 4} y={PLANT.y - km * KM_PX - 4} fontSize="14" fill="#f4f4f4" fillOpacity="0.7" className="font-mono">
-                {km} km
-              </text>
-            </g>
+          {FRAMES.map((f, i) => (looping || i === FRAMES.length - 1) && (
+            <div key={f || "now"} aria-hidden className={cn("keep-grid absolute inset-0 grid grid-cols-3 transition-opacity duration-300", i === frame ? "opacity-80" : "opacity-0")}>
+              {YS.flatMap((y) => XS.map((x) => (
+                // eslint-disable-next-line @next/next/no-img-element -- third-party radar tiles
+                <img key={`${x}-${y}`} src={tile(f, x, y)} alt="" width={256} height={256} decoding="async" className="size-full" />
+              )))}
+            </div>
           ))}
-          <circle cx={PLANT.x} cy={PLANT.y} r="7" fill="var(--primary)" stroke="#161616" strokeWidth="2" />
-          <text x={PLANT.x + 11} y={PLANT.y + 5} fontSize="16" fontWeight="600" fill="#f4f4f4" className="font-mono">
-            ST. LUCIE
-          </text>
-        </svg>
+          <svg viewBox="0 0 768 768" className="pointer-events-none absolute inset-0 size-full" role="img" aria-label={`${label}. Rings at 20 and 50 km.`}>
+            {[20, 50].map((km) => (
+              <g key={km}>
+                <circle cx={PLANT.x} cy={PLANT.y} r={km * KM_PX} fill="none" stroke="#f4f4f4" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="5 5" />
+                <text x={PLANT.x + 4} y={PLANT.y - km * KM_PX - 4} fontSize="14" fill="#f4f4f4" fillOpacity="0.7" className="font-mono">
+                  {km} km
+                </text>
+              </g>
+            ))}
+            <circle cx={PLANT.x} cy={PLANT.y} r="7" fill="var(--primary)" stroke="#161616" strokeWidth="2" />
+            <text x={PLANT.x + 11} y={PLANT.y + 5} fontSize="16" fontWeight="600" fill="#f4f4f4" className="font-mono">
+              ST. LUCIE
+            </text>
+          </svg>
+        </div>
         <span className="absolute top-2 left-2 rounded bg-background/80 px-1.5 py-0.5 font-mono text-[11px] tracking-wide tabular-nums">
           RADAR · {AGE[frame]}
         </span>

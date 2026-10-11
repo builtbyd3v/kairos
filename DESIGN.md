@@ -33,6 +33,9 @@ Status tints under status text stay at 10% or less (`bg-recall/10`); at 15% reca
 - Card titles and table headers: `label-caps` (11 px Geist Mono, uppercase, 0.12em tracking, muted color). `CardTitle` takes an optional `info` string for the small (i) icon.
 - KPI tiles: caps label, 28 px mono number, sparkbars at the right (neutral bars, latest bar in the accent, red for bars past a limit), footer row with the delta.
 - Radius base 10 px: cards 18 px, inset panels 14 px, controls 10 px, pills fully round. Page padding 32 px. Grid gap 20 px.
+- Dashboard is denser: 16 px gaps. Grid by width: one column under 1280 px (DOM order is the story), wide | narrow rows (3:2) from 1280 px, four columns from 1800 px (`3xl` breakpoint in `globals.css`).
+- Phones and tablets: every grid in `main` stacks to one column (rule at the end of `globals.css`); add `keep-grid` to a grid that must keep its columns (tile mosaics, label rows, KPI pairs).
+- Targets: 24 px minimum on desktop, 44 px on phone (bottom tabs, scenario switch, alerts bell). SVG chart text sits near 12 px: the viewBox width tracks the drawn width.
 - Segmented controls are pills on the panel color; the active pill is `secondary` with a hairline ring.
 
 ## Motion

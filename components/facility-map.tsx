@@ -10,7 +10,7 @@ const radius = (s: MapSite) => 2.5 + Math.sqrt(s.anomalies) * 1.2; // area grows
 const NUDGE: Record<string, [number, number]> = { WP04: [-0.5, 1.2], WP05: [-4.6, 4.7] };
 export const pos = (s: Pick<MapSite, "id" | "x" | "y">) => ({ x: s.x + (NUDGE[s.id]?.[0] ?? 0), y: s.y + (NUDGE[s.id]?.[1] ?? 0) });
 // Where a waypoint's name sits when names are on: below by default; crowded waypoints move so labels do not cover circles.
-const NAME_AT: Record<string, "above" | "right" | "left"> = { WP04: "right", WP07: "above", WP05: "left", WP10: "right", WP12: "right" };
+const NAME_AT: Record<string, "above" | "right" | "left"> = { WP06: "right", WP04: "right", WP07: "above", WP05: "left", WP10: "right", WP12: "right" };
 const DOTS = Array.from({ length: 11 }, (_, i) => i * 10);
 const PATH_UI = {
   walked: { stroke: "#4f9fe8", width: 1.6, dash: undefined, opacity: 1 },
@@ -61,12 +61,13 @@ export function FacilityMap({
 }) {
   const byId = new Map(sites.map((s) => [s.id, s]));
   return (
-    <div className={cn("grid grid-cols-2 gap-3", className)}>
+    // keep-grid: opt out of the global phone/tablet one-column rule; floors sit side by side from 640 px, stacked on phones.
+    <div className={cn("keep-grid grid grid-cols-1 gap-3 sm:grid-cols-2", className)}>
       {[1, 2].map((floor) => {
         const path = (route ?? []).map((id) => byId.get(id)).filter((s): s is MapSite => !!s && s.floor === floor);
         return (
           <figure key={floor}>
-            <svg viewBox="-6 -6 112 112" className="w-full rounded-xl bg-[#0c1016] ring-1 ring-white/[0.06]" role="img" aria-label={`Floor ${floor} map`}>
+            <svg viewBox="-6 -6 112 112" className="w-full rounded-xl bg-[#0c1016] ring-1 ring-white/[0.06]" role="group" aria-label={`Floor ${floor} map. Each waypoint is a link.`}>
               {/* Dot grid, 10 map units apart. */}
               {DOTS.flatMap((gx) => DOTS.map((gy) => <circle key={`${gx}-${gy}`} cx={gx} cy={gy} r="0.35" fill="#2a3542" />))}
               {path.length > 1 && (
@@ -109,6 +110,8 @@ export function FacilityMap({
                       className="focus-visible:outline-none [&:focus-visible>circle]:stroke-foreground [&:hover>circle]:fill-opacity-45"
                     >
                       <title>{`${s.id} ${s.name}: ${pct}% inspections OK (${s.ok}/${s.total}), ${s.anomalies} anomalies`}</title>
+                      {/* Invisible hit area: about 24 px across even where the map is drawn small. */}
+                      <circle cx={x} cy={y} r={Math.max(r, 5)} fill="transparent" />
                       {outdoor.includes(s.id) && <circle cx={x} cy={y} r={r + 3} fill="none" stroke="#7ec4ff" strokeDasharray="1.5 1.5" strokeWidth="0.6" />}
                       <circle cx={x} cy={y} r={r} fill={fill} fillOpacity={0.22} stroke={fill} strokeWidth="0.8" className="transition-[fill-opacity]" />
                       <text x={x} y={y + 1.4} textAnchor="middle" fontSize="3.8" fontWeight="600" fill="#f4f4f4" className="pointer-events-none font-mono">
@@ -119,7 +122,7 @@ export function FacilityMap({
                         const [nx, ny, anchor]: [number, number, "start" | "middle" | "end"] =
                           at === "above" ? [x, y - r - 1.6, "middle"] : at === "right" ? [x + r + 1.4, y + 1, "start"] : at === "left" ? [x - r - 1.4, y + 1, "end"] : [x, y + r + 3.6, "middle"];
                         return (
-                          <text x={nx} y={ny} textAnchor={anchor} fontSize="2.9" fill="#a8a8a2" stroke="#0c1016" strokeWidth="0.8" paintOrder="stroke" className="pointer-events-none">
+                          <text x={nx} y={ny} textAnchor={anchor} fontSize="3.3" fill="#a8a8a2" stroke="#0c1016" strokeWidth="0.8" paintOrder="stroke" className="pointer-events-none">
                             {s.name}
                           </text>
                         );
@@ -161,7 +164,7 @@ export function FacilityMap({
           </figure>
         );
       })}
-      {!neutral && <div className="col-span-2">
+      {!neutral && <div className="col-span-full">
         <Why label="Legend">
           Color = share of inspections OK there (green ≥ 85%, yellow ≥ 70%, red below). Size = anomaly count.
           {outdoor.length > 0 && " Dashed ring = outdoor leg (assumed)."}

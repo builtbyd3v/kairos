@@ -4,6 +4,8 @@
 
 
 @theme inline {
+    /* Wide desktop (1800 px and up): the dashboard switches to four columns. A theme breakpoint sorts after 2xl; an arbitrary min-[...] would not. */
+    --breakpoint-3xl: 112.5rem;
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
     --font-mono: var(--font-mono);

@@ -16,6 +16,9 @@ export default function ConsoleLayout({ children }: LayoutProps<"/">) {
   return (
     // The whole app floats on a darker backdrop as one framed window (sidebar + panel), like a desktop app.
     <div className="min-h-screen bg-backdrop lg:p-3 print:bg-white print:p-0">
+      <a href="#content" className="sr-only z-50 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        Skip to content
+      </a>
       <div className="flex min-h-screen lg:min-h-[calc(100vh-1.5rem)] lg:rounded-2xl lg:bg-sidebar lg:shadow-[0_32px_80px_-24px_rgb(0_0_0/0.9)] lg:ring-1 lg:ring-white/[0.07] print:bg-white print:shadow-none print:ring-0">
         <aside className="sticky top-3 hidden h-[calc(100vh-1.5rem)] w-60 shrink-0 flex-col px-3 py-4 lg:flex print:hidden">
           <Link href="/" className="mb-6 flex items-center gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-white/[0.06] focus-visible:outline-2 focus-visible:outline-ring">
@@ -39,7 +42,9 @@ export default function ConsoleLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<TopBar search={<Palette />} openAnomalies={0} site={SITE.name.split(",")[0]} />}>
             <Top />
           </Suspense>
-          {children}
+          <div id="content" tabIndex={-1} className="outline-none">
+            {children}
+          </div>
         </div>
       </div>
       <MobileNav />

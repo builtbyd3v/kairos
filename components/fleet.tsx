@@ -101,7 +101,7 @@ export function Kpis({ a, water, weatherHolds }: { a: Analysis; water: EvidenceR
     },
   ];
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="keep-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {tiles.map((k, i) => (
         <Card key={k.label} size="sm" className={cn("animate-rise", DELAYS[i])}>
           <CardHeader>
@@ -186,7 +186,7 @@ export function RoundHealth({ a }: { a: Analysis }) {
         <ul className="panel-inset divide-y divide-border">
           {rows.map((r) => (
             <li key={r.title}>
-              <Link href={r.href} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-ring">
+              <Link href={r.href} className="keep-grid grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-ring">
                 <span className="font-mono text-lg font-semibold text-hold tabular-nums">{r.figure}</span>
                 <span>
                   <span className="block font-medium">{r.title}</span>
