@@ -273,7 +273,7 @@ function RouteBeat() {
   );
 }
 
-/* Beat 2 (StepSafe f013): a dark radar-style map. St. Lucie marker, storm cells closing in, water pins on the route. */
+/* Beat 2 (StepSafe f013): a dark radar-style map. Plant marker (the demo site), storm cells closing in, water pins on the route. */
 function RadarBeat() {
   const pin = "M0 0 C-10 -14 -15 -20 -15 -29 A15 15 0 1 1 15 -29 C15 -20 10 -14 0 0 Z";
   return (
@@ -311,7 +311,7 @@ function RadarBeat() {
         <g className="k-pop [--d:0.3s]">
           <line x1="974" y1="552" x2="1120" y2="490" stroke="#4f9fe8" strokeOpacity="0.6" strokeWidth="3" />
           <rect x="1120" y="340" width="440" height="300" rx="24" fill="#13233a" stroke="#4f9fe8" strokeOpacity="0.5" strokeWidth="2" />
-          <text x="1146" y="384" fontSize="24" fontWeight="600" fill="#f5f5f4">St. Lucie plant · route</text>
+          <text x="1146" y="384" fontSize="24" fontWeight="600" fill="#f5f5f4">The plant · route</text>
           <circle cx="1290" cy="500" r="40" fill="#1f3352" />
           <circle cx="1390" cy="500" r="34" fill="#1f3352" />
           <rect x="1450" y="450" width="70" height="90" rx="6" fill="#1f3352" />
@@ -369,7 +369,7 @@ function StormBeat() {
 
       <div className="absolute top-[130px] left-[1250px] w-[600px] rounded-[30px] bg-card p-5 shadow-[0_32px_80px_-24px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
         <div className="mb-4 flex items-center justify-between px-2 font-mono text-[20px] tracking-[0.12em] text-muted-foreground uppercase">
-          <span>Rain radar · St. Lucie</span>
+          <span>Rain radar · the plant</span>
           <span className="k-pop [--d:3s] rounded-full bg-recall px-3 py-0.5 text-black">Recall</span>
         </div>
         <svg viewBox="0 0 480 480" className="w-full rounded-[22px] bg-[#151b21]" aria-hidden>
@@ -473,8 +473,9 @@ function OutroBeat() {
     <div className="absolute inset-x-0 top-[230px] flex flex-col items-center text-center">
       <Mark className="k-pop [--d:0.1s] size-[150px] shadow-[0_0_80px_-10px_rgb(79_159_232/0.7)]" />
       <p className="k-rise [--d:0.3s] mt-8 text-[150px] leading-none font-bold tracking-tight">Kairos</p>
-      <p className="k-rise [--d:0.6s] mt-8 text-[44px] text-white/80">Weather and water checks for Spot, inside Orbit</p>
-      <p className="k-rise [--d:0.9s] mt-6 font-mono text-[36px] text-link">kairos.boston</p>
+      <p className="k-rise [--d:0.6s] mt-8 text-[52px] font-semibold text-white/90">Catch the puddle. Clear the storm.</p>
+      <p className="k-rise [--d:0.8s] mt-3 text-[30px] text-white/60">Built for NextEra&apos;s Spot</p>
+      <p className="k-rise [--d:1s] mt-6 font-mono text-[36px] text-link">kairos.boston</p>
     </div>
   );
 }
