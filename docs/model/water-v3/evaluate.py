@@ -25,6 +25,9 @@ TILES = os.environ.get("TILES") == "1"  # also score a tiled q8 variant (5 passe
 recs = [json.loads(l) for l in open(os.path.join(PACK, "labels.jsonl"))]
 recs = [r for r in recs if r["split"] in ("calib", "test")]
 recs = recs[:: int(os.environ.get("EVAL_STRIDE", "1"))]  # note: stride > 1 only for smoke runs of this script
+CALIB_ONLY = os.environ.get("CALIB_ONLY") == "1"  # picking among candidates: calib split, fp32 only, never opens test
+if CALIB_ONLY:
+    recs = [r for r in recs if r["split"] == "calib"]
 
 q8_path = os.path.join(V2, "onnx", "model_quantized.onnx")
 if not os.path.exists(q8_path):
@@ -34,7 +37,7 @@ if not os.path.exists(q8_path):
 
 proc = AutoImageProcessor.from_pretrained(V2)
 sess = {k: ort.InferenceSession(os.path.join(V2, "onnx", f), providers=["CPUExecutionProvider"])
-        for k, f in (("fp32", "model.onnx"), ("q8", "model_quantized.onnx"))}
+        for k, f in (("fp32", "model.onnx"), ("q8", "model_quantized.onnx")) if not (CALIB_ONLY and k == "q8")}
 
 
 def iou(a, b):
@@ -137,6 +140,9 @@ def calibrate(key):
 
 
 thr = calibrate("fp32")
+if CALIB_ONLY:
+    json.dump({"threshold": thr, "calib": score("calib", "fp32", thr)}, open(OUT, "w"), indent=1)
+    sys.exit(print(json.dumps({"threshold": thr, "calib": score("calib", "fp32", thr)})))
 
 res = {"threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames", "threshold": thr,
        "quant_ops": QOPS, "calib": score("calib", "fp32", thr), "test_fp32": score("test", "fp32", thr), "test_q8": score("test", "q8", thr),

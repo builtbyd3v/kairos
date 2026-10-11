@@ -1,0 +1,987 @@
+{
+ "note": "v2 = shipped Hub revision 54c3bb4 ONNX, re-scored with this folder's evaluate.py. Candidates were picked on calib only; the picked one (run B 800 weights at 640 input) and both run A models were also scored on test. Not shipped.",
+ "spend_usd": {
+  "l4x1_960_runA_canceled_at_12pct": 0.21,
+  "l4x1_800_runA": 0.56,
+  "a100_960_runA": 1.94,
+  "a100_960_runB": 1.7,
+  "l4x1_800_runB": 0.56,
+  "total": 4.97
+ },
+ "webgpu_ms_per_frame_m4pro_chrome_fp32_median_of_10": {
+  "idle_cpu": {
+   "640": 101,
+   "800": 135,
+   "960": 165
+  },
+  "busy_cpu": {
+   "640": 215,
+   "800": 240,
+   "960": 339
+  }
+ },
+ "v2": {
+  "threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames",
+  "threshold": 0.49,
+  "quant_ops": "all",
+  "calib": {
+   "threshold": 0.49,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 315,
+   "box_recall_iou50": 0.5,
+   "box_recall_iou25": 0.565989847715736,
+   "tiny_recall_iou50": 0.05,
+   "tiny_recall_iou25": 0.05,
+   "box_precision_iou50": 0.6253968253968254,
+   "hits": {
+    "box50": 197,
+    "box25": 223,
+    "tiny50": 1,
+    "tiny25": 1,
+    "matched_dets": 197
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 21,
+     "n": 379,
+     "per100": 5.5
+    },
+    "kaggle_wet": {
+     "alarm": 38,
+     "n": 42,
+     "per100": 90.5
+    },
+    "pwwbs_wet": {
+     "alarm": 184,
+     "n": 230,
+     "per100": 80.0
+    },
+    "scand_dry": {
+     "alarm": 2,
+     "n": 81,
+     "per100": 2.5
+    }
+   }
+  },
+  "test_fp32": {
+   "threshold": 0.49,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 680,
+   "box_recall_iou50": 0.48842592592592593,
+   "box_recall_iou25": 0.5787037037037037,
+   "tiny_recall_iou50": 0.10526315789473684,
+   "tiny_recall_iou25": 0.14035087719298245,
+   "box_precision_iou50": 0.6205882352941177,
+   "hits": {
+    "box50": 422,
+    "box25": 500,
+    "tiny50": 6,
+    "tiny25": 8,
+    "matched_dets": 422
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 19,
+     "n": 579,
+     "per100": 3.3
+    },
+    "kaggle_wet": {
+     "alarm": 50,
+     "n": 57,
+     "per100": 87.7
+    },
+    "pwwbs_wet": {
+     "alarm": 463,
+     "n": 543,
+     "per100": 85.3
+    },
+    "scand_dry": {
+     "alarm": 2,
+     "n": 172,
+     "per100": 1.2
+    }
+   }
+  },
+  "test_q8": {
+   "threshold": 0.49,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 664,
+   "box_recall_iou50": 0.48148148148148145,
+   "box_recall_iou25": 0.5671296296296297,
+   "tiny_recall_iou50": 0.07017543859649122,
+   "tiny_recall_iou25": 0.08771929824561403,
+   "box_precision_iou50": 0.6265060240963856,
+   "hits": {
+    "box50": 416,
+    "box25": 490,
+    "tiny50": 4,
+    "tiny25": 5,
+    "matched_dets": 416
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 17,
+     "n": 579,
+     "per100": 2.9
+    },
+    "kaggle_wet": {
+     "alarm": 52,
+     "n": 57,
+     "per100": 91.2
+    },
+    "pwwbs_wet": {
+     "alarm": 461,
+     "n": 543,
+     "per100": 84.9
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 172,
+     "per100": 2.3
+    }
+   }
+  },
+  "test_industrial_fp32": {
+   "threshold": 0.49,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 324,
+   "box_recall_iou50": 0.49206349206349204,
+   "box_recall_iou25": 0.5782312925170068,
+   "tiny_recall_iou50": 0.08108108108108109,
+   "tiny_recall_iou25": 0.10810810810810811,
+   "box_precision_iou50": 0.6697530864197531,
+   "hits": {
+    "box50": 217,
+    "box25": 255,
+    "tiny50": 3,
+    "tiny25": 4,
+    "matched_dets": 217
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 13,
+     "n": 339,
+     "per100": 3.8
+    },
+    "kaggle_wet": {
+     "alarm": 17,
+     "n": 20,
+     "per100": 85.0
+    },
+    "pwwbs_wet": {
+     "alarm": 227,
+     "n": 264,
+     "per100": 86.0
+    },
+    "scand_dry": {
+     "alarm": 2,
+     "n": 165,
+     "per100": 1.2
+    }
+   }
+  },
+  "test_industrial_q8": {
+   "threshold": 0.49,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 326,
+   "box_recall_iou50": 0.4943310657596372,
+   "box_recall_iou25": 0.5714285714285714,
+   "tiny_recall_iou50": 0.05405405405405406,
+   "tiny_recall_iou25": 0.08108108108108109,
+   "box_precision_iou50": 0.6687116564417178,
+   "hits": {
+    "box50": 218,
+    "box25": 252,
+    "tiny50": 2,
+    "tiny25": 3,
+    "matched_dets": 218
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 13,
+     "n": 339,
+     "per100": 3.8
+    },
+    "kaggle_wet": {
+     "alarm": 17,
+     "n": 20,
+     "per100": 85.0
+    },
+    "pwwbs_wet": {
+     "alarm": 228,
+     "n": 264,
+     "per100": 86.4
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 165,
+     "per100": 2.4
+    }
+   }
+  },
+  "input_size": {
+   "height": 640,
+   "width": 640
+  },
+  "q8_parity": {
+   "alarm_flips": 36,
+   "n": 1351,
+   "max_top_score_gap": 0.2922
+  }
+ },
+ "runA_800_paste": {
+  "threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames",
+  "threshold": 0.66,
+  "quant_ops": "all",
+  "calib": {
+   "threshold": 0.66,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 128,
+   "box_recall_iou50": 0.20812182741116753,
+   "box_recall_iou25": 0.24619289340101522,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.1,
+   "box_precision_iou50": 0.640625,
+   "hits": {
+    "box50": 82,
+    "box25": 97,
+    "tiny50": 0,
+    "tiny25": 2,
+    "matched_dets": 82
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 21,
+     "n": 379,
+     "per100": 5.5
+    },
+    "kaggle_wet": {
+     "alarm": 31,
+     "n": 42,
+     "per100": 73.8
+    },
+    "pwwbs_wet": {
+     "alarm": 70,
+     "n": 230,
+     "per100": 30.4
+    },
+    "scand_dry": {
+     "alarm": 0,
+     "n": 81,
+     "per100": 0.0
+    }
+   }
+  },
+  "test_fp32": {
+   "threshold": 0.66,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 261,
+   "box_recall_iou50": 0.19675925925925927,
+   "box_recall_iou25": 0.22337962962962962,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6513409961685823,
+   "hits": {
+    "box50": 170,
+    "box25": 193,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 170
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 40,
+     "n": 579,
+     "per100": 6.9
+    },
+    "kaggle_wet": {
+     "alarm": 29,
+     "n": 57,
+     "per100": 50.9
+    },
+    "pwwbs_wet": {
+     "alarm": 173,
+     "n": 543,
+     "per100": 31.9
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 172,
+     "per100": 2.3
+    }
+   }
+  },
+  "test_q8": {
+   "threshold": 0.66,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 292,
+   "box_recall_iou50": 0.22569444444444445,
+   "box_recall_iou25": 0.25578703703703703,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6678082191780822,
+   "hits": {
+    "box50": 195,
+    "box25": 221,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 195
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 41,
+     "n": 579,
+     "per100": 7.1
+    },
+    "kaggle_wet": {
+     "alarm": 29,
+     "n": 57,
+     "per100": 50.9
+    },
+    "pwwbs_wet": {
+     "alarm": 193,
+     "n": 543,
+     "per100": 35.5
+    },
+    "scand_dry": {
+     "alarm": 9,
+     "n": 172,
+     "per100": 5.2
+    }
+   }
+  },
+  "test_industrial_fp32": {
+   "threshold": 0.66,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 120,
+   "box_recall_iou50": 0.1836734693877551,
+   "box_recall_iou25": 0.19727891156462585,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.675,
+   "hits": {
+    "box50": 81,
+    "box25": 87,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 81
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 20,
+     "n": 339,
+     "per100": 5.9
+    },
+    "kaggle_wet": {
+     "alarm": 3,
+     "n": 20,
+     "per100": 15.0
+    },
+    "pwwbs_wet": {
+     "alarm": 86,
+     "n": 264,
+     "per100": 32.6
+    },
+    "scand_dry": {
+     "alarm": 3,
+     "n": 165,
+     "per100": 1.8
+    }
+   }
+  },
+  "test_industrial_q8": {
+   "threshold": 0.66,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 141,
+   "box_recall_iou50": 0.21541950113378686,
+   "box_recall_iou25": 0.23356009070294784,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6737588652482269,
+   "hits": {
+    "box50": 95,
+    "box25": 103,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 95
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 22,
+     "n": 339,
+     "per100": 6.5
+    },
+    "kaggle_wet": {
+     "alarm": 3,
+     "n": 20,
+     "per100": 15.0
+    },
+    "pwwbs_wet": {
+     "alarm": 97,
+     "n": 264,
+     "per100": 36.7
+    },
+    "scand_dry": {
+     "alarm": 8,
+     "n": 165,
+     "per100": 4.8
+    }
+   }
+  },
+  "input_size": {
+   "height": 800,
+   "width": 800
+  },
+  "q8_parity": {
+   "alarm_flips": 64,
+   "n": 1351,
+   "max_top_score_gap": 0.355
+  }
+ },
+ "runA_960_paste": {
+  "threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames",
+  "threshold": 0.65,
+  "quant_ops": "all",
+  "calib": {
+   "threshold": 0.65,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 111,
+   "box_recall_iou50": 0.18274111675126903,
+   "box_recall_iou25": 0.20812182741116753,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6486486486486487,
+   "hits": {
+    "box50": 72,
+    "box25": 82,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 72
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 22,
+     "n": 379,
+     "per100": 5.8
+    },
+    "kaggle_wet": {
+     "alarm": 27,
+     "n": 42,
+     "per100": 64.3
+    },
+    "pwwbs_wet": {
+     "alarm": 56,
+     "n": 230,
+     "per100": 24.3
+    },
+    "scand_dry": {
+     "alarm": 0,
+     "n": 81,
+     "per100": 0.0
+    }
+   }
+  },
+  "test_fp32": {
+   "threshold": 0.65,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 225,
+   "box_recall_iou50": 0.17824074074074073,
+   "box_recall_iou25": 0.2013888888888889,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6844444444444444,
+   "hits": {
+    "box50": 154,
+    "box25": 174,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 154
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 28,
+     "n": 579,
+     "per100": 4.8
+    },
+    "kaggle_wet": {
+     "alarm": 30,
+     "n": 57,
+     "per100": 52.6
+    },
+    "pwwbs_wet": {
+     "alarm": 149,
+     "n": 543,
+     "per100": 27.4
+    },
+    "scand_dry": {
+     "alarm": 5,
+     "n": 172,
+     "per100": 2.9
+    }
+   }
+  },
+  "test_q8": {
+   "threshold": 0.65,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 249,
+   "box_recall_iou50": 0.1863425925925926,
+   "box_recall_iou25": 0.20949074074074073,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6465863453815262,
+   "hits": {
+    "box50": 161,
+    "box25": 181,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 161
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 32,
+     "n": 579,
+     "per100": 5.5
+    },
+    "kaggle_wet": {
+     "alarm": 32,
+     "n": 57,
+     "per100": 56.1
+    },
+    "pwwbs_wet": {
+     "alarm": 158,
+     "n": 543,
+     "per100": 29.1
+    },
+    "scand_dry": {
+     "alarm": 13,
+     "n": 172,
+     "per100": 7.6
+    }
+   }
+  },
+  "test_industrial_fp32": {
+   "threshold": 0.65,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 94,
+   "box_recall_iou50": 0.15873015873015872,
+   "box_recall_iou25": 0.17006802721088435,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.7446808510638298,
+   "hits": {
+    "box50": 70,
+    "box25": 75,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 70
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 10,
+     "n": 339,
+     "per100": 2.9
+    },
+    "kaggle_wet": {
+     "alarm": 4,
+     "n": 20,
+     "per100": 20.0
+    },
+    "pwwbs_wet": {
+     "alarm": 70,
+     "n": 264,
+     "per100": 26.5
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 165,
+     "per100": 2.4
+    }
+   }
+  },
+  "test_industrial_q8": {
+   "threshold": 0.65,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 110,
+   "box_recall_iou50": 0.1655328798185941,
+   "box_recall_iou25": 0.17687074829931973,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6636363636363637,
+   "hits": {
+    "box50": 73,
+    "box25": 78,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 73
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 12,
+     "n": 339,
+     "per100": 3.5
+    },
+    "kaggle_wet": {
+     "alarm": 4,
+     "n": 20,
+     "per100": 20.0
+    },
+    "pwwbs_wet": {
+     "alarm": 75,
+     "n": 264,
+     "per100": 28.4
+    },
+    "scand_dry": {
+     "alarm": 12,
+     "n": 165,
+     "per100": 7.3
+    }
+   }
+  },
+  "input_size": {
+   "height": 960,
+   "width": 960
+  },
+  "q8_parity": {
+   "alarm_flips": 67,
+   "n": 1351,
+   "max_top_score_gap": 0.5385
+  }
+ },
+ "runB_800_nopaste_calib_only": {
+  "threshold": 0.6,
+  "calib": {
+   "threshold": 0.6,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 174,
+   "box_recall_iou50": 0.2715736040609137,
+   "box_recall_iou25": 0.31218274111675126,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.6149425287356322,
+   "hits": {
+    "box50": 107,
+    "box25": 123,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 107
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 20,
+     "n": 379,
+     "per100": 5.3
+    },
+    "kaggle_wet": {
+     "alarm": 34,
+     "n": 42,
+     "per100": 81.0
+    },
+    "pwwbs_wet": {
+     "alarm": 100,
+     "n": 230,
+     "per100": 43.5
+    },
+    "scand_dry": {
+     "alarm": 1,
+     "n": 81,
+     "per100": 1.2
+    }
+   }
+  }
+ },
+ "runB_960_nopaste_calib_only": {
+  "threshold": 0.58,
+  "calib": {
+   "threshold": 0.58,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 161,
+   "box_recall_iou50": 0.23604060913705585,
+   "box_recall_iou25": 0.2715736040609137,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.577639751552795,
+   "hits": {
+    "box50": 93,
+    "box25": 107,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 93
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 20,
+     "n": 379,
+     "per100": 5.3
+    },
+    "kaggle_wet": {
+     "alarm": 33,
+     "n": 42,
+     "per100": 78.6
+    },
+    "pwwbs_wet": {
+     "alarm": 90,
+     "n": 230,
+     "per100": 39.1
+    },
+    "scand_dry": {
+     "alarm": 1,
+     "n": 81,
+     "per100": 1.2
+    }
+   }
+  }
+ },
+ "runB_800_weights_at_640_PICKED": {
+  "threshold_rule": "lowest cutoff with calib dry false alarms <= 5 per 100 frames",
+  "threshold": 0.63,
+  "quant_ops": "all",
+  "calib": {
+   "threshold": 0.63,
+   "n_frames": 732,
+   "n_boxes": 394,
+   "n_tiny_boxes": 20,
+   "n_detections": 223,
+   "box_recall_iou50": 0.38071065989847713,
+   "box_recall_iou25": 0.4213197969543147,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.672645739910314,
+   "hits": {
+    "box50": 150,
+    "box25": 166,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 150
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 22,
+     "n": 379,
+     "per100": 5.8
+    },
+    "kaggle_wet": {
+     "alarm": 32,
+     "n": 42,
+     "per100": 76.2
+    },
+    "pwwbs_wet": {
+     "alarm": 143,
+     "n": 230,
+     "per100": 62.2
+    },
+    "scand_dry": {
+     "alarm": 1,
+     "n": 81,
+     "per100": 1.2
+    }
+   }
+  },
+  "test_fp32": {
+   "threshold": 0.63,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 439,
+   "box_recall_iou50": 0.36574074074074076,
+   "box_recall_iou25": 0.41550925925925924,
+   "tiny_recall_iou50": 0.017543859649122806,
+   "tiny_recall_iou25": 0.017543859649122806,
+   "box_precision_iou50": 0.7198177676537585,
+   "hits": {
+    "box50": 316,
+    "box25": 359,
+    "tiny50": 1,
+    "tiny25": 1,
+    "matched_dets": 316
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 13,
+     "n": 579,
+     "per100": 2.2
+    },
+    "kaggle_wet": {
+     "alarm": 35,
+     "n": 57,
+     "per100": 61.4
+    },
+    "pwwbs_wet": {
+     "alarm": 341,
+     "n": 543,
+     "per100": 62.8
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 172,
+     "per100": 2.3
+    }
+   }
+  },
+  "test_q8": {
+   "threshold": 0.63,
+   "n_frames": 1351,
+   "n_boxes": 864,
+   "n_tiny_boxes": 57,
+   "n_detections": 449,
+   "box_recall_iou50": 0.3738425925925926,
+   "box_recall_iou25": 0.41782407407407407,
+   "tiny_recall_iou50": 0.017543859649122806,
+   "tiny_recall_iou25": 0.017543859649122806,
+   "box_precision_iou50": 0.7193763919821826,
+   "hits": {
+    "box50": 323,
+    "box25": 361,
+    "tiny50": 1,
+    "tiny25": 1,
+    "matched_dets": 323
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 15,
+     "n": 579,
+     "per100": 2.6
+    },
+    "kaggle_wet": {
+     "alarm": 37,
+     "n": 57,
+     "per100": 64.9
+    },
+    "pwwbs_wet": {
+     "alarm": 348,
+     "n": 543,
+     "per100": 64.1
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 172,
+     "per100": 2.3
+    }
+   }
+  },
+  "test_industrial_fp32": {
+   "threshold": 0.63,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 199,
+   "box_recall_iou50": 0.3492063492063492,
+   "box_recall_iou25": 0.38095238095238093,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.7738693467336684,
+   "hits": {
+    "box50": 154,
+    "box25": 168,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 154
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 7,
+     "n": 339,
+     "per100": 2.1
+    },
+    "kaggle_wet": {
+     "alarm": 4,
+     "n": 20,
+     "per100": 20.0
+    },
+    "pwwbs_wet": {
+     "alarm": 162,
+     "n": 264,
+     "per100": 61.4
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 165,
+     "per100": 2.4
+    }
+   }
+  },
+  "test_industrial_q8": {
+   "threshold": 0.63,
+   "n_frames": 788,
+   "n_boxes": 441,
+   "n_tiny_boxes": 37,
+   "n_detections": 212,
+   "box_recall_iou50": 0.35827664399092973,
+   "box_recall_iou25": 0.3945578231292517,
+   "tiny_recall_iou50": 0.0,
+   "tiny_recall_iou25": 0.0,
+   "box_precision_iou50": 0.7452830188679245,
+   "hits": {
+    "box50": 158,
+    "box25": 174,
+    "tiny50": 0,
+    "tiny25": 0,
+    "matched_dets": 158
+   },
+   "frames": {
+    "kaggle_dry": {
+     "alarm": 10,
+     "n": 339,
+     "per100": 2.9
+    },
+    "kaggle_wet": {
+     "alarm": 7,
+     "n": 20,
+     "per100": 35.0
+    },
+    "pwwbs_wet": {
+     "alarm": 169,
+     "n": 264,
+     "per100": 64.0
+    },
+    "scand_dry": {
+     "alarm": 4,
+     "n": 165,
+     "per100": 2.4
+    }
+   }
+  },
+  "input_size": {
+   "height": 640,
+   "width": 640
+  },
+  "q8_parity": {
+   "alarm_flips": 49,
+   "n": 1351,
+   "max_top_score_gap": 0.31
+  }
+ }
+}
