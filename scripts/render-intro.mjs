@@ -20,13 +20,13 @@ const TOTAL = 45.75;
 
 // Narration: one short line per moment, start times in clock seconds.
 const LINES = [
-  [0.3, "Ryan, NextEra's Spot engineer, told us Spot can't see a storm coming mid-route, or a puddle in its path."],
-  [7.5, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
-  [13.4, "It also watches live radar around Saint Lucie while the round is running."],
+  [0.3, "Spot can't see a storm coming mid-route, or a puddle in its path."],
+  [6.0, "Kairos spots even a small puddle, holds Spot at the waypoint, and the operator confirms."],
+  [13.4, "It also watches live radar around the plant while the round is running."],
   [19.2, "When the weather turns mid-round, Kairos recalls Spot to the dock."],
   [28.8, "Here is how it works."],
   [31.9, "The water model runs in the browser, the Kairos dashboard plugs into Orbit, and every call is logged in Neon."],
-  [40.8, "Kairos. Weather and water checks for Spot, inside Orbit."],
+  [41.2, "Kairos. Catch the puddle. Clear the storm."],
 ];
 // Soft rain bed under the storm beat, clock seconds.
 const RAIN = [[21.0, 31.5]];
