@@ -305,7 +305,7 @@ const mode = process.argv[2] ?? "3020";
 const vos = {};
 for (const [k, v] of Object.entries(VOICES)) vos[k] = await voice(v);
 if (mode === "--stt") {
-  for (const [k, v] of Object.entries(VOICES)) for (const key of Object.keys(LINES)) console.log(`${k} ${key}: ${await transcribe(vos[k][key].file)}`);
+  for (const k of Object.keys(VOICES)) for (const key of Object.keys(LINES)) console.log(`${k} ${key}: ${await transcribe(vos[k][key].file)}`);
 } else if (mode !== "--audio") {
   if (mode !== "--encode") await record(Number(mode));
   Object.entries(VOICES).forEach(([k, v], i) => encode(v, vos[k], i === 0));
