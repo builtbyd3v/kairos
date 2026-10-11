@@ -46,7 +46,7 @@ export function FacilityMap({
   sites: MapSite[];
   route?: string[];
   spot?: string;
-  wet?: string; // waypoint where the water model flagged water in Spot's path
+  wet?: string | string[]; // waypoint(s) where the water model flagged water in Spot's path
 
   outdoor?: string[];
   dock?: string;
@@ -118,11 +118,11 @@ export function FacilityMap({
                     </a>
                   );
                 })}
-              {wet && byId.get(wet)?.floor === floor && (
-                <text x={pos(byId.get(wet)!).x - 4} y={pos(byId.get(wet)!).y - 3.5} textAnchor="end" fontSize="3.6" fontWeight="600" fill="var(--hold)" className="font-mono">
+              {[wet ?? []].flat().map((id) => byId.get(id)).filter((s) => s?.floor === floor).map((s) => (
+                <text key={s!.id} x={pos(s!).x - 4} y={pos(s!).y - 3.5} textAnchor="end" fontSize="3.6" fontWeight="600" fill="var(--hold)" className="font-mono">
                   WATER
                 </text>
-              )}
+              ))}
               {spotAt?.floor === floor && (
                 <g className="pointer-events-none">
                   <circle cx={spotAt.x} cy={spotAt.y} r="5" fill="#ffd60a" fillOpacity="0.25" className="origin-center animate-ping [transform-box:fill-box] motion-reduce:animate-none" />
