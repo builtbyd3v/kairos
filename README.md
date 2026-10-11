@@ -30,7 +30,7 @@ Works for any plant Spot patrols: point it at the plant's coordinates. The demo 
 ## How it fits Orbit
 Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Orbit. A HOLD maps to pausing the schedule and a RECALL to sending Spot to the dock (Orbit API v0 endpoint names, **simulated** in this demo). The water model runs wherever Spot's camera frames are: in the browser today, on Spot's CORE I/O as a Network Compute Bridge worker in a real deployment.
 
-## Sponsor tech, and why each one is load-bearing
+## Sponsor tech, and why each one matters
 | Sponsor | What it does in Kairos | Without it |
 |---|---|---|
 | NextEra | The challenge (a Spot management dashboard), the robot data (synthetic SPOT kit), and the problem itself, from their Spot engineer. | No problem worth solving and no robot data. |
