@@ -1,8 +1,12 @@
 # Kairos
 
+**Catch the puddle. Clear the storm.** *Built for NextEra's Spot.*
+
 **A weather and water dashboard for Boston Dynamics Spot, built as a plugin for Orbit.** Spot is rated IP54: light rain is fine, harsh rain and storms are not, and no forecast can see a puddle in its path. Kairos watches both on every round: when the weather turns mid-round it says **RECALL**, and when Spot's camera sees water in its path it says **HOLD** until an operator confirms. Every call is logged.
 
 Built at Knight Hacks IX (UCF, Oct 9-11 2026) for the NextEra Energy "SPOT Management Dashboard" challenge.
+
+Works for any plant Spot patrols: point it at the plant's coordinates. The demo site is NextEra's St. Lucie plant in Florida.
 
 **Live:** https://kairos.boston · **Intro video:** `public/intro/intro.mp4`
 

@@ -8,7 +8,7 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Kairos",
-  description: "Readiness board for Boston Dynamics Spot inspection rounds: true mission status plus weather go / hold / recall.",
+  description: "Catch the puddle. Clear the storm. A weather and water dashboard for Boston Dynamics Spot, built as an Orbit plugin. Built for NextEra's Spot.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

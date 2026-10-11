@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Kairos",
     short_name: "Kairos",
-    description: "Weather and water checks for Spot, inside Orbit.",
+    description: "Catch the puddle. Clear the storm. Built for NextEra's Spot.",
     start_url: "/",
     display: "standalone",
     background_color: "#161616",

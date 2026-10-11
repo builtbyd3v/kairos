@@ -76,7 +76,7 @@ export function TopBar({ search, openAnomalies, site, recordedAt }: { search: Re
         </form>
         <span className="hidden items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/[0.06] sm:flex">
           <Clock aria-hidden className="size-3.5" />
-          {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET
+          Demo site: {site} · <span className="font-mono tabular-nums">{clock ?? "--"}</span> ET
         </span>
         <Link
           href="/anomalies"
