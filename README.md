@@ -65,6 +65,7 @@ npm test                     # rule, model-confidence, branch-routing tests
 `OPERATOR_KEY` (env) lets an operator write to production; everyone else writes to their own Neon branch.
 
 ## Disclosure (Knight Hacks rules)
+- **Not affiliated:** Kairos is an independent student hackathon project. It is not affiliated with, sponsored by, or endorsed by NextEra Energy or Boston Dynamics. Spot and Orbit are Boston Dynamics products, named here only to describe what Kairos works with.
 All project code, both fine-tuned models and the data pipelines were made during the event (hacking began Fri 2026-10-09, 11 PM EDT).
 - **AI tools:** Claude Code (Anthropic Claude models) wrote most of the code under our direction; OpenAI Codex reviewed facts and evaluations. We chose the problem, the rules and every product decision, and reviewed and tested the output. Decisions and trade-offs: `DECISIONS.md`. The intro narration is an ElevenLabs voice ("Misa", from the author's ElevenLabs account).
 - **Base models:** `PekingU/rtdetr_v2_r18vd` (Apache 2.0), fine-tuned by us into `builtbyd3v/kairos-water-rtdetr`. Earlier experiments: `facebook/convnext-tiny-224` (Apache 2.0) into `builtbyd3v/spot-wetfloor-convnext-tiny` and `builtbyd3v/kairos-door-rain`.
