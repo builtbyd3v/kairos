@@ -39,7 +39,7 @@ Kairos is a layer on top of Orbit, not a replacement. Mission data comes from Or
 | GoDaddy Registry | The `kairos.boston` domain. | |
 
 ## The numbers (all on public photos; no NextEra camera frames exist)
-- **Water model, held out (never trained on):** flags 85% of wet photos from a puddle source it never saw (463 of 543); 1.2 false alarms per 100 frames from a camera on a real Spot (2 of 172). **Known gap:** tiny puddles under 1% of the frame, 6 of 57. Details: `docs/model/water-v2/RESULTS.md`.
+- **Water model, held out (never trained on), fp32 file (WebGPU):** flags 85% of wet photos from a puddle source it never saw (463 of 543); 1.2 false alarms per 100 frames from a camera on a real Spot (2 of 172). **Known gap:** tiny puddles under 1% of the frame, 6 of 57. The int8 file (WASM fallback, and the number on the Hugging Face card): 461 of 543 and 4 of 172. Details: `docs/model/water-v2/RESULTS.md`.
 - **Confidence that means something:** "water 90%" means 9 in 10 boxes at that score were real water, measured on a calibration split (315 boxes) and checked on test (680 boxes). `docs/model/water-v2/CONFIDENCE.md`.
 - **Plant-like floors (int8 file):** on the industrial-like test slice (indoor hard floors and spills), it flags 86% of wet frames (245 of 284) with 2.4 false alarms per 100 indoor Spot frames (4 of 165).
 - **Speed:** about 70 to 100 ms per frame on WebGPU in Chrome (two measurements: 67 ms p50, and 101 ms median of 10 runs).
